@@ -2,23 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace Mods.Pipe.Scripts
 {
   internal static class MoveWater
   {
-    static float maximumWaterInFlow = 0.50f;
+    static float maximumWaterInFlow = 5.00f;
 
-    static float maximumWaterOutFlow = 1.00f;
+    static float maximumWaterOutFlow = 5.00f;
 
-    static float minimumWaterFlow = 0.05f;
+    static float minimumWaterFlow = 0.01f;
 
-    static float minimumDelivereWaters = 0.05f;
+    static float minimumDelivereWaters = 0.01f;
     
-    static float waterLostMaximumPercent = 0.90f;
-
-    static float waterPerSecond = 0.50f;
+    static float waterPerSecond = 1.00f;
     
     private static float LimitWater(float expectedWater, bool inflow)
     {
@@ -54,22 +51,27 @@ namespace Mods.Pipe.Scripts
 
     private static float getWaterLevel(List<WaterGate> Gates)
     {
+      float waterSum = 0f;
       float average = Gates
         .Aggregate(
           0f,
           (float sum, WaterGate gate) =>
           {
             gate.UpdateWaters();
+            waterSum += gate.Water;
             return sum + gate.WaterLevel;
           }
         );
+      if (waterSum <= 0)
+        return float.NaN;
       return average / Gates.Count;
     }
 
     private static float GetWaterPercentPerSecond()
     {
-      Debug.Log($"[MoveWater.GetWaterPercentPerSecond] fixedDeltaTime={Time.fixedDeltaTime} waterPerSecond={waterPerSecond} waterPercent={Time.fixedDeltaTime * waterPerSecond}");
-      return Time.fixedDeltaTime * waterPerSecond;
+      return waterPerSecond;
+      //return Time.fixedDeltaTime * waterPerSecond;
+      //return Mathf.Min(Time.fixedDeltaTime, 1f) * waterPerSecond; // Time.fixedDeltaTime = 0.6
     }
 
     private static bool calculateFlow(List<WaterGate> Gates, float average)
@@ -98,7 +100,6 @@ namespace Mods.Pipe.Scripts
             return lists;
           }
         );
-      Debug.Log($"[MoveWater.calculateFlow] average={average} delivereWaters={delivereWaters} receivertWaters={receivertWaters} deliverers.Count={deliverers.Count} requesters.Count={receivers.Count}  deliveryWaterBreak={delivereWaters < minimumDelivereWaters}");
       if (deliverers.Count == 0 || receivers.Count == 0 || delivereWaters < minimumDelivereWaters)
         return false;
       var waterUsed = receivers
@@ -110,23 +111,18 @@ namespace Mods.Pipe.Scripts
               delivereWaters * (gate.DesiredWater / receivertWaters),
               false
             );
-            Debug.Log($"[MoveWater.calculateFlow.receivers.loop] gate.id={gate.id} delivereWaters={delivereWaters} gate.DesiredWater={gate.DesiredWater} receivertWaters={receivertWaters} water={water} gate.Water={gate.Water} WaterDiff={water - gate.Water}");
             gate.DesiredWater = water;
             waterUsed += gate.DesiredWater;
             return waterUsed;
           }
         );
-      float waterLost = delivereWaters - waterUsed;
-      Debug.Log($"[MoveWater.calculateFlow.waterLost] waterLost={waterLost} delivereWaters={delivereWaters} waterUsed={waterUsed} lostPercent={waterLost / delivereWaters} waterLostBreak={waterLost / delivereWaters < waterLostMaximumPercent}");
-      if (waterLost / delivereWaters > waterLostMaximumPercent)
-        return false;
+      float waterNotUsed = delivereWaters - waterUsed;
       deliverers
         .ForEach((WaterGate gate) =>
         {
           float water = gate.DesiredWater;
-          if (waterLost > 0f)
-            water -= (waterLost * (water / delivereWaters));
-          Debug.Log($"[MoveWater.calculateFlow.deliverers.loop] gate.id={gate.id} gate.DesiredWater={gate.DesiredWater} waterLost={waterLost} Twater={water} delivereWaters={delivereWaters} gate.Water={gate.Water}  WaterDiff={water - gate.Water}");
+          if (waterNotUsed > 0f)
+            water -= (waterNotUsed * (water / delivereWaters));
           gate.DesiredWater = water - gate.Water;
         });
       bool canFlow = Gates
@@ -138,7 +134,6 @@ namespace Mods.Pipe.Scripts
             return canFlow;
           }
         );
-      Debug.Log($"[MoveWater.calculateFlow] delivereWaters={delivereWaters} waterUsed={waterUsed} waterLost={waterLost} canFlow={canFlow}");
       return canFlow;
     }
 
@@ -148,7 +143,6 @@ namespace Mods.Pipe.Scripts
       Gates
         .ForEach((WaterGate gate) =>
         {
-          Debug.Log($"[MoveWater.moveWater.loop] gate.id={gate.id} gate.WaterDiff={gate.DesiredWater} waterMoved={gate.DesiredWater * waterPercentPerSecond}");
           gate.MoveWater(gate.DesiredWater * waterPercentPerSecond);
         });
     }
@@ -158,7 +152,6 @@ namespace Mods.Pipe.Scripts
       if (Gates.Count <= 1)
         return false;
       float average = getWaterLevel(Gates);
-      Debug.Log($"[MoveWater.Do] Gates.Count={Gates.Count}");
       if (float.IsNaN(average))
         return false;
       bool newFlow = calculateFlow(Gates, average);

@@ -1,8 +1,6 @@
-using Moq;
 using System.Collections.Generic;
 using System.Linq;
 using Timberborn.Common;
-using UnityEditor.VersionControl;
 using UnityEngine;
 
 namespace Mods.Pipe.Scripts
@@ -11,38 +9,79 @@ namespace Mods.Pipe.Scripts
   {
     private static readonly HashSet<PipeGroup> Groups = new HashSet<PipeGroup>();
 
-    private static TickCount nodesTick = new TickCount();
+    private static readonly List<WaterGate> GroupRecreateGates = new List<WaterGate>();
+
+    private static bool working = false;
 
     private static bool GroupNotExist(PipeGroup group)
     {
-      return group != null && Groups.Contains(group);
+      return group != null && !Groups.Contains(group);
     }
 
-    private static void UpdatePipeNodeCount()
+    private static void GroupRecreateTailRecursion(
+      PipeNode actualNode,
+      ref Queue<PipeNode> pipeWorkList,
+      ref HashSet<PipeNode> resolvedNode,
+      PipeGroup group = null
+    )
     {
-      int PipeNodeCount = Groups
-        .Where((PipeGroup group) => group.isEnabled)
-        .Aggregate(
-          0,
-          (int count, PipeGroup group) =>
-          {
-            count += group.Pipes
-              .Where((PipeNode node) => node.isEnabled)
-              .Count();
-            return count;
-          }
-        );
-      nodesTick.SetMaxTicks(PipeNodeCount);
+      if (actualNode  != null && actualNode.isEnabled && !resolvedNode.Contains(actualNode))
+      {
+        if (group == null)
+          group = new PipeGroup();
+          PipeGroupQueue.GroupRecalculeGates(group);
+        actualNode.SetGroup(group);
+        resolvedNode.Add(actualNode);
+        var connectedNodes = actualNode.waterGates
+          .Select((WaterGate gate) => gate.gateConnected?.pipeNode)
+          .Where((PipeNode node) => node != null && node.isEnabled)
+          .ToList();
+        foreach (var node in connectedNodes)
+        {
+          if (!resolvedNode.Contains(node))
+            pipeWorkList.Enqueue(node);
+        }
+      }
+      if (pipeWorkList.IsEmpty())
+        return;
+      var nextNode = pipeWorkList.Dequeue();
+      GroupRecreateTailRecursion(nextNode, ref pipeWorkList, ref resolvedNode, group);
     }
 
-    public static void ActionGroupRecalculeGates(PipeGroupChange change)
+    private static void GroupRecreate(PipeNode deletedNode)
+    {
+      deletedNode.group.SetDisabled();
+      var pipeWorkList = new Queue<PipeNode>();
+      var resolvedNode = new HashSet<PipeNode>();
+      var startNodes = deletedNode.waterGates
+        .Select((WaterGate gate) => gate.gateConnected?.pipeNode)
+        .Where((PipeNode node) => node != null && node.isEnabled)
+        .ToList();
+      foreach (var node in startNodes)
+      {
+        GroupRecreateTailRecursion(node, ref pipeWorkList, ref resolvedNode);
+      }
+      deletedNode.group.Pipes.ExceptWith(resolvedNode);
+      var forgottenPipes = new Queue<PipeNode>(deletedNode.group.Pipes);
+      while (!forgottenPipes.IsEmpty())
+      {
+        var nextNode = forgottenPipes.Dequeue();
+        if (nextNode.isEnabled)
+          GroupRecreateTailRecursion(nextNode, ref pipeWorkList, ref resolvedNode);
+      }
+      pipeWorkList.Clear();
+      resolvedNode.Clear();
+      deletedNode.group.Clear();
+    }
+
+    private static void ActionGroupRecalculeGates(PipeGroupChange change)
     {
       if (GroupNotExist(change.group))
         return;
       change.group.recalculeGates();
     }
 
-    public static void ActionPipeJoin(PipeGroupChange change)
+    private static void ActionPipeJoin(PipeGroupChange change)
     {
       var groupA = change.node?.group;
       var groupB = change.secondNode?.group;
@@ -54,30 +93,39 @@ namespace Mods.Pipe.Scripts
         groupA.UnionTo(groupB);
     }
 
-    public static void ActionPipeNodeCreate(PipeGroupChange change)
+    private static void ActionPipeNodeCreate(PipeGroupChange change)
     {
+      Debug.Log($"[Manager.ActionPipeNodeCreate] node={change.node.id} start");
       var pipe = change.node;
       var group = new PipeGroup();
       pipe.SetGroup(group);
       Groups.Add(group);
-      UpdatePipeNodeCount();
+      pipe.CheckGates();
+      Debug.Log($"[Manager.ActionPipeNodeCheckGates] node={change.node.id} end");
     }
 
-    public static void ActionPipeNodeRemove(PipeGroupChange change)
+    private static void ActionPipeNodeRemove(PipeGroupChange change)
     {
+      Debug.Log($"[Manager.ActionPipeNodeRemove] node={change.node.id} start");
       if (GroupNotExist(change.group))
         return;
       change.group.PipeRemove(change.node);
-      UpdatePipeNodeCount();
+      GroupRecreate(change.node);
+      Debug.Log($"[Manager.ActionPipeNodeRemove] node={change.node.id} end");
     }
 
-    public static void ActionPipeNodeCheckGates(PipeGroupChange change) {
-      change.node.CheckGates();
-    }
-
-    public static void ActionGateCheckInput(PipeGroupChange change)
+    private static void ActionPipeNodeCheckGates(PipeGroupChange change)
     {
+      Debug.Log($"[Manager.ActionPipeNodeCheckGates] node={change.node.id} start");
+      change.node.CheckGates();
+      Debug.Log($"[Manager.ActionPipeNodeCheckGates] node={change.node.id} end");
+    }
+
+    private static void ActionGateCheckInput(PipeGroupChange change)
+    {
+      Debug.Log($"[Manager.ActionGateCheckInput] gate={change.gate.id} start");
       change.gate.CheckInput();
+      Debug.Log($"[Manager.ActionGateCheckInput] gate={change.gate.id} end");
     }
 
     public static bool ConsumeChanges()
@@ -93,16 +141,16 @@ namespace Mods.Pipe.Scripts
             ActionGroupRecalculeGates(change);
             break;
 
-          case PipeGroupChangeTypes.PIPE_JOIN:
-            ActionPipeJoin(change);
-            break;
-
           case PipeGroupChangeTypes.PIPE_CREATE:
             ActionPipeNodeCreate(change);
             break;
 
           case PipeGroupChangeTypes.PIPE_REMOVE:
             ActionPipeNodeRemove(change);
+            break;
+
+          case PipeGroupChangeTypes.PIPE_JOIN:
+            ActionPipeJoin(change);
             break;
 
           case PipeGroupChangeTypes.PIPE_CHECK_GATES:
@@ -128,12 +176,18 @@ namespace Mods.Pipe.Scripts
       }
     }
 
-    public static void Tick()
+    public static void Tick(PipeGroup group)
     {
-      if (nodesTick.Skip())
+      Debug.Log($"*** Time.fixedDeltaTime={Time.fixedDeltaTime}");
+      Debug.Log($"[Manager.Tick] working={working} try");
+      if (working || TimerControl.Skip())
         return;
+      Debug.Log($"[Manager.Tick] start vvv");
+      working = true;
       ConsumeChanges();
       DoMoveWater();
+      working = false;
+      Debug.Log($"[Manager.Tick] end ^^^");
     }
   }
 }

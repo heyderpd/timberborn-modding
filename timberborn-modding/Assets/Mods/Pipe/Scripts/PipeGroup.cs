@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Timberborn.Common;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.TestTools;
-using static UnityEngine.EventSystems.EventTrigger;
 
 namespace Mods.Pipe.Scripts
 {
@@ -40,9 +35,14 @@ namespace Mods.Pipe.Scripts
       Pipes.Remove(node);
     }
 
-    public void Clear()
+    public void SetDisabled()
     {
       isEnabled = false;
+    }
+
+    public void Clear()
+    {
+      SetDisabled();
       Pipes.Clear();
       WaterGates.Clear();
     }

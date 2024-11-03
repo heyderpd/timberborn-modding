@@ -7,8 +7,6 @@ using Timberborn.BaseComponentSystem;
 using Timberborn.WaterSystem;
 using Timberborn.BlockSystem;
 using Timberborn.WaterObjects;
-using UnityEngine.Rendering;
-using UnityEngine.TestTools;
 using Timberborn.TerrainSystem;
 
 namespace Mods.Pipe.Scripts
@@ -30,8 +28,8 @@ namespace Mods.Pipe.Scripts
     public WaterGateSide waterGateSide;
 
     private WaterGateFlow waterGateFlow = WaterGateFlow.STOP;
-    
-    private PipeNode pipeNode;
+
+    public PipeNode pipeNode { get; private set; }
 
     public WaterGate gateConnected;
 
@@ -147,7 +145,6 @@ namespace Mods.Pipe.Scripts
     public void ReleaseConnection()
     {
       gateConnected = null;
-      PipeGroupQueue.GroupRecalculeGates(pipeNode.group);
     }
 
     private bool notHasEmptySpace()
@@ -247,9 +244,10 @@ namespace Mods.Pipe.Scripts
 
     public string GetInfo()
     {
-      string info = $"  *Gate[\n node={pipeNode?.id}\n gate={id}\n cord={coordinates.ToString()}\n side={waterGateSide}\n flow={waterGateFlow}\n ";
-      info += $"gateConnected={gateConnected?.id}\n enabled={isEnabled}\n ";
-      info += $"Floor={Floor.ToString("0.00")}\n WaterLevel={WaterLevel.ToString("0.00")}\n Water={Water.ToString("0.00")}\n DesiredWater={DesiredWater.ToString("0.00")}];\n";
+      string info = $"Gate[\n node={pipeNode?.id}\n gate={id}\n cord={coordinates.ToString()}\n side={waterGateSide}\n flow={waterGateFlow}\n ";
+      info += $" gateConnected={gateConnected?.id}\n enabled={isEnabled}\n ";
+      info += $" Floor={Floor.ToString("0.00")}\n WaterLevel={WaterLevel.ToString("0.00")}\n Water={Water.ToString("0.00")}\n DesiredWater={DesiredWater.ToString("0.00")}\n";
+      info += $"];\n";
       return info;
     }
   }

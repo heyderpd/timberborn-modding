@@ -24,15 +24,15 @@
       switch (gate)
       {
         case WaterGateSide.TOP:
-          return 0f; // 0f
+          return 0f;
         case WaterGateSide.BOTTON:
-          return 0f; // 1f
+          return 1f;
         case WaterGateSide.FRONT:
         case WaterGateSide.BACK:
         case WaterGateSide.LEFT:
         case WaterGateSide.RIGHT:
         default:
-          return 0f; // 0.2f
+          return 0.25f;
       }
     }
 

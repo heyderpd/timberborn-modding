@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.BlockSystem;
@@ -52,23 +51,18 @@ namespace Mods.Pipe.Scripts
       waterGates = new List<WaterGate>();
       GetComponentsFast<WaterGate>(waterGates);
       blockObject = GetComponentFast<BlockObject>();
-      PipeGroupQueue.PipeNodeCreate(this);
     }
 
     public void InitializeEntity()
     {
       coordinates = blockObject.Coordinates;
-      PipeGroupQueue.PipeNodeCheckGates(this);
+      PipeGroupQueue.PipeNodeCreate(this);
+      //PipeGroupQueue.PipeNodeCheckGates(this);
     }
 
     public void DeleteEntity()
     {
       isEnabled = false;
-      foreach (var _gate in waterGates)
-      {
-        var otherGate = _gate.gateConnected;
-        otherGate?.ReleaseConnection();
-      }
       PipeGroupQueue.PipeNodeRemove(group, this);
     }
 
@@ -92,7 +86,7 @@ namespace Mods.Pipe.Scripts
     {
       if (!isEnabled)
         return;
-      PipeGroupManager.Tick();
+      PipeGroupManager.Tick(this.group);
     }
 
     public void SetGroup(PipeGroup _group)
@@ -106,6 +100,11 @@ namespace Mods.Pipe.Scripts
       if (group.Same(node?.group))
       {
         Debug.Log($"PIPE.TryConnect pipe={id} thisGroup={group.id} otherGroup={node.group.id} not_same_group");
+        return true;
+      }
+      if (!node.isEnabled)
+      {
+        Debug.Log($"PIPE.TryConnect pipe={id} thisGroup={group.id} otherGroup={node.group.id} node_disabled");
         return true;
       }
       WaterGate endGate = node.waterGates
@@ -128,7 +127,6 @@ namespace Mods.Pipe.Scripts
 
     public void CheckGates()
     {
-      Debug.Log($"PIPE.CheckNear group={group.id} pipe={id} EXECUTE");
       if (!isEnabled)
         return;
       var enabled = false;
@@ -180,6 +178,8 @@ namespace Mods.Pipe.Scripts
 
     public string GetFragmentInfo()
     {
+      if (group == null)
+        return "no group";
       return group.GetInfo();
       //return GetInfo() + group.GetInfo();
     }

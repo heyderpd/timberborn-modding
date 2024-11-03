@@ -144,7 +144,7 @@ MonoBehaviour:
   _toolGroupId: Water
   _toolOrder: 81
   _toolShape: 0
-  _layout: 1
+  _layout: 2
   _customPivot:
     _hasCustomPivot: 0
     _coordinates: {x: 0, y: 0, z: 0}
@@ -252,6 +252,7 @@ MonoBehaviour:
   waterCoordinates: {x: 0, y: -1, z: 0}
   waterGateSide: 1
   gateConnected: {fileID: 0}
+  DesiredWater: 0
 --- !u!114 &3908924080598491517
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -267,6 +268,7 @@ MonoBehaviour:
   waterCoordinates: {x: 0, y: 1, z: 0}
   waterGateSide: 0
   gateConnected: {fileID: 0}
+  DesiredWater: 0
 --- !u!114 &2918800193914806410
 MonoBehaviour:
   m_ObjectHideFlags: 0
