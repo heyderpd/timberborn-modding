@@ -1,8 +1,19 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Mods.Pipe.Scripts
+namespace Mods.OldGopher.Pipe.Scripts
 {
+  internal static class OldGopherLog
+  {
+    public static readonly bool enabled = true;
+
+    public static void Log(string text)
+    {
+      if (enabled)
+        Debug.Log(text);
+    }
+  }
+
   internal class TickCount
   {
     private int ticks = 0;

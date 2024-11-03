@@ -10,7 +10,7 @@ using Timberborn.WaterObjects;
 using Timberborn.TerrainSystem;
 using Timberborn.Localization;
 
-namespace Mods.Pipe.Scripts
+namespace Mods.OldGopher.Pipe.Scripts
 {
   internal class WaterGate : BaseComponent,
                              IInitializableEntity,
@@ -116,7 +116,7 @@ namespace Mods.Pipe.Scripts
       }
       catch (Exception err)
       {
-        Debug.Log($"#ERROR [WaterGate.IsUnderwater] id={id} err={err}");
+        OldGopherLog.Log($"#ERROR [WaterGate.IsUnderwater] id={id} err={err}");
         return false;
       }
     }
@@ -142,7 +142,7 @@ namespace Mods.Pipe.Scripts
         return true;
       } catch (Exception err)
       {
-        Debug.Log($"#ERROR [WaterGate.UpdateWaters] id={id} err={err}");
+        OldGopherLog.Log($"#ERROR [WaterGate.UpdateWaters] id={id} err={err}");
         return false;
       }
     }
@@ -194,14 +194,14 @@ namespace Mods.Pipe.Scripts
     {
       if (terrainService.Underground(coordinates))
       {
-        Debug.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=BLOCKED by underground");
+        OldGopherLog.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=BLOCKED by underground");
         State = WaterGateState.BLOCKED;
         return;
       }
       var block = blockService.GetObjectsWithComponentAt<BlockObject>(coordinates).FirstOrDefault();
       if (block == null || block?.IsFinished == false)
       {
-        Debug.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=EMPTY by block=null IsFinished={block?.IsFinished}");
+        OldGopherLog.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=EMPTY by block=null IsFinished={block?.IsFinished}");
         State = WaterGateState.EMPTY;
         return;
       }
@@ -209,7 +209,7 @@ namespace Mods.Pipe.Scripts
       var connected = pipeNode.TryConnect(this, pipe);
       if (connected)
       {
-        Debug.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=CONNECTED by connected=true");
+        OldGopherLog.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=CONNECTED by connected=true");
         State = WaterGateState.CONNECTED;
         return;
       }
@@ -217,7 +217,7 @@ namespace Mods.Pipe.Scripts
       State = obstacle != null
         ? WaterGateState.BLOCKED
         : WaterGateState.EMPTY;
-      Debug.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State={State} by WaterObstacle");
+      OldGopherLog.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State={State} by WaterObstacle");
     }
 
     public bool FlowNotChanged(float water)
@@ -235,14 +235,14 @@ namespace Mods.Pipe.Scripts
       return false;
     }
 
-    public void MoveWater(float water)
+    public void MoveWater(float water, float contamination)
     {
       if (!isEnabled || notHasEmptySpace())
         return;
-      Debug.Log($"WATER.MoveWater pipe={pipeNode.id}");
       float waterAbs = Mathf.Abs(water);
-      float contaminatedWater = waterAbs * ContaminationPercentage;
+      float contaminatedWater = waterAbs * contamination;
       float cleanWater = waterAbs - contaminatedWater;
+      OldGopherLog.Log($"[WaterGate.MoveWater] pipe={pipeNode.id} id={id} water={water} waterAbs={waterAbs} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
       if (water > 0f)
         AddWater(cleanWater, contaminatedWater);
       if (water < 0f)
@@ -253,6 +253,7 @@ namespace Mods.Pipe.Scripts
     {
       try
       {
+        OldGopherLog.Log($"[WaterGate.AddWater] pipe={pipeNode.id} id={id} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
         if (cleanWater > 0f)
           waterService.AddCleanWater(coordinates, cleanWater);
         if (contaminatedWater > 0f)
@@ -260,7 +261,7 @@ namespace Mods.Pipe.Scripts
       }
       catch (Exception err)
       {
-        Debug.Log($"#ERROR [WaterGate.AddWater] id={id} err={err}");
+        OldGopherLog.Log($"#ERROR [WaterGate.AddWater] id={id} err={err}");
       }
     }
 
@@ -268,6 +269,7 @@ namespace Mods.Pipe.Scripts
     {
       try
       {
+        OldGopherLog.Log($"[WaterGate.RemoveWater] pipe={pipeNode.id} id={id} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
         if (!IsUnderwater())
           return;
         if (cleanWater > 0f)
@@ -277,7 +279,7 @@ namespace Mods.Pipe.Scripts
       }
       catch (Exception err)
       {
-        Debug.Log($"#ERROR [WaterGate.RemoveWater] id={id} err={err}");
+        OldGopherLog.Log($"#ERROR [WaterGate.RemoveWater] id={id} err={err}");
       }
     }
 
@@ -287,7 +289,7 @@ namespace Mods.Pipe.Scripts
       info += $"  node={pipeNode?.id} gate={id} cord={coordinates.ToString()}\n ";
       info += $"  state={State} side={Side} flow={Flow}\n ";
       info += $"  gateConnected={gateConnected?.id} enabled={isEnabled}\n ";
-      info += $"  Floor={Floor.ToString("0.00")} WaterLevel={WaterLevel.ToString("0.00")}\n ";
+      info += $"  Floor={Floor.ToString("0.00")} Contamination={ContaminationPercentage.ToString("0.00")} WaterLevel={WaterLevel.ToString("0.00")}\n ";
       info += $"  Water={Water.ToString("0.00")} DesiredWater={DesiredWater.ToString("0.00")}\n ";
       info += $"];\n";
       return info;

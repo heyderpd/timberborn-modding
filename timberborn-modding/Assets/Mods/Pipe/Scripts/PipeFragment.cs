@@ -5,7 +5,7 @@ using Timberborn.Localization;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace Mods.Pipe.Scripts
+namespace Mods.OldGopher.Pipe.Scripts
 {
   public class PipeFragment : IEntityPanelFragment
   {
@@ -29,7 +29,6 @@ namespace Mods.Pipe.Scripts
     {
       root = new VisualElement();
       var box = new Box();
-      //box.style.width = 20;
       box.style.backgroundColor = Color.white;
       text = new Label();
       text.style.color = Color.black;
@@ -56,7 +55,7 @@ namespace Mods.Pipe.Scripts
         return;
       }
       root.ToggleDisplayStyle(true);
-      text.text = pipeNode.GetFragmentInfo(); //  _loc.T(pipeNode.GetFragmentInfo());
+      text.text = pipeNode.GetFragmentInfo();
     }
   }
 }

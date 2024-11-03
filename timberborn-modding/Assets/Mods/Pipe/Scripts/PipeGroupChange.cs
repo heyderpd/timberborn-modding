@@ -5,7 +5,7 @@ using Timberborn.BlockSystem;
 using Timberborn.Common;
 using UnityEngine;
 
-namespace Mods.Pipe.Scripts
+namespace Mods.OldGopher.Pipe.Scripts
 {
   public enum PipeGroupChangeTypes
   {
@@ -63,7 +63,6 @@ namespace Mods.Pipe.Scripts
 
     public void GroupRecalculeGates(PipeGroup group)
     {
-      Debug.Log($"[Changes.GroupRecalculeGates] WILL group={group?.id}");
       if (group == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -74,7 +73,6 @@ namespace Mods.Pipe.Scripts
 
     public void GroupRecalculateGates(PipeNode node)
     {
-      Debug.Log($"[Changes.GroupRecalculateGates] WILL group={node?.group?.id} node={node?.id}");
       if (node == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -85,7 +83,6 @@ namespace Mods.Pipe.Scripts
 
     public void PipeNodeJoin(PipeNode node, PipeNode secondNode)
     {
-      Debug.Log($"[Changes.PipeNodeJoin] WILL group={node?.group?.id} node={node?.id}");
       if (node == null || secondNode == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -97,7 +94,6 @@ namespace Mods.Pipe.Scripts
 
     public void PipeNodeCreate(PipeNode node)
     {
-      Debug.Log($"[Changes.PipeNodeCreate] WILL group={node?.group?.id} node={node?.id}");
       if (node == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -108,7 +104,6 @@ namespace Mods.Pipe.Scripts
 
     public void PipeNodeRemove(PipeGroup group, PipeNode node)
     {
-      Debug.Log($"[Changes.PipeNodeRemove] WILL group={node?.group?.id} node={node?.id}");
       if (group == null || node == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -120,7 +115,6 @@ namespace Mods.Pipe.Scripts
 
     public void PipeNodeCheckGates(PipeNode node)
     {
-      Debug.Log($"[Changes.PipeNodeCheckGates] WILL group={node?.group?.id} node={node?.id}");
       if (node == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -131,7 +125,6 @@ namespace Mods.Pipe.Scripts
 
     public void PipeNodeCheckChanges(BlockObject blockObject)
     {
-      Debug.Log($"[Changes.PipeNodeCheckChanges] WILL");
       if (blockObject == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -142,7 +135,6 @@ namespace Mods.Pipe.Scripts
 
     public void WaterGateCheckInput(WaterGate gate)
     {
-      Debug.Log($"[Changes.ActionGateCheckInput] WILL group={gate?.pipeNode.group?.id} node={gate?.pipeNode.id} gate={gate.id}");
       if (gate == null)
         return;
       changes.Enqueue(new PipeGroupChange(

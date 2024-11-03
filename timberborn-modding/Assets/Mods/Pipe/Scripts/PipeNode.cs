@@ -10,7 +10,7 @@ using Timberborn.TickSystem;
 using System.Linq;
 using Moq;
 
-namespace Mods.Pipe.Scripts
+namespace Mods.OldGopher.Pipe.Scripts
 {
   internal class PipeNode : BaseComponent,
                             IInitializableEntity,
@@ -58,13 +58,13 @@ namespace Mods.Pipe.Scripts
 
     public void InitializeEntity()
     {
-      Debug.Log($"[PIPE.InitializeEntity] pipe={id}");
+      OldGopherLog.Log($"[PIPE.InitializeEntity] pipe={id}");
       coordinates = blockObject.Coordinates;
     }
 
     public void DeleteEntity()
     {
-      Debug.Log($"[PIPE.DeleteEntity] pipe={id}");
+      OldGopherLog.Log($"[PIPE.DeleteEntity] pipe={id}");
       isEnabled = false;
       pipeGroupQueue.PipeNodeRemove(group, this);
     }
@@ -107,17 +107,17 @@ namespace Mods.Pipe.Scripts
     {
       if (node == null)
       {
-        Debug.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} node_is_null");
+        OldGopherLog.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} node_is_null");
         return false;
       }
       if (group.Same(node?.group))
       {
-        Debug.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} is_same_group");
+        OldGopherLog.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} is_same_group");
         return true;
       }
       if (!node.isEnabled)
       {
-        Debug.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} node_disabled");
+        OldGopherLog.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} node_disabled");
         return false;
       }
       WaterGate endGate = node.waterGates
@@ -126,13 +126,13 @@ namespace Mods.Pipe.Scripts
           && gate.coordinates.Equals(coordinates));
       if (!endGate)
       {
-        Debug.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.GetInfo()} gate_not_found");
+        OldGopherLog.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.GetInfo()} gate_not_found");
         return false;
       }
       startGate.SetConnection(endGate);
       endGate.SetConnection(startGate);
       pipeGroupQueue.PipeNodeJoin(node, this);
-      Debug.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} connected");
+      OldGopherLog.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} connected");
       return true;
     }
 
@@ -163,13 +163,11 @@ namespace Mods.Pipe.Scripts
 
     public void WaterGateCheckInput(BlockObject block)
     {
-      Debug.Log($"[PIPE.WaterGateCheckInput] ghost bursters 1 block.isnull={block == null} block.IsFinished={block.IsFinished} IsFar={IsFar(block)}");
       if (!isEnabled || block == null || block?.IsFinished == false || IsFar(block))
         return;
       WaterGate gate = waterGates
         .FirstOrDefault((WaterGate gate) =>
           gate.coordinates.Equals(block.Coordinates));
-      Debug.Log($"[PIPE.WaterGateCheckInput] ghost bursters 2 gate={gate == null}");
       if (gate == null)
         return;
       gate.CheckInput();
@@ -191,7 +189,6 @@ namespace Mods.Pipe.Scripts
       if (group == null)
         return "no group";
       return group.GetInfo();
-      //return GetInfo() + group.GetInfo();
     }
   }
 }

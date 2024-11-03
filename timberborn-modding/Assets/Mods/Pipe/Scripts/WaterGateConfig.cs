@@ -1,4 +1,4 @@
-﻿namespace Mods.Pipe.Scripts
+﻿namespace Mods.OldGopher.Pipe.Scripts
 {
   internal enum WaterGateState
   {

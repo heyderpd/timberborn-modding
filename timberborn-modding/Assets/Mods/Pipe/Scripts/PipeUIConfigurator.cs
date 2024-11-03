@@ -1,7 +1,7 @@
 ﻿using Bindito.Core;
 using Timberborn.EntityPanelSystem;
 
-namespace Mods.Pipe.Scripts
+namespace Mods.OldGopher.Pipe.Scripts
 {
   [Context("Game")]
   public class PipeWaterUIConfigurator : IConfigurator
@@ -10,17 +10,12 @@ namespace Mods.Pipe.Scripts
     {
       containerDefinition.Bind<PipeGroupQueue>().AsSingleton();
       containerDefinition.Bind<PipeGroupManager>().AsSingleton();
-      containerDefinition.Bind<PipeFragment>().AsSingleton();
-      //containerDefinition.MultiBind<TemplateModule>().ToProvider(ProvideTemplateModule).AsSingleton();
-      containerDefinition.MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();
+      if (OldGopherLog.enabled)
+      {
+        containerDefinition.Bind<PipeFragment>().AsSingleton();
+        containerDefinition.MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();
+      }
     }
-    
-    /*private static TemplateModule ProvideTemplateModule() // apresenta sinalizacoes virtuais ao selecionar o objeto
-    {
-      TemplateModule.Builder builder = new TemplateModule.Builder();
-      builder.AddDecorator<PipeWaterMove, SluiceMarker>();
-      return builder.Build();
-    }*/
 
     private class EntityPanelModuleProvider : IProvider<EntityPanelModule>
     {

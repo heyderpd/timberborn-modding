@@ -9,7 +9,7 @@ using Timberborn.BlockSystem;
 using UnityEngine.UIElements;
 using Moq;
 
-namespace Mods.Pipe.Scripts
+namespace Mods.OldGopher.Pipe.Scripts
 {
   internal class PipeGroupManager : ITickableSingleton, ILoadableSingleton
   {
@@ -35,7 +35,7 @@ namespace Mods.Pipe.Scripts
 
     public void Load()
     {
-      Debug.Log($"[eventBus.Load] WILL DO");
+      OldGopherLog.Log($"[eventBus.Load] WILL DO");
       eventBus.Register(this);
     }
 
@@ -107,7 +107,7 @@ namespace Mods.Pipe.Scripts
 
     private void ActionGroupRecalculateGates(PipeGroupChange change)
     {
-      Debug.Log($"[Manager.ActionGroupRecalculeGates] DOING group={change.group?.id ?? change.node?.group?.id}  node={change.node?.id}");
+      OldGopherLog.Log($"[Manager.ActionGroupRecalculeGates] DOING group={change.group?.id ?? change.node?.group?.id}  node={change.node?.id}");
       var group = change.node != null ? change.node.group : change.group;
       if (GroupNotExist(group))
         return;
@@ -118,7 +118,7 @@ namespace Mods.Pipe.Scripts
     {
       var groupA = change.node?.group;
       var groupB = change.secondNode?.group;
-      Debug.Log($"[Manager.ActionPipeJoin] DOING group={change.group?.id} node={change.node.id} otherGroup={groupB?.id}");
+      OldGopherLog.Log($"[Manager.ActionPipeJoin] DOING group={change.group?.id} node={change.node.id} otherGroup={groupB?.id}");
       if (GroupNotExist(groupA) || GroupNotExist(groupB))
         return;
       if (groupA.Pipes.Count > groupB.Pipes.Count)
@@ -129,7 +129,7 @@ namespace Mods.Pipe.Scripts
 
     private void ActionPipeNodeCreate(PipeGroupChange change)
     {
-      Debug.Log($"[Manager.ActionPipeNodeCreate] DOING group={change.group?.id} node={change.node.id}");
+      OldGopherLog.Log($"[Manager.ActionPipeNodeCreate] DOING group={change.group?.id} node={change.node.id}");
       var pipe = change.node;
       var group = new PipeGroup(pipeGroupQueue);
       pipe.SetGroup(group);
@@ -141,42 +141,44 @@ namespace Mods.Pipe.Scripts
 
     private void ActionPipeNodeRemove(PipeGroupChange change)
     {
-      Debug.Log($"[Manager.ActionPipeNodeRemove] DOING group={change.group?.id} node={change.node.id}");
+      OldGopherLog.Log($"[Manager.ActionPipeNodeRemove] DOING group={change.group?.id} node={change.node.id}");
       if (GroupNotExist(change.group))
         return;
       change.group.PipeRemove(change.node);
       GroupRecreate(change.node);
     }
 
-    private void ActionPipeNodeCheckChanges(PipeGroupChange change)
+    private void ActionPipeNodeCheckChanges(PipeGroupChange? change)
     {
-      // TODO: talvez quando eu receber varias vezes os eventos. eu deveria dar skip nos outros em um loop de consume? para em um loop processar isso somente uma unica vez?
+      if (change?.type != PipeGroupChangeTypes.PIPE_CHECK_CHANGES)
+        return;
       var now = Time.fixedTime;
-      Debug.Log($"[Manager.ActionPipeNodeCheckChanges] DOING Time.fixedTime={Time.fixedTime}");
+      OldGopherLog.Log($"[Manager.ActionPipeNodeCheckChanges] DOING Time.fixedTime={Time.fixedTime}");
       foreach (var group in Groups)
       {
         foreach (var pipe in group.Pipes)
         {
-          pipe.WaterGateCheckInput(change.blockObject);
+          pipe.WaterGateCheckInput(change?.blockObject);
         }
       }
-      Debug.Log($"[Manager.ActionPipeNodeCheckChanges] DONE Time.fixedTime={Time.fixedTime} time={now - Time.fixedTime}");
+      OldGopherLog.Log($"[Manager.ActionPipeNodeCheckChanges] DONE Time.fixedTime={Time.fixedTime} time={now - Time.fixedTime}");
     }
 
     private void ActionPipeNodeCheckGates(PipeGroupChange change)
     {
-      Debug.Log($"[Manager.ActionPipeNodeCheckGates] DOING group={change.group?.id} node={change.node.id}");
+      OldGopherLog.Log($"[Manager.ActionPipeNodeCheckGates] DOING group={change.group?.id} node={change.node.id}");
       change.node.CheckGates();
     }
 
     private void ActionGateCheckInput(PipeGroupChange change)
     {
-      Debug.Log($"[Manager.ActionGateCheckInput] DOING group={change.gate?.pipeNode.group?.id} node={change.gate?.pipeNode.id} gate={change.gate.id}");
+      OldGopherLog.Log($"[Manager.ActionGateCheckInput] DOING group={change.gate?.pipeNode.group?.id} node={change.gate?.pipeNode.id} gate={change.gate.id}");
       change.gate.CheckInput();
     }
 
     public bool ConsumeChanges()
     {
+      PipeGroupChange? lastChange = null;
       if (!pipeGroupQueue.HasChanges)
         return false;
       while (pipeGroupQueue.HasChanges)
@@ -201,7 +203,7 @@ namespace Mods.Pipe.Scripts
             break;
 
           case PipeGroupChangeTypes.PIPE_CHECK_CHANGES:
-            ActionPipeNodeCheckChanges(change);
+            lastChange = change;
             break;
 
           case PipeGroupChangeTypes.PIPE_CHECK_GATES:
@@ -216,6 +218,8 @@ namespace Mods.Pipe.Scripts
             break;
         }
       }
+      if (lastChange != null)
+        ActionPipeNodeCheckChanges(lastChange);
       return true;
     }
 
