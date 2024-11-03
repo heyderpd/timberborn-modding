@@ -31,15 +31,12 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public PipeNode FindPipe(Vector3Int coordinate)
     {
-      ModUtils.Log($"[WaterRadar.FindPipe] 01 Underground={terrainService.Underground(coordinate)}");
       if (terrainService.Underground(coordinate))
         return null;
       var block = blockService.GetMiddleObjectAt(coordinate);
-      ModUtils.Log($"[WaterRadar.FindPipe] 02 IsFinished={block?.IsFinished != true}");
       if (block?.IsFinished != true)
         return null;
       var pipe = block.GetComponentFast<PipeNode>();
-      ModUtils.Log($"[WaterRadar.FindPipe] 03 block={pipe == null}");
       if (pipe != null)
         return pipe;
       return null;
@@ -47,17 +44,14 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public WaterObstacleType FindWaterObstacle(Vector3Int coordinate)
     {
-      ModUtils.Log($"[WaterRadar.FindWaterObstacle] 01 Underground={terrainService.Underground(coordinate)}");
       if (terrainService.Underground(coordinate))
         return WaterObstacleType.BLOCK;
       var blockMiddle = blockService.GetMiddleObjectAt(coordinate);
       var waterObstacleMiddle = blockMiddle?.IsFinished == true && blockMiddle?.GetComponentFast<WaterObstacle>() != null;
-      ModUtils.Log($"[WaterRadar.FindWaterObstacle] 03 blockMiddle={blockMiddle} waterObstacleMiddle={waterObstacleMiddle}");
       if (waterObstacleMiddle)
         return WaterObstacleType.BLOCK;
       var blockBottom = blockService.GetBottomObjectAt(coordinate);
       var hasWaterObstacleBottom = blockBottom?.IsFinished == true && blockBottom?.GetComponentFast<WaterObstacle>() != null;
-      ModUtils.Log($"[WaterRadar.FindWaterObstacle] 04 blockBottom={blockBottom} hasWaterObstacleBottom={hasWaterObstacleBottom}");
       if (hasWaterObstacleBottom)
         return WaterObstacleType.HORIZONTAL;
       return WaterObstacleType.EMPTY;

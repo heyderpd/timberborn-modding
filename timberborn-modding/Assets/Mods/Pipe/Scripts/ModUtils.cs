@@ -13,12 +13,6 @@ namespace Mods.OldGopher.Pipe.Scripts
   {
     public static readonly bool enabled = true;
 
-    public static readonly int waterTick = 3;
-
-    // default=0.3f reason: 1f handle 3 watersources and 0.3f handle 1 or 1 cms.
-    // withTick=1f reason: with 3 tick I need move 3x the water in one move to stay at 1 cms.
-    public static readonly float waterPower = 1f;
-
     private static readonly ImmutableArray<Vector3Int> coordOffsets = ImmutableArray.Create(
       // z
       new Vector3Int(0, 0, 1),
@@ -100,11 +94,10 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public static IEnumerable<Vector3Int> getReflexPositions(BlockObject block)
     {
-      if (block?.IsFinished != true)
+      if (block?.IsFinished != true || block.Blocks.Size.x == 0 || block.Blocks.Size.y == 0 || block.Blocks.Size.z == 0)
         yield break;
       var (xp, yp, zp, xl, yl, zl) = getRectifyRef(block);
       // near in body
-      ModUtils.Log($"[TailRecursion.getReflexPositions] body");
       for (var x = 0; x <= xl + 0; x++)
       {
         for (var y = 0; y <= yl + 0; y++)
@@ -116,7 +109,6 @@ namespace Mods.OldGopher.Pipe.Scripts
         }
       }
       // near in axis X
-      ModUtils.Log($"[TailRecursion.getReflexPositions] near X");
       for (var y = 0; y <= yl + 0; y++)
       {
         for (var z = 0; z <= zl + 0; z++)
@@ -134,7 +126,6 @@ namespace Mods.OldGopher.Pipe.Scripts
         }
       }
       // near in axis Y
-      ModUtils.Log($"[TailRecursion.getReflexPositions] near Y");
       for (var x = 0; x <= xl + 0; x++)
       {
         for (var z = 0; z <= zl + 0; z++)
@@ -152,7 +143,6 @@ namespace Mods.OldGopher.Pipe.Scripts
         }
       }
       // near in axis Z
-      ModUtils.Log($"[TailRecursion.getReflexPositions] near Z");
       for (var x = 0; x <= xl + 0; x++)
       {
         for (var y = 0; y <= yl + 0; y++)
@@ -200,6 +190,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       var steps = _valueMax / _steps;
       value = (int)(value / steps);
       value = Mathf.Min(value * steps, 1f);
+      ModUtils.Log($"[GetValueStep] _value={_value} _valueMax={_valueMax} value={value}");
       return value;
     }
   }
@@ -299,7 +290,6 @@ namespace Mods.OldGopher.Pipe.Scripts
 
       public bool IsInvalidNode(PipeNode node)
       {
-        ModUtils.Log($"[TailRecursion.IsInvalidNode] node={node?.id} isEnabled={node?.isEnabled} Contains={nodesResolved.Contains(node)}");
         return node == null || !node.isEnabled || nodesResolved.Contains(node);
       }
 

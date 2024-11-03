@@ -124,13 +124,13 @@ MonoBehaviour:
   m_Script: {fileID: -790041461, guid: 1bd6ccb667024f9c2b77daf7f62a4eed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _selectionSoundName: Shaft
+  _selectionSoundName: Default
   _loopingSoundName: 
   _buildingCost:
   - _goodId: Log
-    _amount: 2
+    _amount: 5
   - _goodId: MetalBlock
-    _amount: 3
+    _amount: 7
   _scienceCost: 200
   _placeFinished: 0
   _finishableWithBeaversOnSite: 0
@@ -272,12 +272,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Side: 1
   Type: 0
   Mode: 2
-  StopWhenSubmerged: 0
   HigthLimit: 0
-  DesiredWater: 0
 --- !u!114 &-1302879299329295200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -290,12 +287,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Side: 2
   Type: 2
   Mode: 2
-  StopWhenSubmerged: 0
   HigthLimit: 0
-  DesiredWater: 0
 --- !u!114 &5127242608008803914
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -308,12 +302,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Side: 0
   Type: 1
   Mode: 2
-  StopWhenSubmerged: 0
   HigthLimit: 0
-  DesiredWater: 0
 --- !u!114 &4971155771503057506
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -326,6 +317,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9152e3e0a89013c4c931c2bdadf12d91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  canWorkAlone: 0
 --- !u!1 &1369983907444433
 GameObject:
   m_ObjectHideFlags: 0

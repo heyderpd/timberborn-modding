@@ -63,9 +63,9 @@ MonoBehaviour:
   _loopingSoundName: 
   _buildingCost:
   - _goodId: Log
-    _amount: 12
+    _amount: 20
   - _goodId: MetalBlock
-    _amount: 3
+    _amount: 5
   _scienceCost: 300
   _placeFinished: 0
   _finishableWithBeaversOnSite: 0

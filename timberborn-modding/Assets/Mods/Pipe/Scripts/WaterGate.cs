@@ -5,6 +5,7 @@ using Timberborn.EntitySystem;
 using Timberborn.BaseComponentSystem;
 using Timberborn.WaterSystem;
 using Timberborn.BlockSystem;
+using Timberborn.Persistence;
 using Timberborn.CoreUI;
 
 namespace Mods.OldGopher.Pipe.Scripts
@@ -22,6 +23,10 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     [SerializeField]
     public WaterGateMode Mode = WaterGateMode.BOTH;
+
+    private static readonly ComponentKey WaterGateKey = new ComponentKey("WaterGate");
+
+    private static readonly PropertyKey<bool> ModeConfigKey = new PropertyKey<bool>("WaterGateMode");
 
     public WaterGateState State { get; private set; }
 
@@ -71,6 +76,8 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public float ContaminationPercentage { get; private set; }
 
+    public PipeNodePowered powered { get; private set; } = null;
+
     private WaterParticle waterParticle;
 
     private event EventHandler<WaterAddition> WaterAdded;
@@ -98,6 +105,8 @@ namespace Mods.OldGopher.Pipe.Scripts
       blockObject = GetComponentFast<BlockObject>();
       pipeNode = GetComponentFast<PipeNode>();
       waterParticle = GameObjectFast.AddComponent<WaterParticle>();
+      if (IsWaterPump)
+        powered = GetComponentFast<PipeNodePowered>();
     }
 
     public void InitializeEntity()
@@ -111,6 +120,27 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void DeleteEntity() { }
 
+    public void Save(IEntitySaver entitySaver)
+    {
+      if (!IsWaterPump)
+        return;
+      bool waterPumpMode = Mode == WaterGateMode.ONLY_IN;
+      IObjectSaver component = entitySaver.GetComponent(WaterGateKey);
+      component.Set(ModeConfigKey, waterPumpMode);
+    }
+
+    [BackwardCompatible(2023, 9, 22)]
+    public void Load(IEntityLoader entityLoader)
+    {
+      if (!IsWaterPump || !entityLoader.HasComponent(WaterGateKey))
+        return;
+      IObjectLoader component = entityLoader.GetComponent(WaterGateKey);
+      bool waterPumpMode = component.Get(ModeConfigKey);
+      Mode = waterPumpMode
+        ? WaterGateMode.ONLY_IN
+        : WaterGateMode.ONLY_OUT;
+    }
+
     public bool isEnabled
     {
       get
@@ -118,6 +148,18 @@ namespace Mods.OldGopher.Pipe.Scripts
         if (pipeNode == null)
           return false;
         return pipeNode.isEnabled && gateConnected == null && State == WaterGateState.EMPTY;
+      }
+    }
+
+    public float PowerEfficiency
+    {
+      get
+      {
+        ModUtils.Log($"[WaterGate.PowerEfficiency] 01 powered={powered != null} call");
+        if (powered == null)
+          return 1f;
+        ModUtils.Log($"[WaterGate.PowerEfficiency] 02 PowerEfficiency={powered.PowerEfficiency}");
+        return powered.PowerEfficiency;
       }
     }
 
@@ -148,7 +190,9 @@ namespace Mods.OldGopher.Pipe.Scripts
         }
         WaterLevel = threadSafeWaterMap.WaterHeightOrFloor(coordinates);
         WaterDetected = Mathf.Max(WaterLevel - LowerLimit, 0f);
-        WaterAvailable = WaterService.LimitWater(WaterDetected);
+        WaterAvailable = IsWaterPump
+          ? WaterService.LimitWater(WaterDetected, WaterService.pumpRate)
+          : WaterService.LimitWater(WaterDetected);
         if (WaterAvailable > 0f)
           ContaminationPercentage = threadSafeWaterMap.ColumnContamination(coordinates);
         else
@@ -219,20 +263,16 @@ namespace Mods.OldGopher.Pipe.Scripts
     private WaterGateState _CheckInput()
     {
       var pipe = waterRadar.FindPipe(coordinates);
-      ModUtils.Log($"[WATER.CheckInput] 01 node={pipeNode?.id} nodeFound={pipe?.id} gate={id} finding_pipe");
       if (pipeNode == pipe)
       {
-        ModUtils.Log($"[WATER.CheckInput] 02 node={pipeNode?.id} nodeFound={pipe?.id} gate={id} State=EMPTY by found_same_pipe");
         return WaterGateState.EMPTY;
       }
       var connected = pipeNode.TryConnect(this, pipe);
       if (connected)
       {
-        ModUtils.Log($"[WATER.CheckInput] 03 node={pipeNode?.id} nodeFound={pipe?.id} gate={id} State=CONNECTED by connected=true");
         return WaterGateState.CONNECTED;
       }
       var obstacle = waterRadar.FindWaterObstacle(coordinates);
-      ModUtils.Log($"[WATER.CheckInput] 04 node={pipeNode?.id} nodeFound={pipe?.id} gate={id} obstacle={obstacle}");
       return obstacle == WaterObstacleType.BLOCK
         ? WaterGateState.BLOCKED
         : WaterGateState.EMPTY;
@@ -323,7 +363,6 @@ namespace Mods.OldGopher.Pipe.Scripts
       info += $"    id={id} pipe={pipeNode?.id} enabled={isEnabled}\n";
       info += $"    connected={gateConnected?.id} success={SuccessWhenCheckWater}\n";
       info += $"    type={Type} mode={Mode} state={State}\n";
-      info += $"    IsWaterPump={IsWaterPump} IsValve={IsValve}\n";
       info += $"    IsOnlyRequester={IsOnlyRequester} IsOnlyDelivery={IsOnlyDelivery}\n";
       info += $"    lower={LowerLimit.ToString("0.00")} higth={HigthLimit.ToString("0.00")} level={WaterLevel.ToString("0.00")}\n";
       info += $"    detected={WaterDetected.ToString("0.00")} available={WaterAvailable.ToString("0.00")} conta={ContaminationPercentage.ToString("0.00")}\n";

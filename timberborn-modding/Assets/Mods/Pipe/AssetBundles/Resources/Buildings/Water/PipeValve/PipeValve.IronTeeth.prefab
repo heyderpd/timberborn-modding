@@ -123,14 +123,16 @@ MonoBehaviour:
   m_Script: {fileID: -790041461, guid: 1bd6ccb667024f9c2b77daf7f62a4eed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _selectionSoundName: Shaft
+  _selectionSoundName: Default
   _loopingSoundName: 
   _buildingCost:
   - _goodId: Log
-    _amount: 2
+    _amount: 10
   - _goodId: MetalBlock
-    _amount: 3
-  _scienceCost: 200
+    _amount: 10
+  - _goodId: Plank
+    _amount: 5
+  _scienceCost: 500
   _placeFinished: 0
   _finishableWithBeaversOnSite: 0
   _drawRangeBoundsOnIt: 0

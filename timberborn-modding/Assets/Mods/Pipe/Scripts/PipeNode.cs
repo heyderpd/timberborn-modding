@@ -64,6 +64,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       ModUtils.Log($"[PIPE.InitializeEntity] pipe={id}");
       coordinates = blockObject.Coordinates;
+      DisablePowerConsumption();
     }
 
     public void DeleteEntity()
@@ -123,6 +124,14 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
     }
 
+    public void DisablePowerConsumption()
+    {
+      foreach (var gate in waterGates)
+      {
+        gate.powered?.DisablePowerConsumption();
+      }
+    }
+
     public void SetGroup(PipeGroup _group)
     {
       group = _group;
@@ -141,39 +150,22 @@ namespace Mods.OldGopher.Pipe.Scripts
     public bool TryConnect(WaterGate startGate, PipeNode node)
     {
       if (node == null)
-      {
-        ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} node_is_null");
         return false;
-      }
       if (!node.isEnabled)
-      {
-        ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} node_disabled");
         return false;
-      }
       var block = node.GetComponentFast<BlockObject>();
       if (block == null || block?.IsFinished == false)
-      {
-        ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} blockIsNull={block == null} block_not_finished");
         return false;
-      }
       WaterGate endGate = node.GetGate(coordinates);
       bool IsCompatibleGate = endGate
         ? WaterGateConfig.IsCompatibleGate(startGate.Type, endGate.Type)
         : false;
       if (!endGate || !IsCompatibleGate)
-      {
-        ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} coordinates={coordinates} endGate={endGate?.id} IsCompatibleGate={IsCompatibleGate} startGate={startGate.GetInfo()} otherPipe={node.GetInfo()} NOT_MATCH");
         return false;
-      }
-      ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} startGate={startGate.GetInfo()} endGate={endGate.GetInfo()} MATCH");
       if (startGate.CheckConnection(endGate))
-      {
-        ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} same_connection");
         return true;
-      }
       startGate.ConnectionBoth(endGate);
       pipeGroupQueue.Pipe_Join(node, this);
-      ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} connected");
       return true;
     }
 
@@ -203,6 +195,13 @@ namespace Mods.OldGopher.Pipe.Scripts
       {
         gate.ResetFlow();
       }
+    }
+
+    public WaterGate GetGate(WaterGateType type)
+    {
+      WaterGate gate = waterGates
+        .FirstOrDefault((WaterGate gate) => gate.Type == type);
+      return gate;
     }
 
     public WaterGate GetGate(Vector3Int coordinates)
