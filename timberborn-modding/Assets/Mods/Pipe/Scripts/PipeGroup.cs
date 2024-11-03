@@ -15,7 +15,9 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public readonly HashSet<PipeNode> Pipes = new HashSet<PipeNode>();
 
-    private List<WaterGate> WaterGates = new List<WaterGate>();
+    public List<WaterGate> WaterGates { get; private set; } = new List<WaterGate>();
+
+    public float WaterAverage;
 
     private int PipesCount => Pipes.Count;
 
@@ -108,12 +110,12 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       if (!isEnabled)
         return;
-      MoveWater.Do(WaterGates);
+      MoveWater.Do(this);
     }
 
     public string GetInfo()
     {
-      string info = $"Group[id={id}, enabled={isEnabled} nodes={Pipes.Count}:\n";
+      string info = $"Group[id={id} enabled={isEnabled} WaterAverage={WaterAverage.ToString("0.00")} nodes={Pipes.Count}:\n";
       info += $"gates={WaterGates.Count}:\n";
       foreach (var gate in WaterGates.ToList())
       {

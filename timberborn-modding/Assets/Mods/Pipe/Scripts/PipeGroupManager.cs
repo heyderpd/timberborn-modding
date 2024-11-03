@@ -49,79 +49,11 @@ namespace Mods.OldGopher.Pipe.Scripts
       return group == null || group?.isEnabled != true || !Groups.Contains(group);
     }
     
-    private PipeGroup _createGroup()
+    public PipeGroup createGroup()
     {
       var group = new PipeGroup(pipeGroupQueue);
       Groups.Add(group);
       return group;
-    }
-
-    private void _GroupRecreateTailRecursion(
-      PipeNode actualNode,
-      ref Queue<PipeNode> pipeWorkList,
-      ref HashSet<PipeNode> resolvedNode,
-      ref HashSet<PipeGroup> createdGroups,
-      PipeGroup group = null
-    )
-    {
-      if (actualNode  != null && actualNode.isEnabled && !resolvedNode.Contains(actualNode))
-      {
-        if (group == null)
-        {
-          group = _createGroup();
-          createdGroups.Add(group);
-        }
-        actualNode.SetGroup(group);
-        resolvedNode.Add(actualNode);
-        var connectedNodes = actualNode.waterGates
-          .Select((WaterGate gate) => gate.gateConnected?.pipeNode)
-          .Where((PipeNode node) => node != null && node.isEnabled)
-          .ToList();
-        foreach (var node in connectedNodes)
-        {
-          if (!resolvedNode.Contains(node))
-            pipeWorkList.Enqueue(node);
-        }
-      }
-      if (pipeWorkList.IsEmpty())
-        return;
-      var nextNode = pipeWorkList.Dequeue();
-      _GroupRecreateTailRecursion(nextNode, ref pipeWorkList, ref resolvedNode, ref createdGroups, group);
-    }
-
-    private void _GroupRecreate(PipeNode deletedNode)
-    {
-      deletedNode.group.SetDisabled();
-      var pipeWorkList = new Queue<PipeNode>();
-      var resolvedNode = new HashSet<PipeNode>();
-      var createdGroups = new HashSet<PipeGroup>();
-      var startNodes = deletedNode.waterGates
-        .Select((WaterGate gate) => gate.gateConnected?.pipeNode)
-        .Where((PipeNode node) => node != null && node.isEnabled)
-        .ToList();
-      deletedNode.ReleaseConnections();
-      if (startNodes.Count == 0)
-        return;
-      foreach (var node in startNodes)
-      {
-        _GroupRecreateTailRecursion(node, ref pipeWorkList, ref resolvedNode, ref createdGroups);
-      }
-      deletedNode.group.Pipes.ExceptWith(resolvedNode);
-      var forgottenPipes = new Queue<PipeNode>(deletedNode.group.Pipes);
-      while (!forgottenPipes.IsEmpty())
-      {
-        var nextNode = forgottenPipes.Dequeue();
-        if (nextNode.isEnabled)
-          _GroupRecreateTailRecursion(nextNode, ref pipeWorkList, ref resolvedNode, ref createdGroups);
-      }
-      foreach (var group in createdGroups)
-      {
-        pipeGroupQueue.Group_RecalculateGates(group);
-      }
-      createdGroups.Clear();
-      pipeWorkList.Clear();
-      resolvedNode.Clear();
-      pipeGroupQueue.Group_Remove(deletedNode.group);
     }
 
     private void Action_Group_RecalculateGates()
@@ -152,6 +84,8 @@ namespace Mods.OldGopher.Pipe.Scripts
       var groupB = change.secondNode?.group;
       if (_GroupNotExist(groupA) || _GroupNotExist(groupB))
         return;
+      if (groupA == groupB)
+        return;
       if (groupA.Pipes.Count > groupB.Pipes.Count)
         groupB.UnionTo(groupA);
       else
@@ -161,7 +95,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     private void Action_Pipe_Create(PipeGroupChange change)
     {
       var pipe = change.node;
-      var group = _createGroup();
+      var group = createGroup();
       pipe.SetGroup(group);
       pipe.SetEnabled();
       pipe.CheckGates();
@@ -172,7 +106,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (_GroupNotExist(change.node.group))
         return;
       change.node.group.PipeRemove(change.node);
-      _GroupRecreate(change.node);
+      TailRecursion.groupRecreate(this, pipeGroupQueue, change.node);
     }
 
     private void Action_Pipe_CheckGates(PipeGroupChange change)
@@ -270,12 +204,14 @@ namespace Mods.OldGopher.Pipe.Scripts
     [OnEvent]
     public void OnBlockObjectSet(BlockObjectSetEvent blockEvent)
     {
+      ModUtils.Log($"[Manager.OnBlockObjectSet] called IsFinished={blockEvent?.BlockObject?.IsFinished}");
       pipeGroupQueue.Gate_CheckByBlockEvent(blockEvent?.BlockObject);
     }
 
     [OnEvent]
     public void OnBlockObjectUnset(BlockObjectUnsetEvent blockEvent)
     {
+      ModUtils.Log($"[Manager.OnBlockObjectUnset] called IsFinished={blockEvent?.BlockObject?.IsFinished}");
       pipeGroupQueue.Gate_CheckByBlockEvent(blockEvent?.BlockObject);
     }
 

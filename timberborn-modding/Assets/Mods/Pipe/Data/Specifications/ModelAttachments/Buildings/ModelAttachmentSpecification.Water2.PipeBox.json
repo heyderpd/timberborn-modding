@@ -1,14 +1,14 @@
 ﻿{
-  "Id": "Water.PipeStraight",
+  "Id": "Water2.PipeBox",
   "Prefab": "Environment/WaterDrops/WaterDrops",
   "Parent": "#Finished",
   "Position": {
-    "X": 1.5,
-    "Y": 0.256,
-    "Z": 2.5
+    "X": 0.5,
+    "Y": 0.5,
+    "Z": 1
   },
   "Rotation": {
-    "X": 90,
+    "X": 0,
     "Y": 0,
     "Z": 0
   }

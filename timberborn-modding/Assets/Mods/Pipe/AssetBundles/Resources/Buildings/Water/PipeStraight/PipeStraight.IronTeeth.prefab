@@ -84,7 +84,6 @@ GameObject:
   - component: {fileID: 114536901920753065}
   - component: {fileID: 114790364128370181}
   - component: {fileID: 114709933830190137}
-  - component: {fileID: 8353140736947670764}
   - component: {fileID: -1818964738542828118}
   - component: {fileID: -1302879299329295200}
   - component: {fileID: 4971155771503057506}
@@ -260,19 +259,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _progressThresholds:
   - 0
---- !u!114 &8353140736947670764
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1307462774176390}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1516821267, guid: b0c4545210a508c255e4ebd4a145ed71, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _attachmentId: Water.PipeStraight
 --- !u!114 &-1818964738542828118
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -379,7 +365,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 6531092667735529828}
+  - {fileID: 4647887151295512112}
   m_Father: {fileID: 4765490136981864}
   m_LocalEulerAnglesHint: {x: 0, y: -0, z: -0}
 --- !u!65 &65721485082540620
@@ -504,3 +492,65 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _modelName: Buildings/Power/PowerShaftStraight/PowerShaftStraight.IronTeeth.ConstructionStage0.Model
+--- !u!1 &1891242418094771380
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4647887151295512112}
+  m_Layer: 0
+  m_Name: '#GateFront'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4647887151295512112
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1891242418094771380}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.5, y: 0.5, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4828224084944574}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4334190842190443156
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6531092667735529828}
+  m_Layer: 0
+  m_Name: '#GateBack'
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6531092667735529828
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4334190842190443156}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0.5, y: 0.5, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4828224084944574}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

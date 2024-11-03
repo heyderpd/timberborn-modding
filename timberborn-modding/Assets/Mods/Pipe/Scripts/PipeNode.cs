@@ -108,14 +108,15 @@ namespace Mods.OldGopher.Pipe.Scripts
         ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} node_is_null");
         return false;
       }
-      if (group.Same(node?.group))
-      {
-        ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} is_same_group");
-        return true;
-      }
       if (!node.isEnabled)
       {
         ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} node_disabled");
+        return false;
+      }
+      var block = node.GetComponentFast<BlockObject>();
+      if (block == null || block?.IsFinished == false)
+      {
+        ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} blockIsNull={block == null} block_not_finished");
         return false;
       }
       WaterGate endGate = node.GetGate(coordinates);

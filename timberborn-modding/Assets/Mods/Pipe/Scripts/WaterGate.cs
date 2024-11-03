@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Collections.Generic;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.EntitySystem;
@@ -9,8 +8,7 @@ using Timberborn.WaterSystem;
 using Timberborn.BlockSystem;
 using Timberborn.WaterObjects;
 using Timberborn.TerrainSystem;
-using Timberborn.Buildings;
-using Timberborn.Particles;
+using Timberborn.CoreUI;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -23,7 +21,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     public readonly int id = lastId++;
 
     [SerializeField]
-    private Vector3Int waterCoordinates;
+    public Vector3Int waterCoordinates;
 
     [SerializeField]
     public WaterGateSide Side;
@@ -42,19 +40,21 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public Vector3Int coordinates { get; private set; }
 
-    private ITerrainService terrainService;
-
-    private BlockService blockService;
-
     private IWaterService waterService;
 
     private IThreadSafeWaterMap threadSafeWaterMap;
+
+    private BlockService blockService;
+
+    private Colors colors;
+
+    private WaterRadar waterRadar;
 
     private PipeGroupQueue pipeGroupQueue;
 
     public float Floor { get; private set; }
 
-    public float FloorOffset { get; private set; }
+    public float Ceiling { get; private set; }
 
     public float WaterLevel { get; private set; }
 
@@ -64,25 +64,27 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public float ContaminationPercentage { get; private set; }
 
-    public ParticleSystem particleSystem { get; private set; }
+    private WaterParticle waterParticle;
 
-    private ParticlesRunner particlesRunner;
+    private event EventHandler<WaterAddition> WaterAdded;
 
     public bool internalGateEnabled { get; private set; } = true;
 
     [Inject]
     public void InjectDependencies(
-      ITerrainService _terrainService,
       IWaterService _waterService,
       IThreadSafeWaterMap _threadSafeWaterMap,
       BlockService _blockService,
+      Colors _colors,
+      WaterRadar _waterRadar,
       PipeGroupQueue _pipeGroupQueue
     )
     {
-      terrainService = _terrainService;
-      blockService = _blockService;
       waterService = _waterService;
       threadSafeWaterMap = _threadSafeWaterMap;
+      blockService = _blockService;
+      colors = _colors;
+      waterRadar = _waterRadar;
       pipeGroupQueue = _pipeGroupQueue;
     }
 
@@ -90,25 +92,23 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       blockObject = GetComponentFast<BlockObject>();
       pipeNode = GetComponentFast<PipeNode>();
+      waterParticle = GameObjectFast.AddComponent<WaterParticle>();
     }
 
     public void InitializeEntity()
     {
       coordinates = blockObject.Transform(waterCoordinates);
-      FloorOffset = WaterGateConfig.getFloorShift(Side);
-      Floor = (float)(coordinates.z) + FloorOffset;
-
-      var _attachmentId = "Water.PipeStraight";
-      var _attachmentIds = new List<string>{_attachmentId};
-      var component = GetComponentFast<BuildingParticleAttachment>();
-      ModUtils.Log($"particle component={component != null}");
-      particlesRunner = component.CreateParticlesRunner(_attachmentIds);
-      ModUtils.Log($"particle particlesRunner={particlesRunner != null}");
-      //particlesRunner = GetComponentFast<BuildingParticleAttachment>().CreateParticlesRunner(_attachmentIds);
-      //particleSystem = ((Component)GetComponentFast<ModelAttachments>().GetOrCreateAttachment(_attachmentId).Transform).GetComponentInChildren<ParticleSystem>(true);
+      Floor = (float)(coordinates.z) + WaterGateConfig.getFloorShift(Side);
+      Ceiling = (float)(coordinates.z) + WaterGateConfig.getCeilingShift(Side);
+      waterParticle.Initialize(colors, this);
+      WaterAdded += waterParticle.OnWaterAdded;
+      waterRadar.OnGateCreate(coordinates);
+      SetWaterParticles(UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f));
     }
 
-    public void DeleteEntity() { }
+    public void DeleteEntity() {
+      waterRadar.OnGateDelete(coordinates);
+    }
 
     public bool isEnabled
     {
@@ -124,7 +124,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       try
       {
-        if (threadSafeWaterMap == null || !isEnabled)
+        if (threadSafeWaterMap == null || !isEnabled || notHasEmptySpace())
           return false;
         var underwater = threadSafeWaterMap.CellIsUnderwater(coordinates);
         return underwater;
@@ -140,14 +140,17 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       try
       {
-        if (!isEnabled || !IsUnderwater())
+        if (!isEnabled || notHasEmptySpace())
         {
           WaterLevel = 0f;
           Water = 0f;
           ContaminationPercentage = 0f;
           return true;
         }
+        var floorCoordinates = waterRadar.FloorFinderSlower(coordinates);
+        var WaterLevelPqp = threadSafeWaterMap.WaterHeightOrFloor(floorCoordinates);
         WaterLevel = threadSafeWaterMap.WaterHeightOrFloor(coordinates);
+        ModUtils.Log($"[WaterGate.UpdateWaters] 22 WaterLevelPqp={WaterLevelPqp} WaterLevel={WaterLevel}");
         Water = Mathf.Max(WaterLevel - Floor, 0f);
         if (Water > 0f)
           ContaminationPercentage = threadSafeWaterMap.ColumnContamination(coordinates);
@@ -168,6 +171,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     public void SetDisabled()
     {
       internalGateEnabled = false;
+      RemoveWaterParticles();
     }
 
     public void SetConnection(WaterGate gate)
@@ -190,12 +194,8 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private bool notHasEmptySpace()
     {
-      if (terrainService.Underground(coordinates))
-      {
-        return true;
-      }
-      var obstacle = blockService.GetObjectsWithComponentAt<WaterObstacle>(coordinates).FirstOrDefault();
-      return obstacle != null;
+      var obstacle = waterRadar.FindWaterObstacle(coordinates);
+      return obstacle == WaterObstacleType.BLOCK;
     }
 
     public bool CheckInput()
@@ -208,32 +208,20 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private void _CheckInput()
     {
-      if (terrainService.Underground(coordinates))
-      {
-        ModUtils.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=BLOCKED by underground");
-        State = WaterGateState.BLOCKED;
-        return;
-      }
-      var block = blockService.GetObjectsWithComponentAt<BlockObject>(coordinates).FirstOrDefault();
-      if (block == null || block?.IsFinished == false)
-      {
-        ModUtils.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=EMPTY by block=null IsFinished={block?.IsFinished}");
-        State = WaterGateState.EMPTY;
-        return;
-      }
-      var pipe = block.GetComponentFast<PipeNode>();
+      var pipe = blockService.GetObjectsWithComponentAt<PipeNode>(coordinates).FirstOrDefault();
+      ModUtils.Log($"[WATER.CheckInput] 01 node={pipe?.id} finding_pipe");
       var connected = pipeNode.TryConnect(this, pipe);
       if (connected)
       {
-        ModUtils.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=CONNECTED by connected=true");
+        ModUtils.Log($"[WATER.CheckInput] 02 node={pipeNode?.id} gate={id} State=CONNECTED by connected=true");
         State = WaterGateState.CONNECTED;
         return;
       }
-      var obstacle = block.GetComponentFast<WaterObstacle>(); 
-      State = obstacle != null
+      var obstacle = waterRadar.FindWaterObstacle(coordinates);
+      ModUtils.Log($"[WATER.CheckInput] 03 node={pipe?.id} obstacle={obstacle}");
+      State = obstacle == WaterObstacleType.BLOCK
         ? WaterGateState.BLOCKED
         : WaterGateState.EMPTY;
-      ModUtils.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State={State} by WaterObstacle");
     }
 
     public void ResetFlow()
@@ -256,23 +244,27 @@ namespace Mods.OldGopher.Pipe.Scripts
       return false;
     }
 
-    private void WaterParticleAnimation(float water)
+    public void RemoveWaterParticles()
     {
-      if (water > 0)
-        particlesRunner.Play();
+      //SetWaterParticles(0f, 0f);
+    }
+
+    private void SetWaterParticles(float Water, float ContaminatedPercentage)
+    {
+      if (WaterLevel < Ceiling)
+        this.WaterAdded?.Invoke(this, new WaterAddition(Water, ContaminatedPercentage));
       else
-        particlesRunner.Stop();
+        this.WaterAdded?.Invoke(this, new WaterAddition(0f, 0f));
     }
 
     public void MoveWater(float water, float contamination)
     {
-      WaterParticleAnimation(water);
+      //SetWaterParticles(water, contamination);
       if (!isEnabled || notHasEmptySpace())
         return;
       float waterAbs = Mathf.Abs(water);
       float contaminatedWater = waterAbs * contamination;
       float cleanWater = waterAbs - contaminatedWater;
-      ModUtils.Log($"[WaterGate.MoveWater] pipe={pipeNode.id} id={id} water={water} waterAbs={waterAbs} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
       if (water > 0f)
         AddWater(cleanWater, contaminatedWater);
       if (water < 0f)
@@ -283,7 +275,6 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       try
       {
-        ModUtils.Log($"[WaterGate.AddWater] pipe={pipeNode.id} id={id} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
         if (cleanWater > 0f)
           waterService.AddCleanWater(coordinates, cleanWater);
         if (contaminatedWater > 0f)
@@ -299,7 +290,6 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       try
       {
-        ModUtils.Log($"[WaterGate.RemoveWater] pipe={pipeNode.id} id={id} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
         if (!IsUnderwater())
           return;
         if (cleanWater > 0f)

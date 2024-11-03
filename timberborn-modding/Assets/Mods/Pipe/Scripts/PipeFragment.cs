@@ -30,7 +30,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       root = new VisualElement();
       var box = new Box();
       box.style.backgroundColor = Color.white;
-      box.style.width = 350;
+      box.style.width = 400;
       text = new Label();
       text.style.color = Color.black;
       box.Add(text);

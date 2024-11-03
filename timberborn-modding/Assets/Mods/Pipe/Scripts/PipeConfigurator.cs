@@ -1,4 +1,5 @@
 ﻿using Bindito.Core;
+using Mods.OldGopher.Pipe.Scripts;
 using Timberborn.Buildings;
 using Timberborn.EntityPanelSystem;
 using Timberborn.PathSystem;
@@ -10,10 +11,11 @@ using Timberborn.WaterObjects;
 namespace Mods.OldGopher.Pipe.Scripts
 {
   [Context("Game")]
-  public class PipeWaterUIConfigurator : IConfigurator
+  public class PipeWaterConfigurator : IConfigurator
   {
     public void Configure(IContainerDefinition containerDefinition)
     {
+      containerDefinition.Bind<WaterRadar>().AsSingleton();
       containerDefinition.Bind<PipeGroupQueue>().AsSingleton();
       containerDefinition.Bind<PipeGroupManager>().AsSingleton();
       if (ModUtils.enabled)
@@ -46,8 +48,6 @@ namespace Mods.OldGopher.Pipe.Scripts
     private static TemplateModule ProvideTemplateModule()
     {
       TemplateModule.Builder builder = new TemplateModule.Builder();
-      builder.AddDecorator<WaterGate, WaterInput>();
-      builder.AddDecorator<WaterGate, WaterOutput>();
       builder.AddDecorator<WaterGate, BuildingParticleAttachment>();
       return builder.Build();
     }

@@ -3,20 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using Timberborn.BlockSystem;
 using System.Collections.Immutable;
+using Moq;
+using Timberborn.Common;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
   internal static class ModUtils
   {
-    public static readonly bool enabled = false;
+    public static readonly bool enabled = true;
 
     private static readonly ImmutableList<Vector3Int> coordOffsets = ImmutableList.Create(
-      new Vector3Int( 0,  0,  1),
-      new Vector3Int( 0,  0, -1),
-      new Vector3Int( 0,  1,  0),
-      new Vector3Int( 0, -1,  0),
-      new Vector3Int( 1,  0,  0),
-      new Vector3Int(-1,  0,  0)
+      new Vector3Int(0, 0, 1),
+      new Vector3Int(0, 0, -1),
+      new Vector3Int(0, 1, 0),
+      new Vector3Int(0, -1, 0),
+      new Vector3Int(1, 0, 0),
+      new Vector3Int(-1, 0, 0)
     );
 
     public static void Log(string text)
@@ -122,6 +124,164 @@ namespace Mods.OldGopher.Pipe.Scripts
         return true;
       nextTime = now + fixedDeltaTime;
       return false;
+    }
+  }
+
+  internal class TailRecursion
+  {
+    private class Scope
+    {
+      private readonly PipeGroupManager pipeGroupManager;
+
+      private readonly PipeGroupQueue pipeGroupQueue;
+
+      private readonly HashSet<PipeGroup> groupsCreated;
+
+      private readonly HashSet<PipeNode> nodesUnresolved;
+
+      private readonly HashSet<PipeNode> nodesResolved;
+
+      private readonly Queue<PipeNode> nodeFirsts;
+
+      public Scope(
+        PipeGroupManager _pipeGroupManager,
+        PipeGroupQueue _pipeGroupQueue,
+        HashSet<PipeNode> _nodesUnresolved,
+        List<PipeNode> _initialNodes
+      )
+      {
+        pipeGroupManager = _pipeGroupManager;
+        pipeGroupQueue = _pipeGroupQueue;
+        groupsCreated = new HashSet<PipeGroup>();
+        nodesUnresolved = new HashSet<PipeNode>(_nodesUnresolved);
+        nodesResolved = new HashSet<PipeNode>();
+        nodeFirsts = new Queue<PipeNode>(_initialNodes);
+      }
+
+      public PipeNode GetNext()
+      {
+        if (nodeFirsts.Count == 0 && nodesUnresolved.Count > 0)
+        {
+          nodesUnresolved.ExceptWith(nodesResolved);
+          foreach (var node in nodesUnresolved)
+          {
+            nodeFirsts.Enqueue(node);
+          }
+          nodesUnresolved.Clear();
+        }
+        if (nodeFirsts.Count > 0)
+          return nodeFirsts.Dequeue();
+        return null;
+      }
+
+      public PipeGroup GroupCreate()
+      {
+        var group = pipeGroupManager.createGroup();
+        groupsCreated.Add(group);
+        return group;
+      }
+
+      public void ResolveNode(PipeNode node)
+      {
+        nodesResolved.Add(node);
+      }
+
+      public bool IsInvalidNode(PipeNode node)
+      {
+        return node == null || !node.isEnabled || nodesResolved.Contains(node);
+      }
+
+      public bool IsValidNode(PipeNode node)
+      {
+        return !IsInvalidNode(node);
+      }
+
+      public void GroupInitialize()
+      {
+        foreach (var group in groupsCreated)
+        {
+          pipeGroupQueue.Group_RecalculateGates(group);
+        }
+      }
+
+      public void Clear()
+      {
+        groupsCreated.Clear();
+        nodesUnresolved.Clear();
+        nodesResolved.Clear();
+        nodeFirsts.Clear();
+      }
+    }
+
+    private static void resolveNode(
+      PipeNode actualNode,
+      PipeGroup group,
+      ref Scope scope,
+      ref Queue<PipeNode> nextNodes
+    )
+    {
+      ModUtils.Log($"[TailRecursion.resolveNode] start actualNode={actualNode?.id}");
+      if (scope.IsInvalidNode(actualNode))
+        return;
+      scope.ResolveNode(actualNode);
+      actualNode.SetGroup(group);
+      var connectedNodes = actualNode.waterGates
+        .Select((WaterGate gate) => gate.gateConnected?.pipeNode)
+        .Where((PipeNode node) => node != null && node.isEnabled)
+        .ToList();
+      foreach (var node in connectedNodes)
+      {
+        if (scope.IsValidNode(node))
+          nextNodes.Enqueue(node);
+      }
+      ModUtils.Log($"[TailRecursion.resolveNode] end");
+    }
+
+    private static void findNewGroup(
+      PipeNode firstNode,
+      ref Scope scope
+    )
+    {
+      ModUtils.Log($"[TailRecursion.findNewGroup] start firstNode={firstNode?.id}");
+      if (scope.IsInvalidNode(firstNode))
+        return;
+      var group = scope.GroupCreate();
+      var nextNodes = new Queue<PipeNode>();
+      resolveNode(firstNode, group, ref scope, ref nextNodes);
+      while (!nextNodes.IsEmpty())
+      {
+        resolveNode(nextNodes.Dequeue(), group, ref scope, ref nextNodes);
+      }
+      ModUtils.Log($"[TailRecursion.findNewGroup] end");
+    }
+
+    public static void groupRecreate(
+      PipeGroupManager pipeGroupManager,
+      PipeGroupQueue pipeGroupQueue,
+      PipeNode deletedNode
+    )
+    {
+      ModUtils.Log($"[TailRecursion.groupRecreate] start");
+      deletedNode.group.SetDisabled();
+      var nextNodes = deletedNode.waterGates
+        .Select((WaterGate gate) => gate.gateConnected?.pipeNode)
+        .Where((PipeNode node) => node != null && node.isEnabled)
+        .ToList();
+      var scope = new Scope(
+        pipeGroupManager,
+        pipeGroupQueue,
+        deletedNode.group.Pipes,
+        nextNodes
+      );
+      PipeNode actualNode = null;
+      while ((actualNode = scope.GetNext()) != null)
+      {
+        findNewGroup(actualNode, ref scope);
+      }
+      scope.GroupInitialize();
+      scope.Clear();
+      pipeGroupQueue.Group_Remove(deletedNode.group);
+      ModUtils.Log($"[TailRecursion.groupRecreate] end");
     }
   }
 }
