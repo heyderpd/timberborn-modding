@@ -4,6 +4,7 @@ using UnityEngine;
 using Timberborn.TickSystem;
 using Timberborn.BlockSystem;
 using Timberborn.SingletonSystem;
+using System.Linq;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -99,6 +100,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       pipe.SetGroup(group);
       pipe.SetEnabled();
       pipe.CheckGates();
+      pipe.DisablePowerConsumption();
       if (PipeLocation.ContainsKey(pipe.coordinates))
         PipeLocation.Remove(pipe.coordinates);
       PipeLocation.Add(pipe.coordinates, pipe);
@@ -238,6 +240,19 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
     }
 
+    private void ShowPipeBeaver()
+    {
+      if (!PipeBeaver.GetRandomChance())
+        return;
+      var group = ModUtils.GetRandomItem<PipeGroup>(Groups.Where(group => group.PipesCount == 1).ToList());
+      if (group == null)
+        return;
+      var pipe = ModUtils.GetRandomItem<PipeNode>(group.Pipes.Where(pipe => pipe.canBeaver).ToList());
+      if (pipe?.Beaver == null)
+        return;
+      pipe.Beaver.WildBeaverAppears();
+    }
+
     public void Tick()
     {
       if (working)
@@ -245,6 +260,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       working = true;
       ConsumeChanges();
       DoMoveWater();
+      ShowPipeBeaver();
       working = false;
     }
   }

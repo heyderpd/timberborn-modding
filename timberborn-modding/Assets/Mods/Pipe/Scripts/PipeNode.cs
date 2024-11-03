@@ -22,6 +22,9 @@ namespace Mods.OldGopher.Pipe.Scripts
     [SerializeField]
     public bool canWorkAlone;
 
+    [SerializeField]
+    public bool canBeaver = false;
+
     private static int lastId = 0;
 
     public readonly int id = lastId++;
@@ -42,6 +45,8 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public bool CanWork => group?.HasMoreThanOnePipe ?? canWorkAlone;
 
+    public PipeBeaver Beaver;
+
     [Inject]
     public void InjectDependencies(
       BlockService _blockService,
@@ -58,13 +63,13 @@ namespace Mods.OldGopher.Pipe.Scripts
       waterGates = new List<WaterGate>();
       GetComponentsFast<WaterGate>(waterGates);
       blockObject = GetComponentFast<BlockObject>();
+      Beaver = GetComponentFast<PipeBeaver>();
     }
 
     public void InitializeEntity()
     {
       ModUtils.Log($"[PIPE.InitializeEntity] pipe={id}");
       coordinates = blockObject.Coordinates;
-      DisablePowerConsumption();
     }
 
     public void DeleteEntity()
@@ -118,6 +123,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void TestParticle()
     {
+      Beaver.WildBeaverAppears();
       foreach (var gate in waterGates)
       {
         gate.TestParticle();

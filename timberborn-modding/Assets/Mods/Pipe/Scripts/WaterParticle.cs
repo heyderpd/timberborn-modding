@@ -85,7 +85,6 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (newWaterPower == waterPower)
         return;
       waterPower = newWaterPower;
-      ModUtils.Log($"[WaterParticle.SetWaterFlow] Water={Event.Water}, waterPower={newWaterPower}");
       float particles = (waterPower * 0.2f) + 0.1f; // range of 0.1 to 0.3
       particlesMainModule.startLifetime = new ParticleSystem.MinMaxCurve(particles);
       float speed = (waterPower * 1f) + 1f; // range of 1 to 2

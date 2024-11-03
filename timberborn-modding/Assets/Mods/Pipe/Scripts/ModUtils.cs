@@ -13,6 +13,8 @@ namespace Mods.OldGopher.Pipe.Scripts
   {
     public static readonly bool enabled = true;
 
+    public static readonly System.Random random = new System.Random();
+
     private static readonly ImmutableArray<Vector3Int> coordOffsets = ImmutableArray.Create(
       // z
       new Vector3Int(0, 0, 1),
@@ -185,13 +187,28 @@ namespace Mods.OldGopher.Pipe.Scripts
     public static float GetValueStep(float _value, float _valueMax, int _steps = 5)
     {
       var value = Mathf.Min(_value, _valueMax);
-      value = Mathf.Max(value, 0);
+      value = Mathf.Max(value, 0f);
       value = value / _valueMax;
       var steps = _valueMax / _steps;
       value = (int)(value / steps);
       value = Mathf.Min(value * steps, 1f);
-      ModUtils.Log($"[GetValueStep] _value={_value} _valueMax={_valueMax} value={value}");
+      value = value * _valueMax;
+      ModUtils.Log($"[GetValueStep] value={_value} valueMax={_valueMax} result={value}");
       return value;
+    }
+
+    public static T GetRandomItem<T>(List<T> list)
+    {
+      try
+      {
+        int index = random.Next(list.Count());
+        return list[index];
+      }
+      catch (Exception err)
+      {
+        ModUtils.Log($"#ERROR [ModUtils.GetRandomItem] err={err}");
+        return default(T);
+      }
     }
   }
 

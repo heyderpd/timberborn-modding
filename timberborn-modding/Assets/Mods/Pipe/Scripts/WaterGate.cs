@@ -44,7 +44,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public WaterGate gateConnected { get; private set; }
 
-    public TickCount tick = new TickCount(5);
+    public TickCount tick = new TickCount(3);
 
     private BlockObject blockObject;
 

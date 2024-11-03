@@ -123,7 +123,7 @@ MonoBehaviour:
   m_Script: {fileID: -790041461, guid: 1bd6ccb667024f9c2b77daf7f62a4eed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _selectionSoundName: Default
+  _selectionSoundName: WaterPump
   _loopingSoundName: 
   _buildingCost:
   - _goodId: Log
@@ -273,7 +273,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Type: 0
   Mode: 2
-  HigthLimit: 0
 --- !u!114 &-1302879299329295200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -288,7 +287,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Type: 1
   Mode: 2
-  HigthLimit: 0
 --- !u!114 &4971155771503057506
 MonoBehaviour:
   m_ObjectHideFlags: 0

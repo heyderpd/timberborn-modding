@@ -13,33 +13,30 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public float pressure { get; private set; }
 
-    public void setPressure(GateContext context, float value)
+    public void setPressure(GateContext reference, float value)
     {
-      pressure = value;
-      var oposite = GetOposite(context);
-      if (pressure >= 0f)
+      pressure = MathF.Abs(value);
+      var oposite = GetOposite(reference);
+      if (value >= 0f)
       {
-        oposite.pressureSum += pressure;
-        context.pressureSum -= pressure;
+        reference.pressureSum += value;
+        oposite.pressureSum -= value;
         pressureDirection = oposite;
       }
       else
       {
-        oposite.pressureSum -= pressure;
-        context.pressureSum += pressure;
-        pressureDirection = context;
+        reference.pressureSum += value;
+        oposite.pressureSum -= value;
+        pressureDirection = reference;
       }
     }
 
     public float quota { get; private set; }
 
-    public void setQuota(GateContext context, float value)
+    public void setQuota(float value)
     {
       quota = MathF.Abs(value);
-      if (value >= 0f)
-        GetOposite(context).quotaSum += quota;
-      else
-        context.quotaSum += quota;
+      getDelivery().quotaSum += quota;
     }
 
     public float waterOferted { get; private set; }
@@ -48,6 +45,14 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       waterOferted = value;
       getRequester().waterOfertedSum += waterOferted;
+    }
+
+    public float waterBlockedByPump { get; private set; }
+
+    public void setWaterBlockedByPump(float value)
+    {
+      waterBlockedByPump = value;
+      getRequester().waterBlockedByPumpSum += waterBlockedByPump;
     }
 
     public float contamination { get; private set; }
@@ -73,6 +78,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       pressure = 0f;
       quota = 0f;
       waterOferted = 0f;
+      waterBlockedByPump = 0f;
       contamination = 0f;
     }
 
@@ -117,6 +123,8 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public float waterOfertedSum;
 
+    public float waterBlockedByPumpSum;
+
     public float contaminationSum;
 
     public float WaterUsed;
@@ -143,6 +151,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       pressureSum = 0f;
       quotaSum = 0f;
       waterOfertedSum = 0f;
+      waterBlockedByPumpSum = 0f;
       contaminationSum = 0f;
       WaterUsed = 0f;
       WaterMove = 0f;
@@ -161,21 +170,33 @@ namespace Mods.OldGopher.Pipe.Scripts
       Interactions.Clear();
     }
 
-    public void SendPumpActivateEvent(bool enabled)
+    public void AddPumpRequested(float water)
     {
-      if (enabled)
-        this.pumpActivate?.Invoke(this, EventArgs.Empty);
+      ModUtils.Log($"[context.AddPumpRequested] 01 water={water} IsWaterPump={gate.IsWaterPump} pumpRequested={pumpRequested}");
+      if (water != 0f && gate.IsWaterPump)
+        pumpRequested += 1;
+      ModUtils.Log($"[context.AddPumpRequested] 02 water={water} IsWaterPump={gate.IsWaterPump} pumpRequested={pumpRequested}");
     }
 
-    public void AddPumpRequested(bool enabled)
+    public void SendPumpActivateEvent(float water)
     {
-      if (enabled)
-        pumpRequested += 1;
+      ModUtils.Log($"[context.SendPumpActivateEvent] 01 water={water}");
+      if (water != 0f)
+        this.pumpActivate?.Invoke(this, EventArgs.Empty);
     }
 
     public void OnPumpActivateAdded(object sender, EventArgs e)
     {
-      AddPumpRequested(true);
+      ModUtils.Log($"[context.OnPumpActivateAdded] 01 IsWaterPump={gate.IsWaterPump}");
+      if (!gate.IsWaterPump)
+        return;
+      var context = (GateContext)sender;
+      ModUtils.Log($"[context.OnPumpActivateAdded] 02 hasContext={context != null}");
+      if (Interactions.TryGetValue(context, out var oposite))
+      {
+        ModUtils.Log($"[context.OnPumpActivateAdded] 03 waterOferted={oposite?.waterBlockedByPump ?? 0f}");
+        AddPumpRequested(oposite?.waterBlockedByPump ?? 0f);
+      }
     }
 
     private void SwitchPowerConsumption(bool enabled)

@@ -87,6 +87,7 @@ GameObject:
   - component: {fileID: -1818964738542828118}
   - component: {fileID: -1302879299329295200}
   - component: {fileID: 4971155771503057506}
+  - component: {fileID: -8040642108688641756}
   m_Layer: 0
   m_Name: PipeVertical.IronTeeth
   m_TagString: Untagged
@@ -123,7 +124,7 @@ MonoBehaviour:
   m_Script: {fileID: -790041461, guid: 1bd6ccb667024f9c2b77daf7f62a4eed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _selectionSoundName: Default
+  _selectionSoundName: WaterPump
   _loopingSoundName: 
   _buildingCost:
   - _goodId: Log
@@ -273,7 +274,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Type: 4
   Mode: 2
-  HigthLimit: 0
 --- !u!114 &-1302879299329295200
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -288,7 +288,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Type: 5
   Mode: 2
-  HigthLimit: 0
 --- !u!114 &4971155771503057506
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -302,6 +301,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canWorkAlone: 0
+  canBeaver: 1
+  Beaver: {fileID: 0}
+--- !u!114 &-8040642108688641756
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1307462774176390}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 951b9c04a13e50f48b49b7068d0a6a35, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  BeaverPrefab: {fileID: 1001718728464631, guid: 371b943062e8a3145a4ca27a687cf2cb,
+    type: 3}
 --- !u!1 &1369983907444433
 GameObject:
   m_ObjectHideFlags: 0
