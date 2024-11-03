@@ -1,124 +1,9 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
-  internal class GateContextInteraction
-  {
-    public GateContext delivery;
-
-    public GateContext requester;
-
-    public float preQuota;
-
-    public float quota;
-
-    public float waterOferted;
-
-    public float contamination;
-
-    public GateContextInteraction(GateContext _delivery, GateContext _requester, float _preQuota)
-    {
-      delivery = _delivery;
-      requester = _requester;
-      preQuota = _preQuota;
-      quota = 0f;
-      waterOferted = 0f;
-      contamination = 0f;
-      requester.pumpActivate += delivery.OnPumpActivateAdded;
-    }
-  }
-
-  internal class GateContext
-  {
-    public readonly WaterGate gate;
-
-    public Dictionary<GateContext, GateContextInteraction> deliveryQuotas = new Dictionary<GateContext, GateContextInteraction>();
-
-    public Dictionary<GateContext, GateContextInteraction> requesterQuotas = new Dictionary<GateContext, GateContextInteraction>();
-
-    public float WaterUsed;
-    
-    public float WaterMove;
-
-    public float Contamination;
-
-    public bool turnedRequester;
-
-    public bool stopedRequester;
-
-    public int pumpRequested;
-
-    public event EventHandler pumpActivate;
-
-    public GateContext(WaterGate _gate)
-    {
-      gate = _gate;
-    }
-
-    public void Reset()
-    {
-      deliveryQuotas.Clear();
-      requesterQuotas.Clear();
-      WaterUsed = 0f;
-      WaterMove = 0f;
-      Contamination = 0f;
-      turnedRequester = false;
-      stopedRequester = false;
-      pumpRequested = 0;
-      pumpActivate = null;
-      ModUtils.Log($"QUE ERRO");
-      if (pumpActivate != null)
-      {
-        ModUtils.Log($"MERDA");
-        foreach (EventHandler callback in pumpActivate.GetInvocationList())
-        {
-          ModUtils.Log($"ESS");
-          pumpActivate -= callback;
-        }
-      }
-      ModUtils.Log($"ESCROTO");
-    }
-
-    public void SendPumpActivateEvent(bool enabled)
-    {
-      ModUtils.Log($"[GateContext.SendPumpActivateEvent] call");
-      if (enabled)
-        this.pumpActivate?.Invoke(this, EventArgs.Empty);
-    }
-
-    public void AddPumpRequested(bool enabled)
-    {
-      ModUtils.Log($"[GateContext.AddPumpRequested] call");
-      if (enabled)
-        pumpRequested += 1;
-    }
-
-    public void OnPumpActivateAdded(object sender, EventArgs e)
-    {
-      ModUtils.Log($"[GateContext.OnPumpActivateAdded] call");
-      AddPumpRequested(true);
-    }
-
-    private void SwitchPowerConsumption(bool enabled)
-    {
-      ModUtils.Log($"[GateContext.SwitchPowerConsumption] call");
-      if (enabled)
-        gate.powered?.EnablePowerConsumption();
-      else
-        gate.powered?.DisablePowerConsumption();
-    }
-
-    public void checkPumpRequested()
-    {
-      ModUtils.Log($"[GateContext.checkPumpRequested] call");
-      SwitchPowerConsumption(pumpRequested > 0);
-      pumpRequested = 0;
-    }
-  }
-
   internal class PipeGroup
   {
     public bool isEnabled { get; private set; } = true;
@@ -143,13 +28,13 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public int Requesters;
 
+    public int Interaction;
+
     private PipeGroupQueue pipeGroupQueue;
 
     public int PipesCount { get; private set; } = 0;
 
     public bool HasMoreThanOnePipe { get; private set; } = false;
-
-    public TickCount WaterTick = new TickCount(WaterService.waterTick);
 
     public PipeGroup(
       PipeGroupQueue _pipeGroupQueue
@@ -190,7 +75,6 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void Destroy()
     {
-      ModUtils.Log($"[PipeGroup.Destroy] group={id}");
       SetDisabled();
       Pipes.Clear();
       WaterGates.Clear();
@@ -253,14 +137,16 @@ namespace Mods.OldGopher.Pipe.Scripts
     public string GetInfo()
     {
       string info = $"Group[\n";
-      info += $"  id={id} enabled={isEnabled} requesters={Requesters} deliveries={Deliveries}\n";
+      info += $"  id={id} enabled={isEnabled} requesters={Requesters} deliveries={Deliveries} interaction={Interaction}\n";
       info += $"  pipes={Pipes.Count} gates={WaterGates.Length}\n";
       info += $"  gates:\n";
       foreach (var context in WaterGates.ToList())
       {
         info += context.gate.GetInfo(false);
-        info += $"    turnedRequester={context.turnedRequester} stopedRequester={context.stopedRequester} \n";
-        info += $"    waterMove={context.WaterMove} contamination={context.Contamination}\n";
+        info += $"    pressureSum={context.pressureSum} quotaSum={context.quotaSum}\n";
+        info += $"    waterOfertedSum={context.waterOfertedSum} contaminationSum={context.contaminationSum}\n";
+        info += $"    WaterUsed={context.WaterUsed} pumpRequested={context.pumpRequested}\n";
+        info += $"    Contamination={context.Contamination} WaterMove={context.WaterMove}\n";
         info += $"  ];\n";
       }
       info += $"];\n";

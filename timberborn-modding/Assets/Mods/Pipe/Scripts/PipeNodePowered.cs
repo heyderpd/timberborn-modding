@@ -24,7 +24,6 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (!mechanicalNode || Tick.Skip())
         return;
       mechanicalNode.UpdateInput(0);
-      ModUtils.Log($"[PipeNodePowered.EnablePowerConsumption] DISABLED");
     }
 
     public void EnablePowerConsumption()
@@ -32,17 +31,14 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (!mechanicalNode)
         return;
       mechanicalNode.UpdateInput(1);
-      ModUtils.Log($"[PipeNodePowered.EnablePowerConsumption] ENABLED");
     }
 
     public float PowerEfficiency
     {
       get
       {
-        ModUtils.Log($"[PipeNodePowered.PowerEfficiency] 01 mechanicalBuilding={mechanicalNode?.ActiveAndPowered}");
         if (mechanicalNode?.ActiveAndPowered != true)
           return 0f;
-        ModUtils.Log($"[PipeNodePowered.PowerEfficiency] 02 PowerEfficiency={mechanicalNode.PowerEfficiency}");
         return mechanicalNode.PowerEfficiency;
       }
     }

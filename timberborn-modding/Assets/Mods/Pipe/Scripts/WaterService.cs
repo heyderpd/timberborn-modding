@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using UnityEngine;
@@ -13,13 +12,13 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public static readonly float minimumFlow = 0.001f;
 
-    public static readonly float waterFactor = 0.36f; // max cms = 0.7
+    public static readonly float minimumPressure = 0.05f;
 
-    public static readonly float pumpPressure = 10.00f;
+    public static readonly float waterFactor = 0.36f; // common max cms = 0.7
 
-    public static readonly float pumpRate = 0.4642f; // 0.3714f; // pump cms = 0.3
+    public static readonly float pumpHeight = 10.00f;
 
-    public static readonly int waterTick = 0; // 3 ficou ondulando muito, 2 teve um pouco de ondulacao e tudo usava 2f
+    public static readonly float pumpRate = 0.4642f; // pump max cms = 0.3
 
     private static IEnumerable<GateContext> GatesIterator(bool IsDelivery, ImmutableArray<GateContext> Gates, GateContext reference, bool checkWater)
     {
@@ -29,9 +28,9 @@ namespace Mods.OldGopher.Pipe.Scripts
           continue;
         if (checkWater && !context.gate.SuccessWhenCheckWater)
           continue;
-        if (IsDelivery && (context.gate.IsOnlyRequester || context.turnedRequester || (checkWater && context.gate.WaterAvailable <= 0f)))
+        if (IsDelivery && (context.gate.IsOnlyRequester || context.forceRequester || (checkWater && context.gate.WaterAvailable <= 0f)))
           continue;
-        if (!IsDelivery && (context.gate.IsOnlyDelivery || context.stopedRequester))
+        if (!IsDelivery && context.gate.IsOnlyDelivery || context.forceDelivery)
           continue;
         yield return context;
       }
@@ -47,221 +46,230 @@ namespace Mods.OldGopher.Pipe.Scripts
       return GatesIterator(false, Gates, reference, checkWater);
     }
 
-    private static float GetPumpLevel(WaterGate input, WaterGate output)
+    public static float CalcPressure(WaterGate gate)
     {
-      var pumpUpLevel = input.LowerLimit + pumpPressure;
+      return CalcPressure(gate.WaterAvailable, gate.WaterLevel);
+    }
+
+    public static float CalcPressure(float WaterAvailable, float WaterLevel)
+    {
+      if (WaterAvailable <= 0f)
+        return 0f;
+      var pressure = WaterLevel * WaterLevel;
+      return pressure;
+    }
+
+    private static float GetCommomPressure(WaterGate input, WaterGate output)
+    {
+      var pressureDiff = Mathf.Abs((input.WaterPressure - output.WaterPressure) / input.WaterPressure);
+      if (minimumPressure > pressureDiff)
+        return 0f;
+      return input.WaterPressure - output.WaterPressure;
+    }
+
+    private static float GetPumpPressure(WaterGate input, WaterGate output)
+    {
+      var pumpLevel = input.LowerLimit + pumpHeight;
+      var pumpPressure = CalcPressure(input.WaterAvailable, pumpLevel) + 1;
+      ModUtils.Log($"[WaterService.GetPumpPressure] pumpLevel={pumpLevel} pumpPressure={pumpPressure} output={output.WaterPressure} result={pumpPressure - output.WaterPressure}");
+      ModUtils.Log($"[WaterService.GetPumpPressure] checkA={input.LowerLimit < output.LowerLimit} checkB={pumpLevel > output.LowerLimit}");
       if (input.LowerLimit < output.LowerLimit)
       {
-        if (pumpUpLevel > output.LowerLimit)
-          return pumpUpLevel;
+        if (pumpLevel > output.LowerLimit)
+          return pumpPressure - output.WaterPressure;
         else
           return 0f;
       }
       else
-        return pumpUpLevel;
+        return pumpPressure - output.WaterPressure;
     }
 
-    private static float GetCommomLevel(WaterGate input, WaterGate output)
+    private static float GetPressure(WaterGate input, WaterGate output)
     {
-      if (output.LowerLimit > input.WaterLevel)
-        return 0f;
-      var diffLevel = input.WaterLevel - output.WaterLevel;
-      if (diffLevel <= 0f)
-        return 0f;
-      return output.WaterLevel + (diffLevel / 2);
+      return (input.IsWaterPump || output.IsWaterPump)
+        ? GetPumpPressure(input, output)
+        : GetCommomPressure(input, output);
     }
 
-    private static float GetNewWaterLevel(WaterGate input, WaterGate output)
+    private static float GetSubmergeLimit(WaterGate gate, float waterAdd)
     {
-      if (input.IsWaterPump || output.IsWaterPump)
-        return GetPumpLevel(input, output);
-      else
-        return GetCommomLevel(input, output);
-    }
-
-    private static float GetSubmergeLimit(WaterGate gate, float water)
-    {
-      var newWaterLevel = gate.WaterLevel + water;
-      if (newWaterLevel < gate.HigthLimit)
-        return newWaterLevel - gate.WaterLevel;
-      else
-        return 0f;
+      ModUtils.Log($"[WaterService.GetSubmergeLimit] s01 waterAdd={waterAdd}");
+      var waterLevel = gate.WaterLevel + waterAdd;
+      ModUtils.Log($"[WaterService.GetSubmergeLimit] s02 waterLevel={waterLevel}");
+      var waterExceded = Mathf.Max(waterLevel - gate.HigthLimit, 0f);
+      ModUtils.Log($"[WaterService.GetSubmergeLimit] s03 waterExceded={waterExceded}");
+      var waterLevelFixed = waterLevel - waterExceded;
+      ModUtils.Log($"[WaterService.GetSubmergeLimit] s04 waterLevelFixed={waterLevelFixed}");
+      var water = waterLevelFixed - gate.WaterLevel;
+      ModUtils.Log($"[WaterService.GetSubmergeLimit] s05 water={water}");
+      return water;
     }
 
     private static float GetPumpLimit(WaterGate gate, float water)
     {
-      ModUtils.Log($"[WaterService.GetPumpLimit] 01 water={water} pumpRate={pumpRate} PowerEfficiency={gate.PowerEfficiency}");
       water = LimitWater(water, pumpRate);
-      ModUtils.Log($"[WaterService.GetPumpLimit] 02 water={water}");
-      if (water <= 0f)
+      if (water == 0f)
         return 0f;
-      ModUtils.Log($"[WaterService.GetPumpLimit] 03 result={water * gate.PowerEfficiency}");
       return water * gate.PowerEfficiency;
     }
 
-    public static float LimitWater(float expectedWater, float maxValue = 0f)
+    public static float GetWaterTopLimit(WaterGate gate, float water)
     {
-      maxValue = maxValue == 0f ? maximumFlow : maxValue;
-      float water = Mathf.Abs(expectedWater);
-      water = Mathf.Min(water, maxValue);
-      water = water > minimumFlow ? water : 0f;
+      ModUtils.Log($"[WaterService.GetWaterTopLimit] 03 IsValve={gate.IsValve} water={water}");
+      if (gate.IsValve)
+        return GetSubmergeLimit(gate, water);
+      else if (gate.IsWaterPump)
+        return GetPumpLimit(gate, water);
+      else
+        return LimitWater(water);
+    }
+
+    public static float GetWaterDelivered(WaterGate input, WaterGate output)
+    {
+      ModUtils.Log($"[WaterService.distributeWater] 01 input={input.WaterLevel} output={output.WaterLevel}");
+      var waterAvg = Mathf.Abs(input.WaterLevel - output.WaterLevel) / 2;
+      var water = GetWaterTopLimit(input, waterAvg);
+      ModUtils.Log($"[WaterService.distributeWater] 02 waterAvg={waterAvg} water={water}");
       return water;
+    }
+
+    public static float LimitWater(float water, float maxValue = 0f)
+    {
+      var waterAbs = Mathf.Abs(water);
+      maxValue = maxValue == 0f ? maximumFlow : maxValue;
+      waterAbs = Mathf.Min(waterAbs, maxValue);
+      waterAbs = waterAbs > minimumFlow ? waterAbs : 0f;
+      return waterAbs;
     }
 
     private static void discoveryDistribution(PipeGroup group)
     {
       group.NoDistribution = false;
-      group.Deliveries = 0;
-      group.Requesters = 0;
+      group.Interaction = 0;
+      HashSet<WaterGate> _deliveries = new HashSet<WaterGate>();
+      HashSet<WaterGate> _requesters = new HashSet<WaterGate>();
       foreach (var context in group.WaterGates)
       {
-        context.Reset();
+        context.Clear();
         context.gate.powered?.DisablePowerConsumption();
       }
       foreach (var delivery in DeliveryIterator(group.WaterGates, checkWater: false))
       {
-        group.Deliveries += 1;
+        _deliveries.Add(delivery.gate);
         foreach (var requester in RequesterIterator(group.WaterGates, delivery, checkWater: false))
         {
-          group.Requesters += 1;
-          var quota = new GateContextInteraction(delivery, requester, 0f);
-          requester.deliveryQuotas.Add(delivery, quota);
-          delivery.requesterQuotas.Add(requester, quota);
+          _requesters.Add(requester.gate);
+          if (_deliveries.Contains(requester.gate) && _requesters.Contains(delivery.gate))
+            continue;
+          group.Interaction += 1;
+          var quota = new GateContextInteraction(delivery, requester);
+          requester.Interactions.Add(delivery, quota);
+          delivery.Interactions.Add(requester, quota);
         }
       }
+      group.Deliveries = _deliveries.Count;
+      group.Requesters = _requesters.Count;
+      _deliveries.Clear();
+      _requesters.Clear();
     }
 
     private static bool distributeWater(PipeGroup group)
     {
       if (group.Deliveries == 0 || group.Requesters == 0)
       {
-        ModUtils.Log($"[WaterService.distributeWater] 00 aborted by deliveries={group.Deliveries} requesters={group.Requesters}");
-        return true;
-      }
-      if (group.WaterTick.Skip())
-      {
-        ModUtils.Log($"[WaterService.distributeWater] 01 skip real distribution");
+        ModUtils.Log($"[WaterService.distributeWater] aborted by deliveries={group.Deliveries} requesters={group.Requesters}");
         return true;
       }
       foreach (var context in group.WaterGates)
       {
         context.checkPumpRequested();
+        context.Reset();
         context.gate.UpdateWaters();
       }
-      // discovery pre quota
-      var noneQuota = true;
-      foreach (var requester in RequesterIterator(group.WaterGates))
+      // discovery pressures
+      var nonePressure = true;
+      foreach (var delivery in DeliveryIterator(group.WaterGates))
       {
-        foreach (var Quota in requester.deliveryQuotas.Values)
+        foreach (var interaction in delivery.Interactions.Values)
         {
-          var preQuotaSum = GetNewWaterLevel(Quota.delivery.gate, requester.gate);
-          if (preQuotaSum > 0f)
-          {
-            Quota.preQuota = preQuotaSum;
-            noneQuota = false;
-          }
+          if (interaction.pressure != 0f)
+            continue;
+          var pressure = GetPressure(delivery.gate, interaction.GetOposite(delivery).gate);
+          interaction.setPressure(delivery, pressure);
+          if (interaction.pressure != 0f)
+            nonePressure = false;
         }
       }
-      if (noneQuota)
+      if (nonePressure)
       {
-        ModUtils.Log($"[WaterService.distributeWater] 02 aborted by noneQuota={noneQuota}");
+        ModUtils.Log($"[WaterService.distributeWater] aborted by nonePressure");
         return true;
       }
-      // balance pre quota
-      var deliveryRemoved = new HashSet<GateContext>();
-      var requesterRemoved = new HashSet<GateContext>();
+      // remove invalid deliveries and requesters
+      var deliveryRemoved = 0;
       foreach (var delivery in DeliveryIterator(group.WaterGates))
       {
-        var preQuotaSum = delivery.deliveryQuotas.Values.Sum(Quota => Quota.preQuota);
-        if (preQuotaSum <= 0f)
-          continue;
-        if (preQuotaSum >= delivery.gate.WaterDetected)
+        if (delivery.pressureSum > 0f)
         {
-          delivery.turnedRequester = true;
-          deliveryRemoved.Add(delivery);
-        } else
-          requesterRemoved.Add(delivery);
+          delivery.forceRequester = true;
+          deliveryRemoved += 1;
+        }
       }
-      foreach (var requester in RequesterIterator(group.WaterGates))
+      if (group.Deliveries - deliveryRemoved == 0)
       {
-        var preQuotaSum = requester.deliveryQuotas.Values.Sum(Quota => Quota.preQuota);
-        if (preQuotaSum > 0f)
-          continue;
-        requester.stopedRequester = true;
-        requesterRemoved.Add(requester);
-      }
-      ModUtils.Log($"[WaterService.distributeWater] 03 deliveryRemoved={deliveryRemoved.Count} requesterRemoved={requesterRemoved.Count}");
-      // check has minimal condiction after changes
-      if (group.Deliveries - deliveryRemoved.Count == 0 || group.Deliveries - requesterRemoved.Count == 0)
-      {
-        ModUtils.Log($"[WaterService.distributeWater] 04 aborted by deliveries={group.Deliveries - deliveryRemoved.Count} requesters={group.Deliveries - requesterRemoved.Count}");
+        ModUtils.Log($"[WaterService.distributeWater] aborted by deliveries={group.Deliveries - deliveryRemoved} after removed invalids");
         return true;
       }
-      // delivery turned requester will be removed from delivery
-      // delivery stay delivery will be removed from requester
-      foreach (var context in group.WaterGates)
-      {
-        foreach (var Quota in context.deliveryQuotas.Values.Where(Quota => deliveryRemoved.Contains(Quota.delivery)))
-        {
-          Quota.preQuota = 0f;
-        }
-        foreach (var Quota in context.requesterQuotas.Values.Where(Quota => requesterRemoved.Contains(Quota.requester)))
-        {
-          Quota.preQuota = 0f;
-        }
-      }
-      // discovery real quota
+      // set quota
       foreach (var requester in RequesterIterator(group.WaterGates))
       {
-        var preQuotaSum = requester.deliveryQuotas.Values.Sum(Quota => Quota.preQuota);
-        foreach (var Quota in requester.deliveryQuotas.Values)
+        foreach (var interaction in requester.Interactions.Values)
         {
-          Quota.quota = Quota.preQuota / preQuotaSum;
+          if (interaction.quota != 0f || interaction.pressure == 0f)
+            continue;
+          var quota = interaction.pressure / requester.pressureSum;
+          interaction.setQuota(requester, quota);
+          ModUtils.Log($"[WaterService.distributeWater] pressure={interaction.pressure} pressureSum={requester.pressureSum} quota={quota}  requester.quotaSum={requester.quotaSum} GetOposite.quotaSum={interaction.GetOposite(requester).quotaSum}");
         }
       }
-      // discovery delivery oferted water and contamination for requesters
+      // set water oferted
       foreach (var delivery in DeliveryIterator(group.WaterGates))
       {
-        var quotaSum = delivery.requesterQuotas.Values.Sum(Quota => Quota.quota);
-        foreach (var Quota in delivery.requesterQuotas.Values)
+        foreach (var interaction in delivery.Interactions.Values)
         {
-          var quota = (Quota.quota / quotaSum);
-          var WaterAvailable = delivery.gate.WaterAvailable * quota;
-          if (delivery.gate.IsWaterPump)
-            WaterAvailable = GetPumpLimit(delivery.gate, WaterAvailable);
-          Quota.waterOferted = WaterAvailable;
-          Quota.contamination = delivery.gate.ContaminationPercentage * quota;
+          if (interaction.waterOferted != 0f || delivery.quotaSum == 0f)
+            continue;
+          var water = GetWaterDelivered(delivery.gate, interaction.getRequester().gate);
+          var quota = interaction.quota / delivery.quotaSum;
+          ModUtils.Log($"[WaterService.distributeWater] 0F interaction={interaction.quota} quotaSum={delivery.quotaSum} quota={quota}");
+          interaction.setWaterOferted(water * quota);
+          interaction.setContamination(delivery.gate.ContaminationPercentage * quota);
         }
       }
-      // discovery requester final water and contamination
+      // discovery requesters water
       foreach (var requester in RequesterIterator(group.WaterGates))
       {
-        var waterSum = requester.deliveryQuotas.Values.Sum(Quota => Quota.waterOferted);
-        ModUtils.Log($"[WaterService.LimitWater] TMP 01 requester={requester.gate.id} waterSum={waterSum}");
-        var waterMove = LimitWater(waterSum);
-        if (requester.gate.IsValve)
-          waterMove = GetSubmergeLimit(requester.gate, waterMove);
-        if (requester.gate.IsWaterPump)
-        {
-          requester.AddPumpRequested(waterMove > 0f);
-          waterMove = GetPumpLimit(requester.gate, waterMove);
-        }
-        requester.SendPumpActivateEvent(waterMove > 0f);
-        ModUtils.Log($"[WaterService.LimitWater] TMP 02 requester={requester.gate.id} waterMove={waterMove}");
-        requester.WaterUsed = waterMove / waterSum;
-        requester.WaterMove = waterMove;
-        requester.Contamination = requester.deliveryQuotas.Values.Sum(Quota => Quota.contamination);
+        requester.WaterMove = GetWaterTopLimit(requester.gate, requester.waterOfertedSum);
+        ModUtils.Log($"[WaterService.GetWaterTopLimit] 07 WaterMove={requester.WaterMove}");
+        requester.Contamination = requester.contaminationSum;
+        requester.WaterUsed = requester.WaterMove > 0f
+          ? (requester.WaterMove / requester.waterOfertedSum)
+          : 0f;
+        requester.AddPumpRequested(requester.WaterMove > 0f);
+        requester.SendPumpActivateEvent(requester.WaterMove > 0f);
       }
-      // discovery delivery final water
+      // discovery deliveries water
       foreach (var delivery in DeliveryIterator(group.WaterGates))
       {
-        var waterUsedSum = delivery.requesterQuotas.Keys.Sum(Quota => Quota.WaterUsed);
-        var waterUsed = waterUsedSum / delivery.requesterQuotas.Count;
-        ModUtils.Log($"[WaterService.LimitWater] delivery final water 01 waterUsedSum={waterUsedSum} Count={delivery.requesterQuotas.Count} waterUsed={waterUsed}");
-        delivery.WaterMove = -(delivery.gate.WaterAvailable * waterUsed);
+        if (delivery.quotaSum == 0f)
+          continue;
+        foreach (var interaction in delivery.Interactions.Values)
+        {
+          delivery.WaterMove += -(interaction.waterOferted * interaction.getRequester().WaterUsed);
+        }
         delivery.Contamination = delivery.gate.ContaminationPercentage;
       }
-      ModUtils.Log($"[WaterService.distributeWater] 05 success");
+      ModUtils.Log($"[WaterService.distributeWater] success");
       return false;
     }
 

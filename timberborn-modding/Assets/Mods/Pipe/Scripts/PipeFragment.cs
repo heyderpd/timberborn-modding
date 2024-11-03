@@ -128,7 +128,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         ShowPumpView();
         show = true;
       }
-      if (devModeManager.Enabled && ModUtils.enabled)
+      if (devModeManager.Enabled)// && ModUtils.enabled)
       {
         ShowDebugView();
         show = true;

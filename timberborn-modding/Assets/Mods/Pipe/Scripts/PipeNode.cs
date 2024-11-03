@@ -232,13 +232,6 @@ namespace Mods.OldGopher.Pipe.Scripts
       return info;
     }
 
-    public void SetGateValue(float value)
-    {
-      var gate = waterGates.FirstOrDefault();
-      if (gate != null)
-        gate.HigthLimit = value;
-    }
-
     public float GetGateValue()
     {
       var gate = waterGates.FirstOrDefault();

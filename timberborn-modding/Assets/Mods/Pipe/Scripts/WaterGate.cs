@@ -64,7 +64,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public float LowerLimit { get; private set; }
 
-    public float HigthLimit;
+    public float HigthLimit { get; private set; }
 
     public bool SuccessWhenCheckWater { get; private set; }
 
@@ -73,6 +73,8 @@ namespace Mods.OldGopher.Pipe.Scripts
     public float WaterDetected { get; private set; }
 
     public float WaterAvailable { get; private set; }
+
+    public float WaterPressure { get; private set; }
 
     public float ContaminationPercentage { get; private set; }
 
@@ -155,10 +157,8 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       get
       {
-        ModUtils.Log($"[WaterGate.PowerEfficiency] 01 powered={powered != null} call");
         if (powered == null)
           return 1f;
-        ModUtils.Log($"[WaterGate.PowerEfficiency] 02 PowerEfficiency={powered.PowerEfficiency}");
         return powered.PowerEfficiency;
       }
     }
@@ -190,13 +190,13 @@ namespace Mods.OldGopher.Pipe.Scripts
         }
         WaterLevel = threadSafeWaterMap.WaterHeightOrFloor(coordinates);
         WaterDetected = Mathf.Max(WaterLevel - LowerLimit, 0f);
-        WaterAvailable = IsWaterPump
-          ? WaterService.LimitWater(WaterDetected, WaterService.pumpRate)
+        WaterAvailable = IsOnlyRequester
+          ? 0f
           : WaterService.LimitWater(WaterDetected);
-        if (WaterAvailable > 0f)
-          ContaminationPercentage = threadSafeWaterMap.ColumnContamination(coordinates);
-        else
-          ContaminationPercentage = 0f;
+        WaterPressure = WaterService.CalcPressure(this);
+        ContaminationPercentage = WaterAvailable > 0f
+          ? threadSafeWaterMap.ColumnContamination(coordinates)
+          : 0f;
         SuccessWhenCheckWater = true;
       } catch (Exception err)
       {
@@ -290,6 +290,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         newFlow = WaterGateFlow.OUT;
       if (water < 0f)
         newFlow = WaterGateFlow.IN;
+      ModUtils.Log($"[WaterGate.FlowNotChanged] water={water} newFlow={newFlow} Flow={Flow}");
       if (Flow != null && Flow == newFlow)
         return true;
       if (Flow != null && tick.Skip())
@@ -365,7 +366,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       info += $"    type={Type} mode={Mode} state={State}\n";
       info += $"    IsOnlyRequester={IsOnlyRequester} IsOnlyDelivery={IsOnlyDelivery}\n";
       info += $"    lower={LowerLimit.ToString("0.00")} higth={HigthLimit.ToString("0.00")} level={WaterLevel.ToString("0.00")}\n";
-      info += $"    detected={WaterDetected.ToString("0.00")} available={WaterAvailable.ToString("0.00")} conta={ContaminationPercentage.ToString("0.00")}\n";
+      info += $"    detected={WaterDetected.ToString("0.00")} available={WaterAvailable.ToString("0.00")} conta={ContaminationPercentage.ToString("0.00")} pressure={WaterPressure.ToString("0.00")}\n";
       if (close)
         info += $"  ];\n";
       return info;
