@@ -88,7 +88,7 @@ GameObject:
   - component: {fileID: -1302879299329295200}
   - component: {fileID: 4971155771503057506}
   m_Layer: 0
-  m_Name: PipeStraight.IronTeeth
+  m_Name: PipeUpward.IronTeeth
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -162,7 +162,7 @@ MonoBehaviour:
   m_Script: {fileID: -731835049, guid: b5f268a4cb31a93ed707a95d3a502b0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _prefabName: PipeStraight.IronTeeth
+  _prefabName: PipeUpward.IronTeeth
   _backwardCompatiblePrefabNames: []
   _requiredFeatureToggle: 
   _disablingFeatureToggle: 
@@ -200,8 +200,8 @@ MonoBehaviour:
     - _matterBelow: 1
       _legacyOccupation: 0
       _useNewOccupation: 1
-      _occupations: 50
-      _stackable: 0
+      _occupations: 62
+      _stackable: 1
       _occupyAllBelow: 0
   _entrance:
     _hasEntrance: 0
@@ -222,7 +222,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _toolGroupId: Water
-  _toolOrder: 82
+  _toolOrder: 86
   _toolShape: 0
   _layout: 1
   _customPivot:
@@ -241,10 +241,10 @@ MonoBehaviour:
   m_Script: {fileID: 652365310, guid: b6b9d4cc3090b6fceb2eb6438dd271f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _displayNameLocKey: Building.PipeStraight.DisplayName
-  _descriptionLocKey: Building.PipeStraight.Description
+  _displayNameLocKey: Building.PipeUpward.DisplayName
+  _descriptionLocKey: Building.PipeUpward.Description
   _flavorDescriptionLocKey: 
-  _imagePath: Buildings/Water/PipeStraight/PipeStraightIcon
+  _imagePath: Buildings/Water/PipeUpward/PipeUpwardIcon
 --- !u!114 &114709933830190137
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -286,8 +286,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterCoordinates: {x: 0, y: 1, z: 0}
-  waterGateSide: 0
+  waterCoordinates: {x: 0, y: 0, z: 1}
+  waterGateSide: 4
   gateConnected: {fileID: 0}
 --- !u!114 &4971155771503057506
 MonoBehaviour:
@@ -422,7 +422,7 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings\Water\PipeStraight\PipeStraight.IronTeeth.Model
+  _modelName: Buildings\Water\PipeUpward\PipeUpward.Model
 --- !u!1 &1842394135998225
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,0 +1,24 @@
+{
+  "Id": "PipeTIntersection",
+  "BackwardCompatibleIds": [
+  ],
+  "Order": 84,
+  "NeedGroupId": "BasicNeeds",
+  "CharacterType": "Beaver",
+  "DisplayNameLocKey": "Building.PipeTIntersection.DisplayName",
+  "StartingValue": 0.0,
+  "MinimumValue": 0.0,
+  "MaximumValue": 1.0,
+  "DailyDelta": -0.6,
+  "ImportanceMultiplier": 1.0,
+  "CriticalNeedType": {
+    "Value": "None"
+  },
+  "CriticalSpriteName": "",
+  "CriticalDescriptionLocKey": "",
+  "DeathOnMinValue": false,
+  "DeathMessageLocKey": "",
+  "Effectiveness": 1.0,
+  "Wastable": true,
+  "FavorableWellbeing": 1
+}

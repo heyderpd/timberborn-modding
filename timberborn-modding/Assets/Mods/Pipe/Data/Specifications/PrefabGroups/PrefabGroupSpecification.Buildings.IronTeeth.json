@@ -2,6 +2,12 @@
   "Id": "Buildings.IronTeeth",
   "Paths#append": [
     "Buildings/Water/PipeBox/PipeBox.IronTeeth",
-    "Buildings/Water/PipeStraight/PipeStraight.IronTeeth"
+    "Buildings/Water/PipeStraight/PipeStraight.IronTeeth",
+    "Buildings/Water/PipeTurn/PipeTurn.IronTeeth",
+    "Buildings/Water/PipeTIntersection/PipeTIntersection.IronTeeth",
+    "Buildings/Water/PipeXIntersection/PipeXIntersection.IronTeeth",
+    "Buildings/Water/PipeUpward/PipeUpward.IronTeeth",
+    "Buildings/Water/PipeVertical/PipeVertical.IronTeeth",
+    "Buildings/Water/PipeDownward/PipeDownward.IronTeeth"
   ]
 }
