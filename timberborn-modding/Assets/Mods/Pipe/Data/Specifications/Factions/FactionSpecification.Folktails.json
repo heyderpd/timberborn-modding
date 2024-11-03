@@ -1,0 +1,12 @@
+{
+  "Needs#append": [
+    "PipeBox",
+    "PipeStraight",
+    "PipeTurn",
+    "PipeTIntersection",
+    "PipeXIntersection",
+    "PipeUpward",
+    "PipeVertical",
+    "PipeDownward"
+  ]
+}

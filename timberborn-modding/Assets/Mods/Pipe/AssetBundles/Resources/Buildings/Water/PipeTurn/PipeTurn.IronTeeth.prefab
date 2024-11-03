@@ -422,7 +422,7 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings\Water\PipeTurn\PipeTurn.Model
+  _modelName: Buildings\Water\PipeTurn\PipeTurn.IronTeeth.Model
 --- !u!1 &1842394135998225
 GameObject:
   m_ObjectHideFlags: 0

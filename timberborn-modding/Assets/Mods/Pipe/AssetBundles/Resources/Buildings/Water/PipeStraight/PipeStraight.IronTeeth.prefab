@@ -84,6 +84,7 @@ GameObject:
   - component: {fileID: 114536901920753065}
   - component: {fileID: 114790364128370181}
   - component: {fileID: 114709933830190137}
+  - component: {fileID: 8353140736947670764}
   - component: {fileID: -1818964738542828118}
   - component: {fileID: -1302879299329295200}
   - component: {fileID: 4971155771503057506}
@@ -259,6 +260,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _progressThresholds:
   - 0
+--- !u!114 &8353140736947670764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1307462774176390}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1516821267, guid: b0c4545210a508c255e4ebd4a145ed71, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _attachmentId: Water.PipeStraight
 --- !u!114 &-1818964738542828118
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -408,7 +422,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.2, y: 0.2, z: 1}
+  m_Size: {x: 0.5, y: 0.7, z: 1}
   m_Center: {x: 0.5, y: 0.5, z: 0.5}
 --- !u!114 &114736604760948331
 MonoBehaviour:

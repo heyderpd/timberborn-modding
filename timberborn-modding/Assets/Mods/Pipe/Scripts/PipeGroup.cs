@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using UnityEngine;
+﻿using System.Linq;
+using System.Collections.Generic;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -37,11 +36,13 @@ namespace Mods.OldGopher.Pipe.Scripts
     public void PipeAdd(PipeNode node)
     {
       Pipes.Add(node);
+      pipeGroupQueue.Group_RecalculateGates(this);
     }
 
     public void PipeRemove(PipeNode node)
     {
       Pipes.Remove(node);
+      pipeGroupQueue.Group_RecalculateGates(this);
     }
 
     public void SetDisabled()
@@ -49,7 +50,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       isEnabled = false;
     }
 
-    public void Clear()
+    public void Destroy()
     {
       SetDisabled();
       Pipes.Clear();
@@ -64,8 +65,9 @@ namespace Mods.OldGopher.Pipe.Scripts
       {
         pipe.SetGroup(group);
       }
-      Clear();
-      pipeGroupQueue.GroupRecalculeGates(group);
+      SetDisabled();
+      pipeGroupQueue.Group_Remove(this);
+      pipeGroupQueue.Group_RecalculateGates(group);
     }
 
     public void recalculateGates()

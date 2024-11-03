@@ -1,8 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
-using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -12,7 +11,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     static readonly float minimumFlow = 0.001f;
     
-    static readonly float waterPercentPerSecond = 0.50f;
+    static readonly float waterPercentPerSecond = 1.00f;
     
     private static float LimitWater(float expectedWater)
     {
@@ -35,32 +34,30 @@ namespace Mods.OldGopher.Pipe.Scripts
       return limited;
     }
 
-    private static Tuple<float, float> getWaterLevel(List<WaterGate> Gates)
+    private static float getWaterLevel(List<WaterGate> Gates)
     {
+      bool success = true;
       float waterSum = 0f;
-      float contamination = 0f;
       float average = Gates
         .Aggregate(
           0f,
           (float sum, WaterGate gate) =>
           {
-            gate.UpdateWaters();
+            success = gate.UpdateWaters() && success;
             waterSum += gate.Water;
-            contamination += gate.ContaminationPercentage;
             return sum + gate.WaterLevel;
           }
         );
-      OldGopherLog.Log($"[MoveWater.getWaterLevel] waterSum={waterSum}");
-      if (waterSum <= minimumFlow)
-        return new Tuple<float, float>(float.NaN, float.NaN);
-      average = average / Gates.Count;
-      contamination = contamination / Gates.Count;
-      return new Tuple<float, float>(average, contamination);
+      ModUtils.Log($"[MoveWater.getWaterLevel] waterSum={waterSum}");
+      if (!success || waterSum <= minimumFlow)
+        return float.NaN;
+      return average / Gates.Count;
     }
 
-    private static bool calculateFlow(List<WaterGate> Gates, float average)
+    //TODO: improve deliverers and requesters to only discovery it when necessary
+    private static Tuple<bool, float> calculateFlow(List<WaterGate> Gates, float average)
     {
-      float delivereWaters = 0f, requestersWaters = 0f;
+      float delivereWaters = 0f, requestersWaters = 0f, contamination = 0f;
       var (deliverers, requesters) = Gates
         .Aggregate(
           new Tuple<List<WaterGate>, List<WaterGate>>(new List<WaterGate>(), new List<WaterGate>()),
@@ -72,13 +69,14 @@ namespace Mods.OldGopher.Pipe.Scripts
               deliverers.Add(gate);
               gate.DesiredWater = GetDeliveryWater(gate, average);
               delivereWaters += gate.DesiredWater;
-              OldGopherLog.Log($"[MoveWater.calculateFlow] Pre deliverers gate.DesiredWater={gate.DesiredWater}");
+              contamination += gate.ContaminationPercentage;
+              ModUtils.Log($"[MoveWater.calculateFlow] Pre deliverers gate.DesiredWater={gate.DesiredWater}");
             } else if (gate.WaterLevel < average)
             {
               requesters.Add(gate);
               gate.DesiredWater = GetReceiveryWater(gate, average);
               requestersWaters += gate.DesiredWater;
-              OldGopherLog.Log($"[MoveWater.calculateFlow] Pre requesters gate.DesiredWater={gate.DesiredWater}");
+              ModUtils.Log($"[MoveWater.calculateFlow] Pre requesters gate.DesiredWater={gate.DesiredWater}");
             } else
             {
               gate.DesiredWater = 0f;
@@ -86,9 +84,9 @@ namespace Mods.OldGopher.Pipe.Scripts
             return lists;
           }
         );
-      OldGopherLog.Log($"[MoveWater.calculateFlow] deliverers={deliverers.Count} receivers={requesters.Count} receivers={delivereWaters} receivers={requestersWaters} check={(deliverers.Count == 0 || requesters.Count == 0 || delivereWaters < minimumFlow || requestersWaters < minimumFlow)}");
+      ModUtils.Log($"[MoveWater.calculateFlow] deliverers={deliverers.Count} receivers={requesters.Count} receivers={delivereWaters} receivers={requestersWaters} check={(deliverers.Count == 0 || requesters.Count == 0 || delivereWaters < minimumFlow || requestersWaters < minimumFlow)}");
       if (deliverers.Count == 0 || requesters.Count == 0 || delivereWaters < minimumFlow || requestersWaters < minimumFlow)
-        return false;
+        return new Tuple<bool, float>(false, 0f);
       var waterUsed = requesters
         .Aggregate(
           0f,
@@ -96,18 +94,18 @@ namespace Mods.OldGopher.Pipe.Scripts
           {
             float water = delivereWaters * (gate.DesiredWater / requestersWaters);
             gate.DesiredWater = Mathf.Min(water, gate.DesiredWater);
-            OldGopherLog.Log($"[MoveWater.Do] Final requesters gate.DesiredWater={gate.DesiredWater}");
+            ModUtils.Log($"[MoveWater.Do] Final requesters gate.DesiredWater={gate.DesiredWater}");
             waterUsed += gate.DesiredWater;
             return waterUsed;
           }
         );
       float waterUsedPercent = waterUsed / delivereWaters;
-      OldGopherLog.Log($"[MoveWater.calculateFlow] delivereWaters={delivereWaters} waterUsed={waterUsed} waterUsedPercent={waterUsedPercent}");
+      ModUtils.Log($"[MoveWater.calculateFlow] delivereWaters={delivereWaters} waterUsed={waterUsed} waterUsedPercent={waterUsedPercent}");
       deliverers
         .ForEach((WaterGate gate) =>
           {
             float water = gate.DesiredWater * waterUsedPercent;
-            OldGopherLog.Log($"[MoveWater.calculateFlow] Final deliverers gate.DesiredWater={gate.DesiredWater} water={-water}");
+            ModUtils.Log($"[MoveWater.calculateFlow] Final deliverers gate.DesiredWater={gate.DesiredWater} water={-water}");
             gate.DesiredWater = -water;
           });
       bool canFlow = Gates
@@ -119,7 +117,8 @@ namespace Mods.OldGopher.Pipe.Scripts
             return canFlow;
           }
         );
-      return canFlow;
+      contamination = contamination / deliverers.Count;
+      return new Tuple<bool, float>(canFlow, contamination);
     }
 
     private static void moveWater(List<WaterGate> Gates, float contamination)
@@ -135,13 +134,13 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       if (Gates.Count <= 1)
         return false;
-      var (average, contamination) = getWaterLevel(Gates);
-      OldGopherLog.Log($"[MoveWater.calculateFlow] average={average} contamination={contamination}");
+      var average = getWaterLevel(Gates);
       if (float.IsNaN(average))
         return false;
-      bool canFlow = calculateFlow(Gates, average);
+      var (canFlow, contamination) = calculateFlow(Gates, average);
       if (!canFlow)
         return false;
+      ModUtils.Log($"[MoveWater.calculateFlow] average={average} contamination={contamination}");
       moveWater(Gates, contamination);
       return true;
     }

@@ -85,11 +85,12 @@ GameObject:
   - component: {fileID: 114790364128370181}
   - component: {fileID: 114709933830190137}
   - component: {fileID: -1818964738542828118}
+  - component: {fileID: 9169811475458214475}
+  - component: {fileID: 6829483168243557917}
   - component: {fileID: -1302879299329295200}
-  - component: {fileID: 5127242608008803914}
   - component: {fileID: 4971155771503057506}
   m_Layer: 0
-  m_Name: PipeTIntersection.IronTeeth
+  m_Name: PipeXIntersection.Folktails
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -163,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: -731835049, guid: b5f268a4cb31a93ed707a95d3a502b0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _prefabName: PipeTIntersection.IronTeeth
+  _prefabName: PipeXIntersection.Folktails
   _backwardCompatiblePrefabNames: []
   _requiredFeatureToggle: 
   _disablingFeatureToggle: 
@@ -223,7 +224,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _toolGroupId: Water
-  _toolOrder: 84
+  _toolOrder: 85
   _toolShape: 0
   _layout: 0
   _customPivot:
@@ -242,10 +243,10 @@ MonoBehaviour:
   m_Script: {fileID: 652365310, guid: b6b9d4cc3090b6fceb2eb6438dd271f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _displayNameLocKey: Building.PipeTIntersection.DisplayName
-  _descriptionLocKey: Building.PipeTIntersection.Description
+  _displayNameLocKey: Building.PipeXIntersection.DisplayName
+  _descriptionLocKey: Building.PipeXIntersection.Description
   _flavorDescriptionLocKey: 
-  _imagePath: Buildings/Water/PipeTIntersection/PipeTIntersectionIcon
+  _imagePath: Buildings/Water/PipeXIntersection/PipeXIntersectionIcon
 --- !u!114 &114709933830190137
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -275,7 +276,7 @@ MonoBehaviour:
   waterCoordinates: {x: 0, y: -1, z: 0}
   Side: 1
   DesiredWater: 0
---- !u!114 &-1302879299329295200
+--- !u!114 &9169811475458214475
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -290,7 +291,22 @@ MonoBehaviour:
   waterCoordinates: {x: -1, y: 0, z: 0}
   Side: 2
   DesiredWater: 0
---- !u!114 &5127242608008803914
+--- !u!114 &6829483168243557917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1307462774176390}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  waterCoordinates: {x: 1, y: 0, z: 0}
+  Side: 3
+  DesiredWater: 0
+--- !u!114 &-1302879299329295200
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -362,7 +378,7 @@ GameObject:
   - component: {fileID: 65721485082540620}
   - component: {fileID: 65878078748061468}
   - component: {fileID: 114736604760948331}
-  - component: {fileID: 4651608275582773456}
+  - component: {fileID: 8129268426404081272}
   m_Layer: 0
   m_Name: '#Finished'
   m_TagString: Untagged
@@ -439,8 +455,8 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings\Water\PipeTIntersection\PipeTIntersection.IronTeeth.Model
---- !u!65 &4651608275582773456
+  _modelName: Buildings\Water\PipeXIntersection\PipeXIntersection.Folktails.Model
+--- !u!65 &8129268426404081272
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -459,8 +475,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.7, y: 0.7, z: 0.5}
-  m_Center: {x: 0.4, y: 0.5, z: 0.5}
+  m_Size: {x: 1, y: 0.7, z: 0.5}
+  m_Center: {x: 0.5, y: 0.5, z: 0.5}
 --- !u!1 &1842394135998225
 GameObject:
   m_ObjectHideFlags: 0
@@ -527,4 +543,4 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings/Power/PowerShaftStraight/PowerShaftStraight.IronTeeth.ConstructionStage0.Model
+  _modelName: Buildings/Power/PowerShaftStraight/PowerShaftStraight.Folktails.ConstructionStage0.Model

@@ -1,13 +1,10 @@
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 using Bindito.Core;
 using Timberborn.Common;
 using Timberborn.TickSystem;
-using Timberborn.SingletonSystem;
-using UnityEngine;
 using Timberborn.BlockSystem;
-using UnityEngine.UIElements;
-using Moq;
+using Timberborn.SingletonSystem;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -17,37 +14,53 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private readonly List<WaterGate> GroupRecreateGates = new List<WaterGate>();
 
+    private readonly PipeGroupChangeDebounce<BlockObject> debounce_gateCheckByBlockEvent = new PipeGroupChangeDebounce<BlockObject>(PipeGroupChangeTypes.GATE_CHECK_BY_BLOCKEVENT);
+
+    private readonly PipeGroupChangeDebounce<PipeGroup> debounce_groupRecalculateGates = new PipeGroupChangeDebounce<PipeGroup>(PipeGroupChangeTypes.GROUP_RECALCULATE_GATES);
+
     private bool working = false;
 
     private EventBus eventBus;
+
+    private BlockService blockService;
 
     private PipeGroupQueue pipeGroupQueue;
 
     [Inject]
     public void InjectDependencies(
       EventBus _eventBus,
+      BlockService _blockService,
       PipeGroupQueue _pipeGroupQueue
     )
     {
       eventBus = _eventBus;
+      blockService = _blockService;
       pipeGroupQueue = _pipeGroupQueue;
     }
 
     public void Load()
     {
-      OldGopherLog.Log($"[eventBus.Load] WILL DO");
       eventBus.Register(this);
     }
 
-    private bool GroupNotExist(PipeGroup group)
+    private bool _GroupNotExist(PipeGroup group)
     {
-      return group != null && !group.isEnabled && !Groups.Contains(group);
+      ModUtils.Log($"[Manager._GroupNotExist] group={group?.id} groupC1={group == null} groupC2={group?.isEnabled != true} groupC3={!Groups.Contains(group)}");
+      return group == null || group?.isEnabled != true || !Groups.Contains(group);
+    }
+    
+    private PipeGroup _createGroup()
+    {
+      var group = new PipeGroup(pipeGroupQueue);
+      Groups.Add(group);
+      return group;
     }
 
-    private void GroupRecreateTailRecursion(
+    private void _GroupRecreateTailRecursion(
       PipeNode actualNode,
       ref Queue<PipeNode> pipeWorkList,
       ref HashSet<PipeNode> resolvedNode,
+      ref HashSet<PipeGroup> createdGroups,
       PipeGroup group = null
     )
     {
@@ -55,8 +68,8 @@ namespace Mods.OldGopher.Pipe.Scripts
       {
         if (group == null)
         {
-          group = new PipeGroup(pipeGroupQueue);
-          pipeGroupQueue.GroupRecalculeGates(group);
+          group = _createGroup();
+          createdGroups.Add(group);
         }
         actualNode.SetGroup(group);
         resolvedNode.Add(actualNode);
@@ -73,14 +86,15 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (pipeWorkList.IsEmpty())
         return;
       var nextNode = pipeWorkList.Dequeue();
-      GroupRecreateTailRecursion(nextNode, ref pipeWorkList, ref resolvedNode, group);
+      _GroupRecreateTailRecursion(nextNode, ref pipeWorkList, ref resolvedNode, ref createdGroups, group);
     }
 
-    private void GroupRecreate(PipeNode deletedNode)
+    private void _GroupRecreate(PipeNode deletedNode)
     {
       deletedNode.group.SetDisabled();
       var pipeWorkList = new Queue<PipeNode>();
       var resolvedNode = new HashSet<PipeNode>();
+      var createdGroups = new HashSet<PipeGroup>();
       var startNodes = deletedNode.waterGates
         .Select((WaterGate gate) => gate.gateConnected?.pipeNode)
         .Where((PipeNode node) => node != null && node.isEnabled)
@@ -90,7 +104,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         return;
       foreach (var node in startNodes)
       {
-        GroupRecreateTailRecursion(node, ref pipeWorkList, ref resolvedNode);
+        _GroupRecreateTailRecursion(node, ref pipeWorkList, ref resolvedNode, ref createdGroups);
       }
       deletedNode.group.Pipes.ExceptWith(resolvedNode);
       var forgottenPipes = new Queue<PipeNode>(deletedNode.group.Pipes);
@@ -98,28 +112,45 @@ namespace Mods.OldGopher.Pipe.Scripts
       {
         var nextNode = forgottenPipes.Dequeue();
         if (nextNode.isEnabled)
-          GroupRecreateTailRecursion(nextNode, ref pipeWorkList, ref resolvedNode);
+          _GroupRecreateTailRecursion(nextNode, ref pipeWorkList, ref resolvedNode, ref createdGroups);
       }
+      foreach (var group in createdGroups)
+      {
+        pipeGroupQueue.Group_RecalculateGates(group);
+      }
+      createdGroups.Clear();
       pipeWorkList.Clear();
       resolvedNode.Clear();
-      deletedNode.group.Clear();
+      pipeGroupQueue.Group_Remove(deletedNode.group);
     }
 
-    private void ActionGroupRecalculateGates(PipeGroupChange change)
+    private void Action_Group_RecalculateGates()
     {
-      OldGopherLog.Log($"[Manager.ActionGroupRecalculeGates] DOING group={change.group?.id ?? change.node?.group?.id}  node={change.node?.id}");
-      var group = change.node != null ? change.node.group : change.group;
-      if (GroupNotExist(group))
+      ModUtils.Log($"[Manager.Action_Group_RecalculateGates] count={debounce_groupRecalculateGates.Count} DOING");
+      if (debounce_groupRecalculateGates.IsEmpty)
         return;
-      group.recalculateGates();
+      foreach (var group in debounce_groupRecalculateGates.Items)
+      {
+        if (_GroupNotExist(group))
+          continue;
+        ModUtils.Log($"[Manager.Action_Group_RecalculateGates] group={group.id} LOOP");
+        group.recalculateGates();
+      }
+      debounce_groupRecalculateGates.Clear();
+      ModUtils.Log($"[Manager.Action_Group_RecalculateGates] DONE");
     }
 
-    private void ActionPipeJoin(PipeGroupChange change)
+    private void Action_Group_Remove(PipeGroupChange change)
+    {
+      change.group?.Destroy();
+      Groups.Remove(change.group);
+    }
+
+    private void Action_Pipe_Join(PipeGroupChange change)
     {
       var groupA = change.node?.group;
       var groupB = change.secondNode?.group;
-      OldGopherLog.Log($"[Manager.ActionPipeJoin] DOING group={change.group?.id} node={change.node.id} otherGroup={groupB?.id}");
-      if (GroupNotExist(groupA) || GroupNotExist(groupB))
+      if (_GroupNotExist(groupA) || _GroupNotExist(groupB))
         return;
       if (groupA.Pipes.Count > groupB.Pipes.Count)
         groupB.UnionTo(groupA);
@@ -127,58 +158,67 @@ namespace Mods.OldGopher.Pipe.Scripts
         groupA.UnionTo(groupB);
     }
 
-    private void ActionPipeNodeCreate(PipeGroupChange change)
+    private void Action_Pipe_Create(PipeGroupChange change)
     {
-      OldGopherLog.Log($"[Manager.ActionPipeNodeCreate] DOING group={change.group?.id} node={change.node.id}");
       var pipe = change.node;
-      var group = new PipeGroup(pipeGroupQueue);
+      var group = _createGroup();
       pipe.SetGroup(group);
-      Groups.Add(group);
       pipe.SetEnabled();
-      pipe.CheckGates(recalculate: false);
-      pipeGroupQueue.GroupRecalculeGates(group);
+      pipe.CheckGates();
     }
 
-    private void ActionPipeNodeRemove(PipeGroupChange change)
+    private void Action_Pipe_Remove(PipeGroupChange change)
     {
-      OldGopherLog.Log($"[Manager.ActionPipeNodeRemove] DOING group={change.group?.id} node={change.node.id}");
-      if (GroupNotExist(change.group))
+      if (_GroupNotExist(change.node.group))
         return;
-      change.group.PipeRemove(change.node);
-      GroupRecreate(change.node);
+      change.node.group.PipeRemove(change.node);
+      _GroupRecreate(change.node);
     }
 
-    private void ActionPipeNodeCheckChanges(PipeGroupChange? change)
+    private void Action_Pipe_CheckGates(PipeGroupChange change)
     {
-      if (change?.type != PipeGroupChangeTypes.PIPE_CHECK_CHANGES)
+      change.node?.CheckGates();
+    }
+
+    private void Action_Gate_Check_ByBlockEvent()
+    {
+      ModUtils.Log($"[Manager.Action_Gate_Check_ByBlockEvent] count={debounce_gateCheckByBlockEvent.Count} DOING");
+      if (debounce_gateCheckByBlockEvent.IsEmpty)
         return;
-      var now = Time.fixedTime;
-      OldGopherLog.Log($"[Manager.ActionPipeNodeCheckChanges] DOING Time.fixedTime={Time.fixedTime}");
-      foreach (var group in Groups)
+      HashSet<WaterGate> Gates = new HashSet<WaterGate>();
+      foreach (var block in debounce_gateCheckByBlockEvent.Items)
       {
-        foreach (var pipe in group.Pipes)
+        var _gates = ModUtils.getNearWaterGates(blockService, block);
+        if (_gates != null)
+          Gates.AddRange(_gates);
+      }
+      ModUtils.Log($"[Manager.Action_Gate_Check_ByBlockEvent] Gates={Gates.Count} COUNT");
+      if (Gates.Count > 0)
+      {
+        foreach (var gate in Gates)
         {
-          pipe.WaterGateCheckInput(change?.blockObject);
+          ModUtils.Log($"[Manager.Action_Gate_Check_ByBlockEvent] gate={gate.id} LOOP");
+          var changed = gate.CheckInput();
+          if (changed)
+            pipeGroupQueue.Group_RecalculateGates(gate.pipeNode);
         }
       }
-      OldGopherLog.Log($"[Manager.ActionPipeNodeCheckChanges] DONE Time.fixedTime={Time.fixedTime} time={now - Time.fixedTime}");
+      Gates.Clear();
+      debounce_gateCheckByBlockEvent.Clear();
+      ModUtils.Log($"[Manager.Action_Gate_Check_ByBlockEvent] DONE");
     }
 
-    private void ActionPipeNodeCheckGates(PipeGroupChange change)
+    private void Action_Gate_Check(PipeGroupChange change)
     {
-      OldGopherLog.Log($"[Manager.ActionPipeNodeCheckGates] DOING group={change.group?.id} node={change.node.id}");
-      change.node.CheckGates();
+      var changed = change.gate?.CheckInput() ?? false;
+      if (changed)
+        pipeGroupQueue.Group_RecalculateGates(change.gate.pipeNode?.group);
     }
 
-    private void ActionGateCheckInput(PipeGroupChange change)
+    private bool ConsumeChanges()
     {
-      OldGopherLog.Log($"[Manager.ActionGateCheckInput] DOING group={change.gate?.pipeNode.group?.id} node={change.gate?.pipeNode.id} gate={change.gate.id}");
-      change.gate.CheckInput();
-    }
-
-    public bool ConsumeChanges()
-    {
-      PipeGroupChange? lastChange = null;
+      debounce_groupRecalculateGates.Clear();
+      debounce_gateCheckByBlockEvent.Clear();
       if (!pipeGroupQueue.HasChanges)
         return false;
       while (pipeGroupQueue.HasChanges)
@@ -187,52 +227,56 @@ namespace Mods.OldGopher.Pipe.Scripts
         switch (change.type)
         {
           case PipeGroupChangeTypes.GROUP_RECALCULATE_GATES:
-            ActionGroupRecalculateGates(change);
+            debounce_groupRecalculateGates.Store(change.type, change.node?.group ?? change.group);
+            break;
+
+          case PipeGroupChangeTypes.GROUP_REMOVE:
+            Action_Group_Remove(change);
             break;
 
           case PipeGroupChangeTypes.PIPE_CREATE:
-            ActionPipeNodeCreate(change);
+            Action_Pipe_Create(change);
             break;
 
           case PipeGroupChangeTypes.PIPE_REMOVE:
-            ActionPipeNodeRemove(change);
+            Action_Pipe_Remove(change);
             break;
 
           case PipeGroupChangeTypes.PIPE_JOIN:
-            ActionPipeJoin(change);
-            break;
-
-          case PipeGroupChangeTypes.PIPE_CHECK_CHANGES:
-            lastChange = change;
+            Action_Pipe_Join(change);
             break;
 
           case PipeGroupChangeTypes.PIPE_CHECK_GATES:
-            ActionPipeNodeCheckGates(change);
+            Action_Pipe_CheckGates(change);
             break;
 
-          case PipeGroupChangeTypes.GATE_CHECK_INPUT:
-            ActionGateCheckInput(change);
+          case PipeGroupChangeTypes.GATE_CHECK_BY_BLOCKEVENT:
+            debounce_gateCheckByBlockEvent.Store(change.type, change.blockObject);
+            break;
+
+          case PipeGroupChangeTypes.GATE_CHECK:
+            Action_Gate_Check(change);
             break;
 
           default:
             break;
         }
       }
-      if (lastChange != null)
-        ActionPipeNodeCheckChanges(lastChange);
+      Action_Group_RecalculateGates();
+      Action_Gate_Check_ByBlockEvent();
       return true;
     }
 
     [OnEvent]
     public void OnBlockObjectSet(BlockObjectSetEvent blockEvent)
     {
-      pipeGroupQueue.PipeNodeCheckChanges(blockEvent?.BlockObject);
+      pipeGroupQueue.Gate_CheckByBlockEvent(blockEvent?.BlockObject);
     }
 
     [OnEvent]
     public void OnBlockObjectUnset(BlockObjectUnsetEvent blockEvent)
     {
-      pipeGroupQueue.PipeNodeCheckChanges(blockEvent?.BlockObject);
+      pipeGroupQueue.Gate_CheckByBlockEvent(blockEvent?.BlockObject);
     }
 
     private void DoMoveWater()

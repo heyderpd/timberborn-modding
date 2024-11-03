@@ -1,9 +1,9 @@
 {
   "Name": "OldGopher_Pipe",
-  "Version": "1.0.0.0",
+  "Version": "1.2.0.0",
   "Id": "Timberborn.OldGopher.Pipe",
   "MinimumGameVersion": "0.6.5.0",
-  "Description": "With this mod, Iron Teeth will have a new pipe construction, which will allow for easy water handling from locations.",
+  "Description": "With this mod will have a new modular pipe construction, which will allow for easy water handling from locations.",
   "RequiredMods": [
   ]
 }

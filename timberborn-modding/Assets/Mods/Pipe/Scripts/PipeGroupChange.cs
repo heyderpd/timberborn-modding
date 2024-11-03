@@ -1,21 +1,20 @@
 ﻿
 using System.Collections.Generic;
-using Timberborn.BaseComponentSystem;
-using Timberborn.BlockSystem;
 using Timberborn.Common;
-using UnityEngine;
+using Timberborn.BlockSystem;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
   public enum PipeGroupChangeTypes
   {
     GROUP_RECALCULATE_GATES,
+    GROUP_REMOVE,
     PIPE_CREATE,
     PIPE_REMOVE,
     PIPE_JOIN,
-    PIPE_CHECK_CHANGES,
+    GATE_CHECK_BY_BLOCKEVENT,
     PIPE_CHECK_GATES,
-    GATE_CHECK_INPUT
+    GATE_CHECK
   }
 
   internal readonly struct PipeGroupChange
@@ -49,7 +48,37 @@ namespace Mods.OldGopher.Pipe.Scripts
       gate = _gate;
     }
   }
-  
+
+  internal class PipeGroupChangeDebounce<T>
+  {
+    private PipeGroupChangeTypes type;
+
+    public HashSet<T> Items { get; private set; } = new HashSet<T>();
+
+    public int Count => Items.Count;
+
+    public bool IsEmpty => Items.Count == 0;
+
+    public PipeGroupChangeDebounce(PipeGroupChangeTypes _type)
+    {
+      type = _type;
+    }
+
+    public void Clear()
+    {
+      Items.Clear();
+    }
+
+    public void Store(PipeGroupChangeTypes _type, T item)
+    {
+      if (type != _type)
+        return;
+      if (item == null)
+        return;
+      Items.Add(item);
+    }
+  }
+
   internal class PipeGroupQueue
   {
     private readonly Queue<PipeGroupChange> changes = new Queue<PipeGroupChange>();
@@ -61,7 +90,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       return changes.Dequeue();
     }
 
-    public void GroupRecalculeGates(PipeGroup group)
+    public void Group_RecalculateGates(PipeGroup group)
     {
       if (group == null)
         return;
@@ -71,7 +100,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       ));
     }
 
-    public void GroupRecalculateGates(PipeNode node)
+    public void Group_RecalculateGates(PipeNode node)
     {
       if (node == null)
         return;
@@ -81,7 +110,17 @@ namespace Mods.OldGopher.Pipe.Scripts
       ));
     }
 
-    public void PipeNodeJoin(PipeNode node, PipeNode secondNode)
+    public void Group_Remove(PipeGroup group)
+    {
+      if (group == null)
+        return;
+      changes.Enqueue(new PipeGroupChange(
+        _type: PipeGroupChangeTypes.GROUP_REMOVE,
+        _group: group
+      ));
+    }
+
+    public void Pipe_Join(PipeNode node, PipeNode secondNode)
     {
       if (node == null || secondNode == null)
         return;
@@ -92,7 +131,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       ));
     }
 
-    public void PipeNodeCreate(PipeNode node)
+    public void Pipe_Create(PipeNode node)
     {
       if (node == null)
         return;
@@ -102,18 +141,17 @@ namespace Mods.OldGopher.Pipe.Scripts
       ));
     }
 
-    public void PipeNodeRemove(PipeGroup group, PipeNode node)
+    public void Pipe_Remove(PipeNode node)
     {
-      if (group == null || node == null)
+      if (node == null)
         return;
       changes.Enqueue(new PipeGroupChange(
         _type: PipeGroupChangeTypes.PIPE_REMOVE,
-        _group: group,
         _node: node
       ));
     }
 
-    public void PipeNodeCheckGates(PipeNode node)
+    public void Pipe_CheckGates(PipeNode node)
     {
       if (node == null)
         return;
@@ -123,22 +161,22 @@ namespace Mods.OldGopher.Pipe.Scripts
       ));
     }
 
-    public void PipeNodeCheckChanges(BlockObject blockObject)
+    public void Gate_CheckByBlockEvent(BlockObject blockObject)
     {
       if (blockObject == null)
         return;
       changes.Enqueue(new PipeGroupChange(
-        _type: PipeGroupChangeTypes.PIPE_CHECK_CHANGES,
+        _type: PipeGroupChangeTypes.GATE_CHECK_BY_BLOCKEVENT,
         _blockObject: blockObject
       ));
     }
 
-    public void WaterGateCheckInput(WaterGate gate)
+    public void Gate_Check(WaterGate gate)
     {
       if (gate == null)
         return;
       changes.Enqueue(new PipeGroupChange(
-        _type: PipeGroupChangeTypes.GATE_CHECK_INPUT,
+        _type: PipeGroupChangeTypes.GATE_CHECK,
         _gate: gate
       ));
     }

@@ -1,9 +1,9 @@
-﻿using Timberborn.BaseComponentSystem;
+﻿using UnityEngine;
+using UnityEngine.UIElements;
 using Timberborn.CoreUI;
+using Timberborn.BaseComponentSystem;
 using Timberborn.EntityPanelSystem;
 using Timberborn.Localization;
-using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -30,6 +30,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       root = new VisualElement();
       var box = new Box();
       box.style.backgroundColor = Color.white;
+      box.style.width = 350;
       text = new Label();
       text.style.color = Color.black;
       box.Add(text);

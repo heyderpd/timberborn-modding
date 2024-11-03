@@ -1,0 +1,13 @@
+{
+  "Id": "Buildings.Folktails",
+  "Paths#append": [
+    "Buildings/Water/PipeBox/PipeBox.Folktails",
+    "Buildings/Water/PipeStraight/PipeStraight.Folktails",
+    "Buildings/Water/PipeTurn/PipeTurn.Folktails",
+    "Buildings/Water/PipeTIntersection/PipeTIntersection.Folktails",
+    "Buildings/Water/PipeXIntersection/PipeXIntersection.Folktails",
+    "Buildings/Water/PipeUpward/PipeUpward.Folktails",
+    "Buildings/Water/PipeVertical/PipeVertical.Folktails",
+    "Buildings/Water/PipeDownward/PipeDownward.Folktails"
+  ]
+}

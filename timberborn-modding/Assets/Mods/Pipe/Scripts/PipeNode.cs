@@ -1,14 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System.Linq;
+using System.Collections.Generic;
 using Bindito.Core;
 using UnityEngine;
-using Timberborn.BaseComponentSystem;
-using Timberborn.BlockSystem;
-using Timberborn.SingletonSystem;
-using Timberborn.EntitySystem;
 using Timberborn.Persistence;
-using Timberborn.TickSystem;
-using System.Linq;
-using Moq;
+using Timberborn.EntitySystem;
+using Timberborn.BlockSystem;
+using Timberborn.BaseComponentSystem;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -58,15 +55,15 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void InitializeEntity()
     {
-      OldGopherLog.Log($"[PIPE.InitializeEntity] pipe={id}");
+      ModUtils.Log($"[PIPE.InitializeEntity] pipe={id}");
       coordinates = blockObject.Coordinates;
     }
 
     public void DeleteEntity()
     {
-      OldGopherLog.Log($"[PIPE.DeleteEntity] pipe={id}");
+      ModUtils.Log($"[PIPE.DeleteEntity] pipe={id}");
       isEnabled = false;
-      pipeGroupQueue.PipeNodeRemove(group, this);
+      pipeGroupQueue.Pipe_Remove(this);
     }
 
     public void Save(IEntitySaver entitySaver) { }
@@ -76,7 +73,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     public void OnEnterFinishedState()
     {
       ((Behaviour)this).enabled = true;
-      pipeGroupQueue.PipeNodeCreate(this);
+      pipeGroupQueue.Pipe_Create(this);
     }
 
     public void OnExitFinishedState()
@@ -93,6 +90,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       group = _group;
       group.PipeAdd(this);
+      ResetFlow();
     }
 
     public void ReleaseConnections()
@@ -107,70 +105,77 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       if (node == null)
       {
-        OldGopherLog.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} node_is_null");
+        ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} node_is_null");
         return false;
       }
       if (group.Same(node?.group))
       {
-        OldGopherLog.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} is_same_group");
+        ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} is_same_group");
         return true;
       }
       if (!node.isEnabled)
       {
-        OldGopherLog.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} node_disabled");
+        ModUtils.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} node_disabled");
         return false;
       }
-      WaterGate endGate = node.waterGates
-        .Find((WaterGate gate) => 
-          WaterGateConfig.IsCompatibleGate(gate.Side, gate.Side)
-          && gate.coordinates.Equals(coordinates));
-      if (!endGate)
+      WaterGate endGate = node.GetGate(coordinates);
+      bool IsCompatibleGate = endGate
+        ? WaterGateConfig.IsCompatibleGate(startGate.Side, endGate.Side)
+        : false;
+      if (!endGate || !IsCompatibleGate)
       {
-        OldGopherLog.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.GetInfo()} gate_not_found");
+        ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} coordinates={coordinates} endGate={endGate?.id} IsCompatibleGate={IsCompatibleGate} startGate={startGate.GetInfo()} otherPipe={node.GetInfo()} NOT_MATCH");
         return false;
       }
+      ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} startGate={startGate.GetInfo()} endGate={endGate.GetInfo()} MATCH");
       startGate.SetConnection(endGate);
       endGate.SetConnection(startGate);
-      pipeGroupQueue.PipeNodeJoin(node, this);
-      OldGopherLog.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} connected");
+      pipeGroupQueue.Pipe_Join(node, this);
+      ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} connected");
       return true;
     }
 
-    public void CheckGates(bool recalculate = true)
+    public bool CheckGates(bool recalculate = true)
     {
       if (!isEnabled)
-        return;
+        return false;
       var _hasChanges = false;
       var _hasGatesEnabled = false;
       foreach (var gate in waterGates)
       {
-        var gateChanged = gate.CheckInput(recalculate: false);
+        var gateChanged = gate.CheckInput();
         _hasChanges = _hasChanges || gateChanged;
         _hasGatesEnabled = _hasGatesEnabled || gate.isEnabled;
       }
       hasGatesEnabled = _hasGatesEnabled;
       if (recalculate && _hasChanges)
-        pipeGroupQueue.GroupRecalculateGates(this);
+        pipeGroupQueue.Group_RecalculateGates(this);
+      return _hasChanges;
     }
 
-    private bool IsFar(BlockObject block)
+    public void ResetFlow()
     {
-      var blockCoordinates = block.Coordinates;
-      var distance = Vector3Int.Distance(blockCoordinates, coordinates);
-      var far = distance != 1f;
-      return far;
+      foreach (var gate in waterGates)
+      {
+        gate.ResetFlow();
+      }
     }
 
-    public void WaterGateCheckInput(BlockObject block)
+    public WaterGate GetGate(Vector3Int coordinates)
     {
-      if (!isEnabled || block == null || block?.IsFinished == false || IsFar(block))
-        return;
+      if (!isEnabled || coordinates == null)
+        return null;
       WaterGate gate = waterGates
         .FirstOrDefault((WaterGate gate) =>
-          gate.coordinates.Equals(block.Coordinates));
-      if (gate == null)
-        return;
-      gate.CheckInput();
+          ModUtils.IsEqual(gate.coordinates, coordinates));
+      return gate;
+    }
+
+    public WaterGate GetGate(BlockObject block)
+    {
+      if (!isEnabled || block?.IsFinished == false || ModUtils.IsFar(coordinates, block.Coordinates))
+        return null;
+      return GetGate(block.Coordinates);
     }
 
     public string GetInfo()
@@ -186,9 +191,11 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public string GetFragmentInfo()
     {
-      if (group == null)
-        return "no group";
-      return group.GetInfo();
+      string info = $"Pipe[\n";
+      info += $"  node={id} enabled={isEnabled} cord={coordinates.ToString()}\n ";
+      info += $"];\n";
+      info += group?.GetInfo() ?? "NO_GROUP";
+      return info;
     }
   }
 }

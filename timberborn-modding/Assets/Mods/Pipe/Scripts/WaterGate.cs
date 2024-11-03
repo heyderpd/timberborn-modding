@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.EntitySystem;
@@ -8,7 +9,8 @@ using Timberborn.WaterSystem;
 using Timberborn.BlockSystem;
 using Timberborn.WaterObjects;
 using Timberborn.TerrainSystem;
-using Timberborn.Localization;
+using Timberborn.Buildings;
+using Timberborn.Particles;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -28,7 +30,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private WaterGateState State;
 
-    private WaterGateFlow Flow = WaterGateFlow.STOP;
+    private WaterGateFlow? Flow = null;
     
     public PipeNode pipeNode { get; private set; }
 
@@ -62,6 +64,10 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public float ContaminationPercentage { get; private set; }
 
+    public ParticleSystem particleSystem { get; private set; }
+
+    private ParticlesRunner particlesRunner;
+
     public bool internalGateEnabled { get; private set; } = true;
 
     [Inject]
@@ -91,6 +97,15 @@ namespace Mods.OldGopher.Pipe.Scripts
       coordinates = blockObject.Transform(waterCoordinates);
       FloorOffset = WaterGateConfig.getFloorShift(Side);
       Floor = (float)(coordinates.z) + FloorOffset;
+
+      var _attachmentId = "Water.PipeStraight";
+      var _attachmentIds = new List<string>{_attachmentId};
+      var component = GetComponentFast<BuildingParticleAttachment>();
+      ModUtils.Log($"particle component={component != null}");
+      particlesRunner = component.CreateParticlesRunner(_attachmentIds);
+      ModUtils.Log($"particle particlesRunner={particlesRunner != null}");
+      //particlesRunner = GetComponentFast<BuildingParticleAttachment>().CreateParticlesRunner(_attachmentIds);
+      //particleSystem = ((Component)GetComponentFast<ModelAttachments>().GetOrCreateAttachment(_attachmentId).Transform).GetComponentInChildren<ParticleSystem>(true);
     }
 
     public void DeleteEntity() { }
@@ -116,7 +131,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
       catch (Exception err)
       {
-        OldGopherLog.Log($"#ERROR [WaterGate.IsUnderwater] id={id} err={err}");
+        ModUtils.Log($"#ERROR [WaterGate.IsUnderwater] id={id} err={err}");
         return false;
       }
     }
@@ -142,7 +157,10 @@ namespace Mods.OldGopher.Pipe.Scripts
         return true;
       } catch (Exception err)
       {
-        OldGopherLog.Log($"#ERROR [WaterGate.UpdateWaters] id={id} err={err}");
+        ModUtils.Log($"#ERROR [WaterGate.UpdateWaters] id={id} err={err}");
+        WaterLevel = 0f;
+        Water = 0f;
+        ContaminationPercentage = 0f;
         return false;
       }
     }
@@ -161,7 +179,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     public void UnsetConnection()
     {
       gateConnected = null;
-      pipeGroupQueue.WaterGateCheckInput(this);
+      pipeGroupQueue.Gate_Check(this);
     }
 
     public void ReleaseConnection()
@@ -180,13 +198,11 @@ namespace Mods.OldGopher.Pipe.Scripts
       return obstacle != null;
     }
 
-    public bool CheckInput(bool recalculate = true)
+    public bool CheckInput()
     {
       var oldState = State;
       _CheckInput();
       var changed = State == WaterGateState.CONNECTED || oldState != State;
-      if (recalculate && changed)
-        pipeGroupQueue.GroupRecalculateGates(pipeNode);
       return changed;
     }
 
@@ -194,14 +210,14 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       if (terrainService.Underground(coordinates))
       {
-        OldGopherLog.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=BLOCKED by underground");
+        ModUtils.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=BLOCKED by underground");
         State = WaterGateState.BLOCKED;
         return;
       }
       var block = blockService.GetObjectsWithComponentAt<BlockObject>(coordinates).FirstOrDefault();
       if (block == null || block?.IsFinished == false)
       {
-        OldGopherLog.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=EMPTY by block=null IsFinished={block?.IsFinished}");
+        ModUtils.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=EMPTY by block=null IsFinished={block?.IsFinished}");
         State = WaterGateState.EMPTY;
         return;
       }
@@ -209,7 +225,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       var connected = pipeNode.TryConnect(this, pipe);
       if (connected)
       {
-        OldGopherLog.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=CONNECTED by connected=true");
+        ModUtils.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=CONNECTED by connected=true");
         State = WaterGateState.CONNECTED;
         return;
       }
@@ -217,7 +233,12 @@ namespace Mods.OldGopher.Pipe.Scripts
       State = obstacle != null
         ? WaterGateState.BLOCKED
         : WaterGateState.EMPTY;
-      OldGopherLog.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State={State} by WaterObstacle");
+      ModUtils.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State={State} by WaterObstacle");
+    }
+
+    public void ResetFlow()
+    {
+      Flow = null;
     }
 
     public bool FlowNotChanged(float water)
@@ -227,22 +248,31 @@ namespace Mods.OldGopher.Pipe.Scripts
         newFlow = WaterGateFlow.OUT;
       if (water < 0f)
         newFlow = WaterGateFlow.IN;
-      if (Flow == newFlow)
+      if (Flow != null && Flow == newFlow)
         return true;
-      if (tick.Skip())
+      if (Flow != null && tick.Skip())
         return true;
       Flow = newFlow;
       return false;
     }
 
+    private void WaterParticleAnimation(float water)
+    {
+      if (water > 0)
+        particlesRunner.Play();
+      else
+        particlesRunner.Stop();
+    }
+
     public void MoveWater(float water, float contamination)
     {
+      WaterParticleAnimation(water);
       if (!isEnabled || notHasEmptySpace())
         return;
       float waterAbs = Mathf.Abs(water);
       float contaminatedWater = waterAbs * contamination;
       float cleanWater = waterAbs - contaminatedWater;
-      OldGopherLog.Log($"[WaterGate.MoveWater] pipe={pipeNode.id} id={id} water={water} waterAbs={waterAbs} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
+      ModUtils.Log($"[WaterGate.MoveWater] pipe={pipeNode.id} id={id} water={water} waterAbs={waterAbs} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
       if (water > 0f)
         AddWater(cleanWater, contaminatedWater);
       if (water < 0f)
@@ -253,7 +283,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       try
       {
-        OldGopherLog.Log($"[WaterGate.AddWater] pipe={pipeNode.id} id={id} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
+        ModUtils.Log($"[WaterGate.AddWater] pipe={pipeNode.id} id={id} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
         if (cleanWater > 0f)
           waterService.AddCleanWater(coordinates, cleanWater);
         if (contaminatedWater > 0f)
@@ -261,7 +291,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
       catch (Exception err)
       {
-        OldGopherLog.Log($"#ERROR [WaterGate.AddWater] id={id} err={err}");
+        ModUtils.Log($"#ERROR [WaterGate.AddWater] id={id} err={err}");
       }
     }
 
@@ -269,7 +299,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       try
       {
-        OldGopherLog.Log($"[WaterGate.RemoveWater] pipe={pipeNode.id} id={id} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
+        ModUtils.Log($"[WaterGate.RemoveWater] pipe={pipeNode.id} id={id} cleanWater={cleanWater} contaminatedWater={contaminatedWater}");
         if (!IsUnderwater())
           return;
         if (cleanWater > 0f)
@@ -279,7 +309,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
       catch (Exception err)
       {
-        OldGopherLog.Log($"#ERROR [WaterGate.RemoveWater] id={id} err={err}");
+        ModUtils.Log($"#ERROR [WaterGate.RemoveWater] id={id} err={err}");
       }
     }
 

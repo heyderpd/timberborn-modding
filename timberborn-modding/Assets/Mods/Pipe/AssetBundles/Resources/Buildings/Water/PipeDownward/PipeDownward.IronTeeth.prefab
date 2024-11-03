@@ -408,7 +408,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.2, y: 0.2, z: 1}
+  m_Size: {x: 0.5, y: 0.7, z: 1}
   m_Center: {x: 0.5, y: 0.5, z: 0.5}
 --- !u!114 &114736604760948331
 MonoBehaviour:
@@ -422,7 +422,7 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings\Water\PipeDownward\PipeDownward.Model
+  _modelName: Buildings\Water\PipeDownward\PipeDownward.IronTeeth.Model
 --- !u!1 &1842394135998225
 GameObject:
   m_ObjectHideFlags: 0
