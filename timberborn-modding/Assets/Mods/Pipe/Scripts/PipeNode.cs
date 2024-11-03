@@ -6,8 +6,6 @@ using Timberborn.Persistence;
 using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
-using System.Drawing;
-using Amazon.Runtime.Internal.Util;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {

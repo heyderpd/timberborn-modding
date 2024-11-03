@@ -10,6 +10,6 @@
     "Buildings/Water/PipeVertical/PipeVertical.Folktails",
     "Buildings/Water/PipeDownward/PipeDownward.Folktails",
     "Buildings/Water/PipeValve/PipeValve.Folktails",
-    "Buildings/Water/WaterPump/WaterPump.Folktails"
+    "Buildings/Water/PipeWaterPump/PipeWaterPump.Folktails"
   ]
 }

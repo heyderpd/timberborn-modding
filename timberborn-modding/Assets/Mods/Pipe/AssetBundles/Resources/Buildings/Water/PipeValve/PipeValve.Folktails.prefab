@@ -272,10 +272,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Type: 6
-  Mode: 2
-  StopWhenSubmerged: 1
+  Mode: 1
   HigthLimit: 0
-  DesiredWater: 0
 --- !u!114 &-1818964738542828118
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -290,9 +288,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Type: 5
   Mode: 2
-  StopWhenSubmerged: 0
   HigthLimit: 0
-  DesiredWater: 0
 --- !u!114 &4971155771503057506
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -305,6 +301,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9152e3e0a89013c4c931c2bdadf12d91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  canWorkAlone: 0
 --- !u!1 &1369983907444433
 GameObject:
   m_ObjectHideFlags: 0

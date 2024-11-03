@@ -6,7 +6,6 @@ using UnityEngine;
 using Timberborn.BlockSystem;
 using Timberborn.Common;
 using Timberborn.Coordinates;
-using UnityEngine.UIElements;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {

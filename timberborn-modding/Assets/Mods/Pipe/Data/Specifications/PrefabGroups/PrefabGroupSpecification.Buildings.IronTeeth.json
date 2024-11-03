@@ -10,6 +10,6 @@
     "Buildings/Water/PipeVertical/PipeVertical.IronTeeth",
     "Buildings/Water/PipeDownward/PipeDownward.IronTeeth",
     "Buildings/Water/PipeValve/PipeValve.IronTeeth",
-    "Buildings/Water/WaterPump/WaterPump.IronTeeth"
+    "Buildings/Water/PipeWaterPump/PipeWaterPump.IronTeeth"
   ]
 }

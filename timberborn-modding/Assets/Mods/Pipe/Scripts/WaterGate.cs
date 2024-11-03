@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.EntitySystem;
@@ -7,7 +6,6 @@ using Timberborn.BaseComponentSystem;
 using Timberborn.WaterSystem;
 using Timberborn.BlockSystem;
 using Timberborn.CoreUI;
-using UnityEngine.TestTools;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -29,13 +27,13 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private WaterGateFlow? Flow = null;
 
-    public bool CantAffectWaterLevel => Mode != WaterGateMode.BOTH;
+    public bool IsOnlyDelivery => Mode == WaterGateMode.ONLY_IN;
+    
+    public bool IsOnlyRequester => Mode == WaterGateMode.ONLY_OUT;
 
     public bool IsValve => Type == WaterGateType.VALVE;
 
     public bool IsWaterPump => Type == WaterGateType.WATERPUMP;
-
-    public bool IsInput => Mode == WaterGateMode.ONLY_IN;
 
     public PipeNode pipeNode { get; private set; }
 
@@ -63,9 +61,13 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public float HigthLimit;
 
+    public bool SuccessWhenCheckWater { get; private set; }
+
     public float WaterLevel { get; private set; }
 
-    public float Water { get; private set; }
+    public float WaterDetected { get; private set; }
+
+    public float WaterAvailable { get; private set; }
 
     public float ContaminationPercentage { get; private set; }
 
@@ -135,31 +137,27 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
     }
 
-    public bool UpdateWaters()
+    public void UpdateWaters()
     {
       try
       {
         if (!isEnabled)
         {
-          WaterLevel = 0f;
-          Water = 0f;
-          ContaminationPercentage = 0f;
-          return true;
+          SuccessWhenCheckWater = false;
+          return;
         }
         WaterLevel = threadSafeWaterMap.WaterHeightOrFloor(coordinates);
-        Water = Mathf.Max(WaterLevel - LowerLimit, 0f);
-        if (Water > 0f)
+        WaterDetected = Mathf.Max(WaterLevel - LowerLimit, 0f);
+        WaterAvailable = WaterService.LimitWater(WaterDetected);
+        if (WaterAvailable > 0f)
           ContaminationPercentage = threadSafeWaterMap.ColumnContamination(coordinates);
         else
           ContaminationPercentage = 0f;
-        return true;
+        SuccessWhenCheckWater = true;
       } catch (Exception err)
       {
         ModUtils.Log($"#ERROR [WaterGate.UpdateWaters] id={id} err={err}");
-        WaterLevel = 0f;
-        Water = 0f;
-        ContaminationPercentage = 0f;
-        return false;
+        SuccessWhenCheckWater = false;
       }
     }
 
@@ -179,65 +177,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         UnityEngine.Random.Range(0.0f, 1.0f)
       );
     }
-
-    public bool CanDelivereryWater(float average)
-    {
-      ModUtils.Log($"[WaterGate.CanDelivereryWater] type={Mode} average={average} IsWaterPump={IsWaterPump} Water={Water} WaterLevel={WaterLevel} check01={Water > 0f} check02={WaterLevel > average}");
-      if (Mode == WaterGateMode.ONLY_OUT)
-        return false;
-      if (IsWaterPump)
-        return true;
-      return Water > 0f && WaterLevel > average;
-    }
-
-    public bool CanRequestWater(float average)
-    {
-      ModUtils.Log($"[WaterGate.CanRequestWater] type={Mode} average={average} LowerLimit={LowerLimit} WaterLevel={WaterLevel} check01={average > LowerLimit} check02={average > WaterLevel}");
-      if (Mode == WaterGateMode.ONLY_IN)
-        return false;
-      if (IsWaterPump)
-        return true;
-      return average > LowerLimit && average > WaterLevel;
-    }
-
-    public static float LimitWater(float expectedWater)
-    {
-      float water = Mathf.Abs(expectedWater);
-      water = Mathf.Min(water, WaterService.maximumFlow);
-      water = water > WaterService.minimumFlow ? water : 0f;
-      return water;
-    }
-
-    public float GetDeliveryWater(float average)
-    {
-      if (IsWaterPump)
-        return WaterService.maximumFlow;
-      var limited = LimitWater(Water);
-      return limited;
-    }
-
-    private float GetRequesterWaterWithSubmergeLimit(float average)
-    {
-      if (WaterLevel > HigthLimit && HigthLimit > average && LowerLimit > average)
-        return 0f;
-      var maximumWater = WaterLevel > LowerLimit
-        ? HigthLimit - WaterLevel
-        : HigthLimit - LowerLimit;
-      maximumWater = Math.Max(maximumWater, 0f);
-      return maximumWater;
-    }
-
-    public float GetRequesterWater(float average)
-    {
-      if (IsWaterPump)
-        return WaterService.maximumFlow;
-      if (IsValve)
-        return GetRequesterWaterWithSubmergeLimit(average);
-      var water = average - WaterLevel;
-      var limited = LimitWater(water);
-      return limited;
-    }
-
+    
     public bool CheckConnection(WaterGate gate)
     {
       return gateConnected == gate && gate.gateConnected == this;
@@ -279,15 +219,20 @@ namespace Mods.OldGopher.Pipe.Scripts
     private WaterGateState _CheckInput()
     {
       var pipe = waterRadar.FindPipe(coordinates);
-      ModUtils.Log($"[WATER.CheckInput] 01 node={pipe?.id} gate={id} finding_pipe");
+      ModUtils.Log($"[WATER.CheckInput] 01 node={pipeNode?.id} nodeFound={pipe?.id} gate={id} finding_pipe");
+      if (pipeNode == pipe)
+      {
+        ModUtils.Log($"[WATER.CheckInput] 02 node={pipeNode?.id} nodeFound={pipe?.id} gate={id} State=EMPTY by found_same_pipe");
+        return WaterGateState.EMPTY;
+      }
       var connected = pipeNode.TryConnect(this, pipe);
       if (connected)
       {
-        ModUtils.Log($"[WATER.CheckInput] 02 node={pipeNode?.id} gate={id} State=CONNECTED by connected=true");
+        ModUtils.Log($"[WATER.CheckInput] 03 node={pipeNode?.id} nodeFound={pipe?.id} gate={id} State=CONNECTED by connected=true");
         return WaterGateState.CONNECTED;
       }
       var obstacle = waterRadar.FindWaterObstacle(coordinates);
-      ModUtils.Log($"[WATER.CheckInput] 03 node={pipe?.id} gate={id} obstacle={obstacle}");
+      ModUtils.Log($"[WATER.CheckInput] 04 node={pipeNode?.id} nodeFound={pipe?.id} gate={id} obstacle={obstacle}");
       return obstacle == WaterObstacleType.BLOCK
         ? WaterGateState.BLOCKED
         : WaterGateState.EMPTY;
@@ -372,15 +317,17 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
     }
 
-    public string GetInfo(bool endString = true)
+    public string GetInfo(bool close = true)
     {
       string info = $"  Gate[\n";
       info += $"    id={id} pipe={pipeNode?.id} enabled={isEnabled}\n";
-      info += $"    connected={gateConnected?.id}\n";
+      info += $"    connected={gateConnected?.id} success={SuccessWhenCheckWater}\n";
       info += $"    type={Type} mode={Mode} state={State}\n";
+      info += $"    IsWaterPump={IsWaterPump} IsValve={IsValve}\n";
+      info += $"    IsOnlyRequester={IsOnlyRequester} IsOnlyDelivery={IsOnlyDelivery}\n";
       info += $"    lower={LowerLimit.ToString("0.00")} higth={HigthLimit.ToString("0.00")} level={WaterLevel.ToString("0.00")}\n";
-      info += $"    detected={Water.ToString("0.00")} conta={ContaminationPercentage.ToString("0.00")}\n";
-      if (endString)
+      info += $"    detected={WaterDetected.ToString("0.00")} available={WaterAvailable.ToString("0.00")} conta={ContaminationPercentage.ToString("0.00")}\n";
+      if (close)
         info += $"  ];\n";
       return info;
     }
