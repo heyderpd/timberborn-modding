@@ -1,3 +1,5 @@
 ID,Text,Comment
-Building.Pipe.Description,Plays a work song that helps the beavers with their daily tasks.,
+Building.Pipe.Description,This pipe will change the game!,
 Building.Pipe.DisplayName,Pipe,
+Building.Pipe.Head,Pipe status,
+Building.Pipe.Depth,Pipe depth,
