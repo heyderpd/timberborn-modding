@@ -1,13 +1,13 @@
 ﻿namespace Mods.Pipe.Scripts
 {
-  public static class WaterGateFlow
+  internal enum WaterGateFlow
   {
-    public static readonly int STOP = 0;
-    public static readonly int IN = 1;
-    public static readonly int OUT = 2;
+    STOP,
+    IN,
+    OUT
   }
 
-  public enum WaterGateSide
+  internal enum WaterGateSide
   {
     FRONT,
     BACK,
@@ -17,41 +17,41 @@
     BOTTON
   }
 
-  public class WaterGateConfig
+  internal static class WaterGateConfig
   {
-    public float flow { get; private set; } = WaterGateFlow.STOP;
-
-    public void SetStop()
-    {
-      flow = WaterGateFlow.STOP;
-    }
-
-    public void SetIn()
-    {
-      flow = WaterGateFlow.IN;
-    }
-
-    public void SetOut()
-    {
-      flow = WaterGateFlow.OUT;
-    }
-
-    public bool IsCompatibleGate(WaterGateSide gate, WaterGateSide opposite)
+    public static float getFloorShift(WaterGateSide gate)
     {
       switch (gate)
       {
+        case WaterGateSide.TOP:
+          return 0f; // 0f
+        case WaterGateSide.BOTTON:
+          return 0f; // 1f
         case WaterGateSide.FRONT:
-          return opposite == WaterGateSide.BACK;
         case WaterGateSide.BACK:
-          return opposite == WaterGateSide.FRONT;
         case WaterGateSide.LEFT:
-          return opposite == WaterGateSide.RIGHT;
         case WaterGateSide.RIGHT:
-          return opposite == WaterGateSide.LEFT;
+        default:
+          return 0f; // 0.2f
+      }
+    }
+
+    public static bool IsCompatibleGate(WaterGateSide gate, WaterGateSide opposite)
+    {
+      switch (gate)
+      {
         case WaterGateSide.TOP:
           return opposite == WaterGateSide.BOTTON;
         case WaterGateSide.BOTTON:
           return opposite == WaterGateSide.TOP;
+        case WaterGateSide.FRONT:
+        case WaterGateSide.BACK:
+        case WaterGateSide.LEFT:
+        case WaterGateSide.RIGHT:
+          return opposite == WaterGateSide.FRONT
+            || opposite == WaterGateSide.BACK
+            || opposite == WaterGateSide.LEFT
+            || opposite == WaterGateSide.RIGHT;
         default:
           return false;
       }

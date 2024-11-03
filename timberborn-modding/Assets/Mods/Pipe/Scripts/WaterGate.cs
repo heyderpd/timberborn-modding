@@ -7,6 +7,9 @@ using Timberborn.BaseComponentSystem;
 using Timberborn.WaterSystem;
 using Timberborn.BlockSystem;
 using Timberborn.WaterObjects;
+using UnityEngine.Rendering;
+using UnityEngine.TestTools;
+using Timberborn.TerrainSystem;
 
 namespace Mods.Pipe.Scripts
 {
@@ -26,38 +29,46 @@ namespace Mods.Pipe.Scripts
     [SerializeField]
     public WaterGateSide waterGateSide;
 
-    public WaterGateConfig config = new WaterGateConfig();
-
+    private WaterGateFlow waterGateFlow = WaterGateFlow.STOP;
+    
     private PipeNode pipeNode;
 
     public WaterGate gateConnected;
 
     private BlockObject blockObject;
 
-    private BlockService blockService;
-
     public Vector3Int coordinates { get; private set; }
+
+    private ITerrainService terrainService;
+
+    private BlockService blockService;
 
     private IWaterService waterService;
 
     private IThreadSafeWaterMap threadSafeWaterMap;
 
+    public float Floor { get; private set; }
+
+    public float WaterLevel { get; private set; }
+
     public float Water { get; private set; }
 
-    public float CleanWater { get; private set; }
+    public float DesiredWater;
 
-    public float ContaminatedWater { get; private set; }
+    public float ContaminationPercentage { get; private set; }
 
     [Inject]
     public void InjectDependencies(
+      ITerrainService _terrainService,
       IWaterService _waterService,
       IThreadSafeWaterMap _threadSafeWaterMap,
       BlockService _blockService
     )
     {
+      terrainService = _terrainService;
+      blockService = _blockService;
       waterService = _waterService;
       threadSafeWaterMap = _threadSafeWaterMap;
-      blockService = _blockService;
     }
 
     public void Awake()
@@ -69,6 +80,7 @@ namespace Mods.Pipe.Scripts
     public void InitializeEntity()
     {
       coordinates = blockObject.Transform(waterCoordinates);
+      Floor = (float)(coordinates.z) + WaterGateConfig.getFloorShift(waterGateSide);
     }
 
     public void DeleteEntity() { }
@@ -87,57 +99,44 @@ namespace Mods.Pipe.Scripts
     {
       try
       {
-        if (threadSafeWaterMap == null || !isEnabled || notHasEmptySpace())
+        if (threadSafeWaterMap == null || !isEnabled)
           return false;
         var underwater = threadSafeWaterMap.CellIsUnderwater(coordinates);
         return underwater;
       }
       catch (Exception err)
       {
-        Debug.Log($"#ERROR GATE.IsUnderwater id={id} err={err}");
+        Debug.Log($"#ERROR [WaterGate.IsUnderwater] id={id} err={err}");
         return false;
       }
     }
 
-    private float GetWater()
+    public bool UpdateWaters()
     {
       try
       {
-        if (!IsUnderwater())
-          return 0f;
-        float totalWaterAmount = threadSafeWaterMap.WaterHeightOrFloor(coordinates);
-        var water = totalWaterAmount - (float)(coordinates.z);
-        return Mathf.Max(water, 0f);
+        //Debug.Log($"#LOG GATE.GetWaters id={id} start");
+        if (!isEnabled || !IsUnderwater())
+        {
+          WaterLevel = 0f;
+          Water = 0f;
+          ContaminationPercentage = 0f;
+          return true;
+        }
+        WaterLevel = threadSafeWaterMap.WaterHeightOrFloor(coordinates);
+        Water = Mathf.Max(WaterLevel - Floor, 0f);
+        if (Water > 0f)
+          ContaminationPercentage = threadSafeWaterMap.ColumnContamination(coordinates);
+        else
+          ContaminationPercentage = 0f;
+        DesiredWater = Water;
+        Debug.Log($"[WaterGate.UpdateWaters] id={id} Water={Water} WaterConta={ContaminationPercentage} end");
+        return true;
       } catch (Exception err)
       {
-        Debug.Log($"#ERROR GATE.GetWater id={id} err={err}");
-        return 0f;
+        Debug.Log($"#ERROR [WaterGate.UpdateWaters] id={id} err={err}");
+        return false;
       }
-    }
-
-    private float GetContaminatedWater()
-    {
-      try
-      {
-        if (!IsUnderwater() || Water == 0f)
-          return 0f;
-        float availableWater = Water;
-        float contaminationPercentage = threadSafeWaterMap.ColumnContamination(coordinates);
-        return availableWater * contaminationPercentage;
-      }
-      catch (Exception err)
-      {
-        Debug.Log($"#ERROR GATE.GetContaminatedWater id={id} err={err}");
-        return 0f;
-      }
-    }
-
-    public void UpdateAvailableWaters()
-    {
-      Debug.Log($"GATE.UpdateAvailableWaters id={id}");
-      Water = GetWater();
-      ContaminatedWater = GetContaminatedWater();
-      CleanWater = Water - ContaminatedWater;
     }
 
     public void SetDisabled()
@@ -148,107 +147,109 @@ namespace Mods.Pipe.Scripts
     public void ReleaseConnection()
     {
       gateConnected = null;
-      pipeNode.groupCheckGate(this);
+      PipeGroupQueue.GroupRecalculeGates(pipeNode.group);
     }
 
     private bool notHasEmptySpace()
     {
+      if (terrainService.Underground(coordinates))
+      {
+        //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={false} by terrain");
+        return true;
+      }
       var obstacle = blockService.GetObjectsWithComponentAt<WaterObstacle>(coordinates).FirstOrDefault();
-      Debug.Log($"GATE.notHasEmptySpace pipeNode={pipeNode.id} gate={id} isObstacle={obstacle != null}");
+      //Debug.Log($"GATE.notHasEmptySpace pipeNode={pipeNode.id} gate={id} isObstacle={obstacle != null}");
       return obstacle != null;
     }
 
-    public bool CheckClearInput()
+    public bool CheckInput()
     {
+      if (terrainService.Underground(coordinates))
+      {
+        //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={false} by terrain");
+        return internalGateEnabled = false;
+      }
       var block = blockService.GetObjectsWithComponentAt<BlockObject>(coordinates).FirstOrDefault();
       if (block == null)
       {
-        Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={true} by empty");
+        //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={true} by empty");
         return internalGateEnabled = true;
       }
       var pipe = block.GetComponentFast<PipeNode>();
       var connected = pipe != null ? pipeNode.TryConnect(this, pipe) : false;
       if (connected)
       {
-        Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={false} by connected");
+        //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={false} by connected");
         return internalGateEnabled = false;
       }
       var obstacle = block.GetComponentFast<WaterObstacle>();
-      Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={obstacle == null} by obstacle");
+      //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={obstacle == null} by obstacle");
       return internalGateEnabled = obstacle == null;
     }
 
-    public void AddWater(float cleanWater, float contaminatedWater)
+    public bool CheckFlowChanged(float water)
     {
-      try
-      {
-        //Debug.Log($"GATE.AddWater id={id} start");
-        if (!isEnabled || notHasEmptySpace())
-        {
-          //Debug.Log($"GATE.AddWater id={id} isEnabled={isEnabled} nospace={notHasEmptySpace()} abort");
-          return;
-        }
-        //Debug.Log($"GATE.AddWater water={cleanWater} conta={contaminatedWater} work");
-        if (cleanWater > 0f)
-        {
-          waterService.AddCleanWater(coordinates, cleanWater);
-        }
-        if (contaminatedWater > 0f)
-        {
-          waterService.AddContaminatedWater(coordinates, contaminatedWater);
-        }
-        //Debug.Log($"GATE.AddWater id={id} end");
-      }
-      catch (Exception err)
-      {
-        Debug.Log($"#ERROR GATE.AddWater id={id} err={err}");
-      }
+      var newFlow = WaterGateFlow.STOP;
+      if (water > 0f)
+        newFlow = WaterGateFlow.OUT;
+      if (water < 0f)
+        newFlow = WaterGateFlow.IN;
+      if (waterGateFlow == newFlow)
+        return true;
+      waterGateFlow = newFlow;
+      return false;
     }
 
-    public void RemoveWater(float cleanWater, float contaminatedWater)
+    public void MoveWater(float water)
     {
-      try
-      {
-        //Debug.Log($"GATE.RemoveWater id={id} start");
-        if (!isEnabled || !IsUnderwater())
-        {
-          //Debug.Log($"GATE.RemoveWater id={id} isEnabled={isEnabled} nospace={notHasEmptySpace()} abort");
-          return;
-        }
-        //Debug.Log($"GATE.RemoveWater water={cleanWater} conta={contaminatedWater} work");
-        if (cleanWater > 0f)
-        {
-          waterService.RemoveCleanWater(coordinates, cleanWater);
-        }
-        if (contaminatedWater > 0f)
-        {
-          waterService.RemoveContaminatedWater(coordinates, contaminatedWater);
-        }
-        //Debug.Log($"GATE.RemoveWater id={id} end");
-      }
-      catch (Exception err)
-      {
-        Debug.Log($"#ERROR GATE.RemoveWater id={id} err={err}");
-      }
-    }
-
-    public void MoveWater(float cleanWater, float contaminatedWater)
-    {
-      bool isAddWater = cleanWater >= 0f && contaminatedWater >= 0f;
-      cleanWater = Mathf.Abs(cleanWater);
-      contaminatedWater = Mathf.Abs(contaminatedWater);
-      if (isAddWater)
-      {
+      if (!isEnabled || notHasEmptySpace())
+        return;
+      float waterAbs = Mathf.Abs(water);
+      float contaminatedWater = waterAbs * ContaminationPercentage;
+      float cleanWater = waterAbs - contaminatedWater;
+      if (water > 0f)
         AddWater(cleanWater, contaminatedWater);
-      } else
-      {
+      if (water < 0f)
         RemoveWater(cleanWater, contaminatedWater);
+    }
+
+    private void AddWater(float cleanWater, float contaminatedWater)
+    {
+      try
+      {
+        if (cleanWater > 0f)
+          waterService.AddCleanWater(coordinates, cleanWater);
+        if (contaminatedWater > 0f)
+          waterService.AddContaminatedWater(coordinates, contaminatedWater);
+      }
+      catch (Exception err)
+      {
+        Debug.Log($"#ERROR [WaterGate.AddWater] id={id} err={err}");
+      }
+    }
+
+    private void RemoveWater(float cleanWater, float contaminatedWater)
+    {
+      try
+      {
+        if (!IsUnderwater())
+          return;
+        if (cleanWater > 0f)
+          waterService.RemoveCleanWater(coordinates, cleanWater);
+        if (contaminatedWater > 0f)
+          waterService.RemoveContaminatedWater(coordinates, contaminatedWater);
+      }
+      catch (Exception err)
+      {
+        Debug.Log($"#ERROR [WaterGate.RemoveWater] id={id} err={err}");
       }
     }
 
     public string GetInfo()
     {
-      string info = $"  Gate[nodeId={pipeNode.id}, nodeId={id}, cord={coordinates.ToString()}, pos={waterCoordinates.ToString()}, flow={config.flow}, side={waterGateSide}, enabled={isEnabled}, water={Water.ToString("0.00")}];\n";
+      string info = $"  *Gate[\n node={pipeNode?.id}\n gate={id}\n cord={coordinates.ToString()}\n side={waterGateSide}\n flow={waterGateFlow}\n ";
+      info += $"gateConnected={gateConnected?.id}\n enabled={isEnabled}\n ";
+      info += $"Floor={Floor.ToString("0.00")}\n WaterLevel={WaterLevel.ToString("0.00")}\n Water={Water.ToString("0.00")}\n DesiredWater={DesiredWater.ToString("0.00")}];\n";
       return info;
     }
   }

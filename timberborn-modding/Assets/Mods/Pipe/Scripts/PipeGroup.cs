@@ -1,6 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Timberborn.Common;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.TestTools;
+using static UnityEngine.EventSystems.EventTrigger;
 
 namespace Mods.Pipe.Scripts
 {
@@ -12,76 +17,56 @@ namespace Mods.Pipe.Scripts
 
     public readonly int id = lastId++;
 
-    private TickCount tick = new TickCount();
+    private TickCount nodesTick = new TickCount();
 
-    private TickCount waterTick = new TickCount(10);
+    public readonly HashSet<PipeNode> Pipes = new HashSet<PipeNode>();
 
-    private readonly PipeGroupQueue changes;
+    private List<WaterGate> WaterGates = new List<WaterGate>();
 
-    private readonly HashSet<PipeNode> pipeNodes = new HashSet<PipeNode>();
-
-    private List<WaterGate> waterGates = new List<WaterGate>();
-
-    public PipeGroup()
-    {
-      changes = new PipeGroupQueue(this);
-    }
+    private int PipesCount => Pipes.Count;
 
     public bool Same(PipeGroup group)
     {
       return group != null && this.Equals(group);
     }
 
-    public void SetChanged()
+    public void PipeAdd(PipeNode node)
     {
-      changes.AddChanged();
+      Pipes.Add(node);
     }
 
-    public void Add(PipeNode node)
+    public void PipeRemove(PipeNode node)
     {
-      changes.AddNode(node);
-    }
-
-    public void Remove(PipeNode node)
-    {
-      changes.RemoveNode(node);
-    }
-
-    public void CheckPipe(PipeNode node)
-    {
-      changes.CheckPipe(node);
-    }
-
-    public void CheckGate(WaterGate gate)
-    {
-      changes.CheckGate(gate);
+      Pipes.Remove(node);
     }
 
     public void Clear()
     {
       isEnabled = false;
-      pipeNodes.Clear();
-      waterGates.Clear();
+      Pipes.Clear();
+      WaterGates.Clear();
     }
 
     public void UnionTo(PipeGroup group)
     {
       if (Same(group))
-      {
         return;
+      foreach (var pipe in Pipes)
+      {
+        pipe.SetGroup(group);
       }
-      changes.MigrateAndClear(group);
+      Clear();
     }
 
-    private void discoveryInputs()
+    public void recalculeGates()
     {
       Debug.Log($"GROUP.discovery group={id} start");
-      if (pipeNodes.Count == 0)
+      if (Pipes.Count == 0)
       {
-        waterGates.Clear();
+        WaterGates.Clear();
         return;
       }
-      waterGates = pipeNodes.ToList()
+      WaterGates = Pipes.ToList()
         .Where((PipeNode node) => node.hasGatesEnabled)
         .Aggregate(
           new List<WaterGate>(),
@@ -97,64 +82,29 @@ namespace Mods.Pipe.Scripts
         .ToList();
     }
 
-    private void tryMoveWater()
+    private bool Skip()
     {
-      if (waterGates.Count <= 1)// || waterTick.Skip())
-      {
-        return;
-      }
-      float minWater = 0.02f;
-      float average = 0f;
-      foreach (var gate in waterGates)
-      {
-        if (!gate.isEnabled)
-          continue;
-        gate.UpdateAvailableWaters();
-        average += gate.Water;
-      }
-      average = average / waterGates.Count;
-      foreach (var gate in waterGates)
-      {
-        var water = average - gate.Water;
-        if (Mathf.Abs(water) < minWater)
-          continue;
-        Debug.Log($"GROUP.movewater count={waterGates.Count} average={average} gate.id={gate.id} gate.Water={gate.Water} water={water}");
-        gate.MoveWater(water, 0f);
-      }
-    }
-
-    private bool SkipTick()
-    {
-      if (pipeNodes.Count <= 1)
-      {
+      if (Pipes.Count <= 1)
         return false;
-      }
-      var count = pipeNodes.Where((PipeNode node) => node.isEnabled).Count();
-      tick.SetMaxTicks(count);
-      return tick.Skip();
+      int count = Pipes.Where((PipeNode node) => node.isEnabled).Count();
+      if (count <= 1)
+        return false;
+      nodesTick.SetMaxTicks(count);
+      return nodesTick.Skip();
     }
 
-    public void Tick()
+    public void DoMoveWater()
     {
-      if (!isEnabled || SkipTick())
-      {
+      if (!isEnabled)
         return;
-      }
-      var changed = changes.ConsumeChanges(pipeNodes);
-      if (changed)
-        discoveryInputs();
-      tryMoveWater();
+      MoveWater.Do(WaterGates);
     }
 
     public string GetInfo()
     {
-      string info = $"Group[id={id}, enabled={isEnabled} nodes={pipeNodes.Count}:\n";
-      /*foreach (var node in pipeNodes.ToList())
-      {
-        info += node.GetInfo();
-      }*/
-      info += $"gates={waterGates.Count}:\n";
-      foreach (var gate in waterGates.ToList())
+      string info = $"Group[id={id}, enabled={isEnabled} nodes={Pipes.Count}:\n";
+      info += $"gates={WaterGates.Count}:\n";
+      foreach (var gate in WaterGates.ToList())
       {
         info += gate.GetInfo();
       }

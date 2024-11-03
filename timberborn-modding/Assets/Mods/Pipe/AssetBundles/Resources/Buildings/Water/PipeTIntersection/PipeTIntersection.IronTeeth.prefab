@@ -86,8 +86,8 @@ GameObject:
   - component: {fileID: 114709933830190137}
   - component: {fileID: -1818964738542828118}
   - component: {fileID: -1302879299329295200}
-  - component: {fileID: 4971155771503057506}
   - component: {fileID: 5127242608008803914}
+  - component: {fileID: 4971155771503057506}
   m_Layer: 0
   m_Name: PipeTIntersection.IronTeeth
   m_TagString: Untagged
@@ -287,21 +287,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterCoordinates: {x: 1, y: 0, z: 0}
+  waterCoordinates: {x: -1, y: 0, z: 0}
   waterGateSide: 2
   gateConnected: {fileID: 0}
---- !u!114 &4971155771503057506
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1307462774176390}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9152e3e0a89013c4c931c2bdadf12d91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &5127242608008803914
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -317,6 +305,18 @@ MonoBehaviour:
   waterCoordinates: {x: 0, y: 1, z: 0}
   waterGateSide: 0
   gateConnected: {fileID: 0}
+--- !u!114 &4971155771503057506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1307462774176390}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9152e3e0a89013c4c931c2bdadf12d91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1369983907444433
 GameObject:
   m_ObjectHideFlags: 0

@@ -84,8 +84,8 @@ GameObject:
   - component: {fileID: 114536901920753065}
   - component: {fileID: 114790364128370181}
   - component: {fileID: 114709933830190137}
-  - component: {fileID: -1818964738542828118}
   - component: {fileID: -1302879299329295200}
+  - component: {fileID: -1818964738542828118}
   - component: {fileID: 4971155771503057506}
   m_Layer: 0
   m_Name: PipeDownward.IronTeeth
@@ -259,6 +259,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _progressThresholds:
   - 0
+--- !u!114 &-1302879299329295200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1307462774176390}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  waterCoordinates: {x: 0, y: -1, z: 0}
+  waterGateSide: 1
+  gateConnected: {fileID: 0}
 --- !u!114 &-1818964738542828118
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -273,21 +288,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   waterCoordinates: {x: 0, y: 0, z: -1}
   waterGateSide: 5
-  gateConnected: {fileID: 0}
---- !u!114 &-1302879299329295200
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1307462774176390}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  waterCoordinates: {x: 0, y: 1, z: 0}
-  waterGateSide: 0
   gateConnected: {fileID: 0}
 --- !u!114 &4971155771503057506
 MonoBehaviour:

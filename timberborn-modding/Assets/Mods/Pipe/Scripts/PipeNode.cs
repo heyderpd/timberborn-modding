@@ -30,7 +30,7 @@ namespace Mods.Pipe.Scripts
 
     private BlockService blockService;
 
-    private PipeGroup group = new PipeGroup();
+    public PipeGroup group { get; private set; }
 
     public List<WaterGate> waterGates { get; private set; }
 
@@ -52,13 +52,13 @@ namespace Mods.Pipe.Scripts
       waterGates = new List<WaterGate>();
       GetComponentsFast<WaterGate>(waterGates);
       blockObject = GetComponentFast<BlockObject>();
-      group.Add(this);
+      PipeGroupQueue.PipeNodeCreate(this);
     }
 
     public void InitializeEntity()
     {
       coordinates = blockObject.Coordinates;
-      CheckNear();
+      PipeGroupQueue.PipeNodeCheckGates(this);
     }
 
     public void DeleteEntity()
@@ -69,8 +69,7 @@ namespace Mods.Pipe.Scripts
         var otherGate = _gate.gateConnected;
         otherGate?.ReleaseConnection();
       }
-      group?.SetChanged();
-      group?.Remove(this);
+      PipeGroupQueue.PipeNodeRemove(group, this);
     }
 
     public void Save(IEntitySaver entitySaver) { }
@@ -93,44 +92,41 @@ namespace Mods.Pipe.Scripts
     {
       if (!isEnabled)
         return;
-      group.Tick();
+      PipeGroupManager.Tick();
     }
 
     public void SetGroup(PipeGroup _group)
     {
       group = _group;
-      group.Add(this);
+      group.PipeAdd(this);
     }
 
     public bool TryConnect(WaterGate startGate, PipeNode node)
     {
-      if (group.Same(node.group))
+      if (group.Same(node?.group))
       {
         Debug.Log($"PIPE.TryConnect pipe={id} thisGroup={group.id} otherGroup={node.group.id} not_same_group");
         return true;
       }
       WaterGate endGate = node.waterGates
-        .Find((WaterGate gate) => gate.coordinates.Equals(coordinates));
+        .Find((WaterGate gate) => 
+          WaterGateConfig.IsCompatibleGate(gate.waterGateSide, gate.waterGateSide)
+          && gate.coordinates.Equals(coordinates));
       if (!endGate)
       {
         Debug.Log($"PIPE.TryConnect thisPipe={id}.by_gate={startGate.id} otherPipe={node.GetInfo()} gate_not_found");
         return false;
       }
-      startGate.gateConnected = endGate;
-      endGate.gateConnected = startGate;
-      group.UnionTo(node.group);
       startGate.SetDisabled();
       endGate.SetDisabled();
+      startGate.gateConnected = endGate;
+      endGate.gateConnected = startGate;
+      PipeGroupQueue.PipeNodeJoin(node, this);
       Debug.Log($"PIPE.TryConnect thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} connected");
       return true;
     }
 
-    public void groupCheckGate(WaterGate gate)
-    {
-      group.CheckGate(gate);
-    }
-
-    public void CheckNear()
+    public void CheckGates()
     {
       Debug.Log($"PIPE.CheckNear group={group.id} pipe={id} EXECUTE");
       if (!isEnabled)
@@ -138,11 +134,11 @@ namespace Mods.Pipe.Scripts
       var enabled = false;
       foreach (var gate in waterGates)
       {
-        var gateEnabled = gate.CheckClearInput();
+        var gateEnabled = gate.CheckInput();
         enabled = enabled || gateEnabled;
       }
       hasGatesEnabled = enabled;
-      group.SetChanged();
+      PipeGroupQueue.GroupRecalculeGates(group);
     }
 
     private bool IsFar(BlockObject block)
@@ -173,7 +169,7 @@ namespace Mods.Pipe.Scripts
 
     public string GetInfo()
     {
-      string info = $" Node[id={id}, group={group?.id}, coordinates={this.coordinates}, enabled={isEnabled} gates={waterGates.Count}:\n";
+      string info = $" Node[id={id}, group={group?.id}, coordinates={this.coordinates}, enabled={isEnabled}, gates={waterGates.Count}:\n";
       foreach (var gate in waterGates)
       {
         info += gate.GetInfo();
@@ -185,6 +181,7 @@ namespace Mods.Pipe.Scripts
     public string GetFragmentInfo()
     {
       return group.GetInfo();
+      //return GetInfo() + group.GetInfo();
     }
   }
 }

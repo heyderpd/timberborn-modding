@@ -288,7 +288,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterCoordinates: {x: 1, y: 0, z: 0}
+  waterCoordinates: {x: -1, y: 0, z: 0}
   waterGateSide: 2
   gateConnected: {fileID: 0}
 --- !u!114 &6829483168243557917
@@ -303,7 +303,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterCoordinates: {x: -1, y: 0, z: 0}
+  waterCoordinates: {x: 1, y: 0, z: 0}
   waterGateSide: 3
   gateConnected: {fileID: 0}
 --- !u!114 &-1302879299329295200

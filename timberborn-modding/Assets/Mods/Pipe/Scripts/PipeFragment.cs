@@ -2,40 +2,39 @@
 using Timberborn.CoreUI;
 using Timberborn.EntityPanelSystem;
 using Timberborn.Localization;
+using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Mods.Pipe.Scripts
 {
   public class PipeFragment : IEntityPanelFragment
   {
-    private static readonly string DepthLocKey = "Building.Pipe.Depth";
-
-    private readonly VisualElementLoader _visualElementLoader;
-    private readonly ILoc _loc;
+    private readonly VisualElementLoader visualElementLoader;
+    private readonly ILoc loc;
 
     private PipeNode pipeNode;
     private VisualElement root;
-    private Label depthLabel;
+    private Label text;
 
     public PipeFragment(
-      VisualElementLoader visualElementLoader,
-      ILoc loc,
-      DebugFragmentFactory debugFragmentFactory
+      VisualElementLoader _visualElementLoader,
+      ILoc _loc
     )
     {
-      _visualElementLoader = visualElementLoader;
-      _loc = loc;
+      visualElementLoader = _visualElementLoader;
+      loc = _loc;
     }
 
     public VisualElement InitializeFragment()
     {
-      root = _visualElementLoader.LoadVisualElement("Game/EntityPanel/StreamGaugeFragment");
-      root.ToggleDisplayStyle(visible: false);
-      depthLabel = root.Q<Label>("DepthLabel");
-      depthLabel.text = "";
-      (root.Q<Label>("GreatestDepthLabel")).text = "";
-      (root.Q<Label>("CurrentLabel")).text = "";
-      (root.Q<Label>("ContaminationLabel")).text = "";
+      root = new VisualElement();
+      var box = new Box();
+      //box.style.width = 20;
+      box.style.backgroundColor = Color.white;
+      text = new Label();
+      text.style.color = Color.black;
+      box.Add(text);
+      root.Add(box);
       return root;
     }
 
@@ -57,8 +56,7 @@ namespace Mods.Pipe.Scripts
         return;
       }
       root.ToggleDisplayStyle(true);
-      depthLabel.text = pipeNode.GetFragmentInfo();
-      //depthLabel.text = _loc.T(pipeNode.GetFragmentInfo());
+      text.text = pipeNode.GetFragmentInfo(); //  _loc.T(pipeNode.GetFragmentInfo());
     }
   }
 }
