@@ -19,11 +19,12 @@ GameObject:
   - component: {fileID: 114594761574811845}
   - component: {fileID: 114615458628604947}
   - component: {fileID: -6469061506973969010}
-  - component: {fileID: 8545899531805618560}
-  - component: {fileID: -2650415219288666980}
-  - component: {fileID: 5598944675834588094}
+  - component: {fileID: 114967471623217779}
+  - component: {fileID: 3859730403716210455}
+  - component: {fileID: 3908924080598491517}
+  - component: {fileID: 2918800193914806410}
   m_Layer: 0
-  m_Name: PipeStraight.IronTeeth
+  m_Name: PipeBox.IronTeeth
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -61,6 +62,8 @@ MonoBehaviour:
   _selectionSoundName: Default
   _loopingSoundName: 
   _buildingCost:
+  - _goodId: Log
+    _amount: 12
   - _goodId: MetalBlock
     _amount: 5
   _scienceCost: 300
@@ -95,7 +98,7 @@ MonoBehaviour:
   m_Script: {fileID: -731835049, guid: b5f268a4cb31a93ed707a95d3a502b0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _prefabName: PipeStraight.IronTeeth
+  _prefabName: PipeBox.IronTeeth
   _backwardCompatiblePrefabNames: []
   _requiredFeatureToggle: 
   _disablingFeatureToggle: 
@@ -139,7 +142,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _toolGroupId: Water
-  _toolOrder: 82
+  _toolOrder: 81
   _toolShape: 0
   _layout: 1
   _customPivot:
@@ -171,10 +174,10 @@ MonoBehaviour:
   m_Script: {fileID: 652365310, guid: b6b9d4cc3090b6fceb2eb6438dd271f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _displayNameLocKey: Building.PipeStraight.DisplayName
-  _descriptionLocKey: Building.PipeStraight.Description
+  _displayNameLocKey: Building.PipeBox.DisplayName
+  _descriptionLocKey: Building.PipeBox.Description
   _flavorDescriptionLocKey: 
-  _imagePath: Buildings/Decorations/Pipe/PipeStraight/PipeStraightIcon
+  _imagePath: Buildings/Water/PipeBox/PipeBoxIcon
 --- !u!114 &114594761574811845
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -217,10 +220,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _noAutoWalls: 0
-  _generateFloorsOnStackable: 0
+  _generateFloorsOnStackable: 1
   _blockAllEdges: 0
   _addedEdges: []
---- !u!114 &8545899531805618560
+--- !u!114 &114967471623217779
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -229,13 +232,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 1001718728464631}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
+  m_Script: {fileID: -1668926802, guid: 915d565361ffc0071cb972b12ad62c80, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterCoordinates: {x: 0, y: 1, z: 0}
-  waterGateSide: 1
-  gateConnected: {fileID: 0}
---- !u!114 &-2650415219288666980
+  _coordinates:
+  - {x: 0, y: 0}
+--- !u!114 &3859730403716210455
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -248,9 +250,24 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   waterCoordinates: {x: 0, y: -1, z: 0}
+  waterGateSide: 1
+  gateConnected: {fileID: 0}
+--- !u!114 &3908924080598491517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001718728464631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  waterCoordinates: {x: 0, y: 1, z: 0}
   waterGateSide: 0
   gateConnected: {fileID: 0}
---- !u!114 &5598944675834588094
+--- !u!114 &2918800193914806410
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -495,4 +512,4 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings\Decorations\Pipe\PipeStraight\PipeStraight.IronTeeth.Model
+  _modelName: Buildings\Water\PipeBox\PipeBox.IronTeeth.Model

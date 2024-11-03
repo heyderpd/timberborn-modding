@@ -3,7 +3,7 @@
   "BackwardCompatibleIds": [
   ],
   "Order": 81,
-  "NeedGroupId": "Water",
+  "NeedGroupId": "BasicNeeds",
   "CharacterType": "Beaver",
   "DisplayNameLocKey": "Building.PipeBox.DisplayName",
   "StartingValue": 0.0,

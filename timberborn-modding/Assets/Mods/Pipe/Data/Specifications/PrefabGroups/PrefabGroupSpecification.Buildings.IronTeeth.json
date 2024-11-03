@@ -1,7 +1,7 @@
 {
   "Id": "Buildings.IronTeeth",
   "Paths#append": [
-    "Buildings/Decorations/Pipe/PipeBox/PipeBox.IronTeeth",
-    "Buildings/Decorations/Pipe/PipeStraight/PipeStraight.IronTeeth"
+    "Buildings/Water/PipeBox/PipeBox.IronTeeth",
+    "Buildings/Water/PipeStraight/PipeStraight.IronTeeth"
   ]
 }

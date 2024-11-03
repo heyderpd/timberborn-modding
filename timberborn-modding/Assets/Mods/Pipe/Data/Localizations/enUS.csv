@@ -1,6 +1,7 @@
 ID,Text,Comment
-Building.Pipe.Description,This pipe will change the game!,
 Building.PipeBox.DisplayName,Pipe Box,
+Building.PipeBox.Description,This pipe will change the game!,
 Building.PipeStraight.DisplayName,Pipe Straight,
+Building.PipeStraight.Description,This pipe will change the game!,
 Building.Pipe.Head,Pipe status,
 Building.Pipe.Depth,Pipe depth,
