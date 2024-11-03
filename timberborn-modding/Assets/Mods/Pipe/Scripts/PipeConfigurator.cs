@@ -1,12 +1,7 @@
 ﻿using Bindito.Core;
-using Mods.OldGopher.Pipe.Scripts;
 using Timberborn.Buildings;
 using Timberborn.EntityPanelSystem;
-using Timberborn.PathSystem;
-using Timberborn.Rendering;
 using Timberborn.TemplateSystem;
-using Timberborn.WaterBuildings;
-using Timberborn.WaterObjects;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -18,11 +13,8 @@ namespace Mods.OldGopher.Pipe.Scripts
       containerDefinition.Bind<WaterRadar>().AsSingleton();
       containerDefinition.Bind<PipeGroupQueue>().AsSingleton();
       containerDefinition.Bind<PipeGroupManager>().AsSingleton();
-      if (ModUtils.enabled)
-      {
-        containerDefinition.Bind<PipeFragment>().AsSingleton();
-        containerDefinition.MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();
-      }
+      containerDefinition.Bind<PipeFragment>().AsSingleton();
+      containerDefinition.MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();
       containerDefinition.MultiBind<TemplateModule>().ToProvider(ProvideTemplateModule).AsSingleton();
     }
 
@@ -40,7 +32,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       public EntityPanelModule Get()
       {
         var builder = new EntityPanelModule.Builder();
-        builder.AddSideFragment(pipeFragment);
+        builder.AddMiddleFragment(pipeFragment);
         return builder.Build();
       }
     }

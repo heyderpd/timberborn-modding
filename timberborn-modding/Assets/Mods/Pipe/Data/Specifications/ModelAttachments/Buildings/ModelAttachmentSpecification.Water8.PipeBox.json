@@ -1,0 +1,15 @@
+﻿{
+  "Id": "Water8.PipeBox",
+  "Prefab": "Environment/WaterDrops/WaterDrops",
+  "Parent": "#Finished",
+  "Position": {
+    "X": 0.5,
+    "Y": 0.5,
+    "Z": 1.7
+  },
+  "Rotation": {
+    "X": 0,
+    "Y": 0,
+    "Z": 0
+  }
+}

@@ -1,10 +1,19 @@
-﻿namespace Mods.OldGopher.Pipe.Scripts
+﻿using UnityEngine;
+
+namespace Mods.OldGopher.Pipe.Scripts
 {
   internal enum WaterGateState
   {
     EMPTY,
     BLOCKED,
     CONNECTED
+  }
+
+  internal enum WaterGateType
+  {
+    ONLY_IN,
+    ONLY_OUT,
+    BOTH
   }
 
   internal enum WaterGateFlow
@@ -16,12 +25,14 @@
 
   internal enum WaterGateSide
   {
-    FRONT,
     BACK,
+    FRONT,
     LEFT,
     RIGHT,
+    BOTTON,
     TOP,
-    BOTTON
+    VALVE,
+    WATERPUMP
   }
 
   public readonly struct WaterAddition
@@ -39,10 +50,36 @@
 
   internal static class WaterGateConfig
   {
-    public static float getFloorShift(WaterGateSide gate)
+    public static Vector3Int getCoordinates(WaterGateSide gate)
     {
       switch (gate)
       {
+        case WaterGateSide.BACK:
+          return new Vector3Int(0, -1, 0);
+        case WaterGateSide.FRONT:
+          return new Vector3Int(0, +1, 0);
+        case WaterGateSide.LEFT:
+          return new Vector3Int(-1, 0, 0);
+        case WaterGateSide.RIGHT:
+          return new Vector3Int(+1, 0, 0);
+        case WaterGateSide.BOTTON:
+          return new Vector3Int(0, 0, -1);
+        case WaterGateSide.TOP:
+          return new Vector3Int(0, 0, +1);
+        case WaterGateSide.VALVE:
+          return new Vector3Int(0, 0,  0);
+        case WaterGateSide.WATERPUMP:
+          return new Vector3Int(0, +1, 0);
+        default:
+          return new Vector3Int(0, 0, 0);
+      }
+    }
+
+    public static float getLowerLimitShift(WaterGateSide gate)
+    {
+      switch (gate)
+      {
+        case WaterGateSide.VALVE:
         case WaterGateSide.TOP:
           return 0f;
         case WaterGateSide.BOTTON:
@@ -51,15 +88,19 @@
         case WaterGateSide.BACK:
         case WaterGateSide.LEFT:
         case WaterGateSide.RIGHT:
-        default:
           return 0.25f;
+        case WaterGateSide.WATERPUMP:
+          return 0.10f;
+        default:
+          return 0f;
       }
     }
 
-    public static float getCeilingShift(WaterGateSide gate)
+    public static float getHigthLimitShift(WaterGateSide gate)
     {
       switch (gate)
       {
+        case WaterGateSide.VALVE:
         case WaterGateSide.TOP:
           return 0.5f;
         case WaterGateSide.BOTTON:
@@ -68,8 +109,11 @@
         case WaterGateSide.BACK:
         case WaterGateSide.LEFT:
         case WaterGateSide.RIGHT:
-        default:
           return 0.75f;
+        case WaterGateSide.WATERPUMP:
+          return 0.90f;
+        default:
+          return 1f;
       }
     }
 
@@ -89,6 +133,7 @@
             || opposite == WaterGateSide.BACK
             || opposite == WaterGateSide.LEFT
             || opposite == WaterGateSide.RIGHT;
+        case WaterGateSide.VALVE:
         default:
           return false;
       }
@@ -110,6 +155,10 @@
           return "Water5.PipeBox";
         case WaterGateSide.BOTTON:
           return "Water6.PipeBox";
+        case WaterGateSide.VALVE:
+          return "Water7.PipeBox";
+        case WaterGateSide.WATERPUMP:
+          return "Water8.PipeBox";
         default:
           return "";
       }

@@ -66,7 +66,7 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: ConstructionSites\ConstructionSite1x1Top\ConstructionSite1x1Top.Model
+  _modelName: ConstructionSites\ConstructionSite1x1\ConstructionSite1x1.Model
 --- !u!1 &1307462774176390
 GameObject:
   m_ObjectHideFlags: 0
@@ -129,7 +129,7 @@ MonoBehaviour:
   - _goodId: Log
     _amount: 2
   - _goodId: MetalBlock
-    _amount: 5
+    _amount: 3
   _scienceCost: 200
   _placeFinished: 0
   _finishableWithBeaversOnSite: 0
@@ -242,7 +242,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _displayNameLocKey: Building.PipeTurn.DisplayName
-  _descriptionLocKey: Building.PipeTurn.Description
+  _descriptionLocKey: Building.PipeGeneric.Description
   _flavorDescriptionLocKey: 
   _imagePath: Buildings/Water/PipeTurn/PipeTurnIcon
 --- !u!114 &114709933830190137
@@ -271,8 +271,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterCoordinates: {x: 0, y: -1, z: 0}
-  Side: 1
+  Side: 0
   DesiredWater: 0
 --- !u!114 &-1302879299329295200
 MonoBehaviour:
@@ -286,7 +285,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterCoordinates: {x: -1, y: 0, z: 0}
   Side: 2
   DesiredWater: 0
 --- !u!114 &4971155771503057506
@@ -345,6 +343,7 @@ GameObject:
   - component: {fileID: 4828224084944574}
   - component: {fileID: 65721485082540620}
   - component: {fileID: 65878078748061468}
+  - component: {fileID: 4290228864066108855}
   - component: {fileID: 114736604760948331}
   m_Layer: 0
   m_Name: '#Finished'
@@ -365,9 +364,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 5397926958652744679}
-  - {fileID: 5598133174921256316}
+  m_Children: []
   m_Father: {fileID: 4765490136981864}
   m_LocalEulerAnglesHint: {x: 0, y: -0, z: -0}
 --- !u!65 &65721485082540620
@@ -410,8 +407,29 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.2, y: 0.2, z: 1}
-  m_Center: {x: 0.5, y: 0.5, z: 0.5}
+  m_Size: {x: 0.5, y: 0.7, z: 0.7}
+  m_Center: {x: 0.5, y: 0.5, z: 0.35}
+--- !u!65 &4290228864066108855
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1607617892005525}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.7, y: 0.7, z: 0.5}
+  m_Center: {x: 0.35, y: 0.5, z: 0.5}
 --- !u!114 &114736604760948331
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -491,66 +509,4 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings/Power/PowerShaftStraight/PowerShaftStraight.Folktails.ConstructionStage0.Model
---- !u!1 &3772851577935017637
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5598133174921256316}
-  m_Layer: 0
-  m_Name: '#GateLeft'
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5598133174921256316
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3772851577935017637}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5, z: 0.5}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4828224084944574}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &4889558281664839923
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5397926958652744679}
-  m_Layer: 0
-  m_Name: '#GateBack'
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5397926958652744679
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4889558281664839923}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.5, y: 0.5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4828224084944574}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  _modelName: Buildings\Water\PipeIncomplete\PipeIncomplete.Folktails.Model

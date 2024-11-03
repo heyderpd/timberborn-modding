@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Bindito.Core;
 using UnityEngine;
 using static UnityEngine.ParticleSystem;
 using Timberborn.CoreUI;
@@ -12,6 +11,8 @@ namespace Mods.OldGopher.Pipe.Scripts
 {
   internal class WaterParticle : BaseComponent
   {
+    private bool initialized;
+
     private string attachmentId;
 
     private Colors colors;
@@ -24,14 +25,17 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private float waterPower = 0f;
 
-    private float waterStep = 0.2f;
+    private float waterContaminated = 0f;
 
     public void Initialize(Colors _colors, WaterGate waterGate)
     {
-      if (attachmentId != null)
+      if (initialized)
+        return;
+      initialized = true;
+      attachmentId = WaterGateConfig.getParticleAttachmentId(waterGate.Side);
+      if (attachmentId == "")
         return;
       colors = _colors;
-      attachmentId = WaterGateConfig.getParticleAttachmentId(waterGate.Side);
       ParticleSystem = ((Component)GetComponentFast<ModelAttachments>().GetOrCreateAttachment(attachmentId).Transform).GetComponentInChildren<ParticleSystem>(true);
       particlesMainModule = ParticleSystem.main;
       particlesRunner = GetComponentFast<BuildingParticleAttachment>().CreateParticlesRunner(new List<string> { attachmentId });
@@ -52,21 +56,29 @@ namespace Mods.OldGopher.Pipe.Scripts
       force.space = ParticleSystemSimulationSpace.World;
     }
 
+    private bool HasWater(WaterAddition Event)
+    {
+      return Event.Water > 0;
+    }
+
+    private void SetColor(WaterAddition Event)
+    {
+      if (!HasWater(Event))
+        return;
+      var newWaterContaminated = ModUtils.GetValueStep(Event.ContaminatedPercentage, 1.0f);
+      if (newWaterContaminated == waterContaminated)
+        return;
+      waterContaminated = newWaterContaminated;
+      MinMaxGradient startColor = particlesMainModule.startColor;
+      startColor.color = colors.WaterContaminationParticleGradient.Evaluate(waterContaminated);
+      particlesMainModule.startColor = startColor;
+    }
+
     private void SetWaterFlow(WaterAddition Event)
     {
       if (!HasWater(Event))
         return;
-      var maxWater = 1f;
-      var waterPower = Event.Water > maxWater
-        ? maxWater
-        : Event.Water > 0
-          ? Event.Water
-          : 0;
-      waterPower = waterPower / maxWater;
-      waterPower = waterPower > 0.95f ? 1f : waterPower;
-      int steps = (int)(waterPower / waterStep);
-      float newWaterPower = waterStep * steps;
-      ModUtils.Log($"[Particle.SetWaterFlow] waterPower={waterPower} steps={steps} newWaterPower={newWaterPower}");
+      var newWaterPower = ModUtils.GetValueStep(Event.Water, ModUtils.waterPower);
       if (newWaterPower == waterPower)
         return;
       waterPower = newWaterPower;
@@ -79,20 +91,6 @@ namespace Mods.OldGopher.Pipe.Scripts
       var shape = ParticleSystem.shape;
       shape.angle = angle;
       shape.radius = radius;
-    }
-
-    private bool HasWater(WaterAddition Event)
-    {
-      return Event.Water > 0;
-    }
-
-    private void SetColor(WaterAddition Event)
-    {
-      if (!HasWater(Event))
-        return;
-      MinMaxGradient startColor = particlesMainModule.startColor;
-      startColor.color = colors.WaterContaminationParticleGradient.Evaluate(Event.ContaminatedPercentage);
-      particlesMainModule.startColor = startColor;
     }
 
     private void SetAnimation(WaterAddition Event)

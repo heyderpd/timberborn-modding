@@ -110,13 +110,12 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       if (!isEnabled)
         return;
-      MoveWater.Do(this);
+      WaterService.Do(this);
     }
 
     public string GetInfo()
     {
-      string info = $"Group[id={id} enabled={isEnabled} WaterAverage={WaterAverage.ToString("0.00")} nodes={Pipes.Count}:\n";
-      info += $"gates={WaterGates.Count}:\n";
+      string info = $"Group[group={id} enabled={isEnabled} WaterAverage={WaterAverage.ToString("0.00")} nodes={Pipes.Count} gates={WaterGates.Count}:\n";
       foreach (var gate in WaterGates.ToList())
       {
         info += gate.GetInfo();

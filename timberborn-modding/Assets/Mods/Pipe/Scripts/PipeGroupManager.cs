@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Collections.Generic;
 using Bindito.Core;
 using Timberborn.Common;
@@ -12,13 +11,11 @@ namespace Mods.OldGopher.Pipe.Scripts
   {
     private readonly HashSet<PipeGroup> Groups = new HashSet<PipeGroup>();
 
-    private readonly List<WaterGate> GroupRecreateGates = new List<WaterGate>();
-
     private readonly PipeGroupChangeDebounce<BlockObject> debounce_gateCheckByBlockEvent = new PipeGroupChangeDebounce<BlockObject>(PipeGroupChangeTypes.GATE_CHECK_BY_BLOCKEVENT);
 
     private readonly PipeGroupChangeDebounce<PipeGroup> debounce_groupRecalculateGates = new PipeGroupChangeDebounce<PipeGroup>(PipeGroupChangeTypes.GROUP_RECALCULATE_GATES);
 
-    private bool working = false;
+    private static bool working = false;
 
     private EventBus eventBus;
 
@@ -43,7 +40,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       eventBus.Register(this);
     }
 
-    private bool _GroupNotExist(PipeGroup group)
+    private bool GroupNotExist(PipeGroup group)
     {
       ModUtils.Log($"[Manager._GroupNotExist] group={group?.id} groupC1={group == null} groupC2={group?.isEnabled != true} groupC3={!Groups.Contains(group)}");
       return group == null || group?.isEnabled != true || !Groups.Contains(group);
@@ -63,7 +60,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         return;
       foreach (var group in debounce_groupRecalculateGates.Items)
       {
-        if (_GroupNotExist(group))
+        if (GroupNotExist(group))
           continue;
         ModUtils.Log($"[Manager.Action_Group_RecalculateGates] group={group.id} LOOP");
         group.recalculateGates();
@@ -74,7 +71,9 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private void Action_Group_Remove(PipeGroupChange change)
     {
-      change.group?.Destroy();
+      if (change.group == null)
+        return;
+      change.group.Destroy();
       Groups.Remove(change.group);
     }
 
@@ -82,7 +81,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       var groupA = change.node?.group;
       var groupB = change.secondNode?.group;
-      if (_GroupNotExist(groupA) || _GroupNotExist(groupB))
+      if (GroupNotExist(groupA) || GroupNotExist(groupB))
         return;
       if (groupA == groupB)
         return;
@@ -103,10 +102,11 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private void Action_Pipe_Remove(PipeGroupChange change)
     {
-      if (_GroupNotExist(change.node.group))
+      if (GroupNotExist(change.node.group))
         return;
       change.node.group.PipeRemove(change.node);
       TailRecursion.groupRecreate(this, pipeGroupQueue, change.node);
+      change.node.Disconnection();
     }
 
     private void Action_Pipe_CheckGates(PipeGroupChange change)
@@ -122,6 +122,8 @@ namespace Mods.OldGopher.Pipe.Scripts
       HashSet<WaterGate> Gates = new HashSet<WaterGate>();
       foreach (var block in debounce_gateCheckByBlockEvent.Items)
       {
+        if (block?.IsFinished == false)
+          continue;
         var _gates = ModUtils.getNearWaterGates(blockService, block);
         if (_gates != null)
           Gates.AddRange(_gates);
@@ -161,7 +163,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         switch (change.type)
         {
           case PipeGroupChangeTypes.GROUP_RECALCULATE_GATES:
-            debounce_groupRecalculateGates.Store(change.type, change.node?.group ?? change.group);
+            debounce_groupRecalculateGates.Store(change.type, change.node?.group != null ? change.node.group : change.group);
             break;
 
           case PipeGroupChangeTypes.GROUP_REMOVE:
@@ -204,7 +206,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     [OnEvent]
     public void OnBlockObjectSet(BlockObjectSetEvent blockEvent)
     {
-      ModUtils.Log($"[Manager.OnBlockObjectSet] called IsFinished={blockEvent?.BlockObject?.IsFinished}");
+      ModUtils.Log($"[Manager.OnBlockObjectSet] called IsFinished={blockEvent?.BlockObject?.IsFinished} size={blockEvent?.BlockObject?.Blocks?.Size}");
       pipeGroupQueue.Gate_CheckByBlockEvent(blockEvent?.BlockObject);
     }
 

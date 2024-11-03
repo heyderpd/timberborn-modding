@@ -5,34 +5,13 @@ using UnityEngine;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
-  internal static class MoveWater
+  internal static class WaterService
   {
-    static readonly float maximumFlow = 1.00f;
+    public static readonly float maximumFlow = 1.00f;
 
-    static readonly float minimumFlow = 0.001f;
-    
-    static readonly float waterPercentPerSecond = 1.00f;
-    
-    private static float LimitWater(float expectedWater)
-    {
-      float water = Mathf.Abs(expectedWater);
-      water = Mathf.Min(water, maximumFlow);
-      water = water >= minimumFlow ? water : 0f;
-      return water;
-    }
+    public static readonly float minimumFlow = 0.001f;
 
-    private static float GetDeliveryWater(WaterGate gate, float average)
-    {
-      var limited = LimitWater(gate.Water);
-      return limited;
-    }
-
-    private static float GetRequesterWater(WaterGate gate, float average)
-    {
-      var water = average - gate.WaterLevel;
-      var limited = LimitWater(water);
-      return limited;
-    }
+    public static readonly float waterPercentPerSecond = ModUtils.waterPower;
 
     private static float getWaterLevel(List<WaterGate> Gates)
     {
@@ -64,17 +43,17 @@ namespace Mods.OldGopher.Pipe.Scripts
           (Tuple<List<WaterGate>, List<WaterGate>> lists, WaterGate gate) =>
           {
             var (deliverers, requesters) = lists;
-            if (gate.WaterLevel > average)
+            if (gate.CanDelivereryWater(average))
             {
               deliverers.Add(gate);
-              gate.DesiredWater = GetDeliveryWater(gate, average);
+              gate.DesiredWater = gate.GetDeliveryWater(average);
               delivereWaters += gate.DesiredWater;
               contamination += gate.ContaminationPercentage;
               //ModUtils.Log($"[MoveWater.calculateFlow] Pre deliverers gate.DesiredWater={gate.DesiredWater}");
-            } else if (gate.WaterLevel < average)
+            } else if (gate.CanRequestWater(average))
             {
               requesters.Add(gate);
-              gate.DesiredWater = GetRequesterWater(gate, average);
+              gate.DesiredWater = gate.GetRequesterWater(average);
               requestersWaters += gate.DesiredWater;
               //ModUtils.Log($"[MoveWater.calculateFlow] Pre requesters gate.DesiredWater={gate.DesiredWater}");
             } else

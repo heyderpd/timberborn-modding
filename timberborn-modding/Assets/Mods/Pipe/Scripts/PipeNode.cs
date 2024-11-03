@@ -93,11 +93,11 @@ namespace Mods.OldGopher.Pipe.Scripts
       ResetFlow();
     }
 
-    public void ReleaseConnections()
+    public void Disconnection()
     {
       foreach (var gate in waterGates)
       {
-        gate.ReleaseConnection();
+        gate.Disconnection();
       }
     }
 
@@ -129,8 +129,12 @@ namespace Mods.OldGopher.Pipe.Scripts
         return false;
       }
       ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} startGate={startGate.GetInfo()} endGate={endGate.GetInfo()} MATCH");
-      startGate.SetConnection(endGate);
-      endGate.SetConnection(startGate);
+      if (startGate.CheckConnection(endGate))
+      {
+        ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} same_connection");
+        return true;
+      }
+      startGate.ConnectionBoth(endGate);
       pipeGroupQueue.Pipe_Join(node, this);
       ModUtils.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} connected");
       return true;
@@ -181,22 +185,40 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public string GetInfo()
     {
-      string info = $" Node[id={id}, group={group?.id}, coordinates={coordinates}, enabled={isEnabled}, gates={waterGates.Count}:\n";
+      string info = $"Node[node={id} enabled={isEnabled}:\n";
       foreach (var gate in waterGates)
       {
         info += gate.GetInfo();
       }
-      info += " ]\n";
+      info += "]\n";
       return info;
     }
 
-    public string GetFragmentInfo()
+    public void SetGateValue(float value)
     {
-      string info = $"Pipe[\n";
-      info += $"  node={id} enabled={isEnabled} cord={coordinates.ToString()}\n ";
-      info += $"];\n";
+      var gate = waterGates.FirstOrDefault();
+      if (gate != null)
+        gate.HigthLimit = value;
+    }
+
+    public float GetGateValue()
+    {
+      var gate = waterGates.FirstOrDefault();
+      if (gate != null)
+        return gate.HigthLimit;
+      return -1f;
+    }
+
+    public List<GateVisualElement> GetFragmentInfo()
+    {
+      return waterGates
+        .Select((WaterGate gate) => new GateVisualElement(gate))
+        .ToList();
+      /*var gate = waterGates.FirstOrDefault();
+      return $"gate.HigthLimit={gate?.Water.ToString("0.00")}";
+      string info = GetInfo();
       info += group?.GetInfo() ?? "NO_GROUP";
-      return info;
+      return info;*/
     }
   }
 }

@@ -65,7 +65,7 @@ MonoBehaviour:
   - _goodId: Log
     _amount: 12
   - _goodId: MetalBlock
-    _amount: 5
+    _amount: 3
   _scienceCost: 300
   _placeFinished: 0
   _finishableWithBeaversOnSite: 0
@@ -249,7 +249,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterCoordinates: {x: 0, y: -1, z: 0}
   Side: 1
   DesiredWater: 0
 --- !u!114 &3908924080598491517
@@ -264,7 +263,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  waterCoordinates: {x: 0, y: 1, z: 0}
   Side: 0
   DesiredWater: 0
 --- !u!114 &2918800193914806410
