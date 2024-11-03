@@ -289,6 +289,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canWorkAlone: 1
+  canBeaver: 0
 --- !u!114 &2711242026732494444
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -501,7 +502,7 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings/Landscaping/Levee/Levee.IronTeeth.ConstructionStage0.Model
+  _modelName: Buildings/Landscaping/Levee/Levee.Folktails.ConstructionStage0.Model
 --- !u!1 &1730594037791531
 GameObject:
   m_ObjectHideFlags: 0

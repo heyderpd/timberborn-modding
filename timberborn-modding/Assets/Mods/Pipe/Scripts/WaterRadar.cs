@@ -42,11 +42,14 @@ namespace Mods.OldGopher.Pipe.Scripts
       return null;
     }
 
-    public WaterObstacleType FindWaterObstacle(Vector3Int coordinate)
+    public WaterObstacleType FindWaterObstacle(Vector3Int coordinate, PipeNode pipeOrigin = null)
     {
       if (terrainService.Underground(coordinate))
         return WaterObstacleType.BLOCK;
       var blockMiddle = blockService.GetMiddleObjectAt(coordinate);
+      var pipe = blockMiddle?.IsFinished == true ? blockMiddle?.GetComponentFast<PipeNode>() : null;
+      if (pipe != null && pipe == pipeOrigin)
+        return WaterObstacleType.EMPTY;
       var waterObstacleMiddle = blockMiddle?.IsFinished == true && blockMiddle?.GetComponentFast<WaterObstacle>() != null;
       if (waterObstacleMiddle)
         return WaterObstacleType.BLOCK;
@@ -55,6 +58,12 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (hasWaterObstacleBottom)
         return WaterObstacleType.HORIZONTAL;
       return WaterObstacleType.EMPTY;
+    }
+
+    public bool IsBlocked(Vector3Int coordinate)
+    {
+      var block = blockService.GetObjectsAt(coordinate);
+      return !block.IsEmpty();
     }
   }
 }

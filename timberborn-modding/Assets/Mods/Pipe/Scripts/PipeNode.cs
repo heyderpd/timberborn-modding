@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Bindito.Core;
 using UnityEngine;
-using Timberborn.Persistence;
 using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
@@ -12,8 +11,7 @@ namespace Mods.OldGopher.Pipe.Scripts
   internal class PipeNode : BaseComponent,
                             IInitializableEntity,
                             IDeletableEntity,
-                            IFinishedStateListener,
-                            IPersistentEntity
+                            IFinishedStateListener
   {
     public bool isEnabled { get; private set; } = false;
 
@@ -35,6 +33,8 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private PipeGroupQueue pipeGroupQueue;
 
+    private PipeBeaver Beaver;
+
     public PipeGroup group { get; private set; }
 
     public List<WaterGate> waterGates { get; private set; }
@@ -44,8 +44,6 @@ namespace Mods.OldGopher.Pipe.Scripts
     public bool IsWaterPump => waterGates?.Any((WaterGate gate) => gate.IsWaterPump) ?? false;
 
     public bool CanWork => group?.HasMoreThanOnePipe ?? canWorkAlone;
-
-    public PipeBeaver Beaver;
 
     [Inject]
     public void InjectDependencies(
@@ -79,10 +77,6 @@ namespace Mods.OldGopher.Pipe.Scripts
       pipeGroupQueue.Pipe_Remove(this);
     }
 
-    public void Save(IEntitySaver entitySaver) { }
-
-    public void Load(IEntityLoader entityLoader) { }
-
     public void OnEnterFinishedState()
     {
       ((Behaviour)this).enabled = true;
@@ -99,31 +93,39 @@ namespace Mods.OldGopher.Pipe.Scripts
       isEnabled = true;
     }
 
-    public string GetWaterPumpState()
+    public bool? GetWaterPumpState()
     {
       if (!IsWaterPump)
-        return "";
+        return null;
       var gate = waterGates.FirstOrDefault((WaterGate gate) => gate.IsWaterPump);
       if (!gate)
-        return "";
-      return gate.Mode == WaterGateMode.ONLY_IN
-        ? "pulling water"
-        : "pushing water";
+        return null;
+      return gate.Mode == WaterGateMode.ONLY_IN;
     }
 
     public void ToggleWaterPump()
     {
-      if (!IsWaterPump)
+      if (!IsWaterPump || waterGates == null)
         return;
-      var gate = waterGates.FirstOrDefault((WaterGate gate) => gate.IsWaterPump);
+      var gate = waterGates.FirstOrDefault(gate => gate.IsWaterPump);
       if (!gate)
         return;
       gate.ToggleWaterPump();
+      pipeGroupQueue.Group_RecalculateGates(this);
+    }
+
+    public void WildBeaverAppears()
+    {
+      if (waterGates == null || !canBeaver)
+        return;
+      Beaver?.WildBeaverAppears(waterGates.FirstOrDefault(gate => gate.Type == WaterGateType.TOP));
     }
 
     public void TestParticle()
     {
-      Beaver.WildBeaverAppears();
+      if (waterGates == null)
+        return;
+      WildBeaverAppears();
       foreach (var gate in waterGates)
       {
         gate.TestParticle();

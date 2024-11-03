@@ -11,15 +11,17 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public static readonly float maximumFlow = 1.00f;
 
-    public static readonly float minimumFlow = 0.001f;
+    public static readonly float minimumFlow = 0.005f;
 
     public static readonly float minimumPressure = 0.05f;
 
-    public static readonly float waterFactor = 0.36f; // common max cms = 0.7
+    public static readonly float waterFactor = 0.36f * Time.fixedDeltaTime; // common max to 0.8cms
 
-    public static readonly float pumpHeight = 8.00f;
+    public static readonly float pumpHeight = 6.50f;
 
-    public static readonly float pumpRate = 0.4642f; // pump max cms = 0.3
+    public static readonly float pumpPressure = 1.00f;
+
+    public static readonly float pumpRate = 0.50f; // pump max to 0.4cms
 
     private static IEnumerable<GateContext> GatesIterator(bool IsDelivery, ImmutableArray<GateContext> Gates, GateContext reference, bool checkWater)
     {
@@ -47,17 +49,24 @@ namespace Mods.OldGopher.Pipe.Scripts
       return GatesIterator(false, Gates, reference, checkWater);
     }
 
-    public static float CalcPressure(WaterGate gate)
+    private static float CalcPressure(float FloorLevel, float WaterLevel)
     {
-      return CalcPressure(gate.WaterAvailable, gate.WaterLevel);
+      var levelPressure = FloorLevel * FloorLevel;
+      var waterPressure = WaterLevel > 0f
+        ? WaterLevel * WaterLevel
+        : 0f;
+      var pressure = Mathf.Max(levelPressure, waterPressure);
+      return pressure;
     }
 
-    public static float CalcPressure(float WaterAvailable, float WaterLevel)
+    public static float CalcPressure(WaterGate gate)
     {
-      if (WaterAvailable <= 0f)
-        return 0f;
-      var pressure = WaterLevel * WaterLevel;
-      return pressure;
+      return CalcPressure(gate.LowerLimit, gate.WaterLevel);
+    }
+
+    public static float CalcPumpPressure(float pumpLevel)
+    {
+      return CalcPressure(pumpLevel, 0f);
     }
 
     private static float GetCommomPressure(WaterGate input, WaterGate output)
@@ -70,21 +79,14 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private static float GetPumpPressure(WaterGate input, WaterGate output)
     {
-      var invalidPressure = (input.IsOnlyDelivery && output.IsOnlyDelivery) || (input.IsOnlyRequester && output.IsOnlyRequester);
+      var invalidPressure = input.IsOnlyRequester || output.IsOnlyDelivery;
       if (invalidPressure)
         return 0f;
       var pumpLevel = input.LowerLimit + pumpHeight;
-      var pumpPressure = CalcPressure(input.WaterAvailable, pumpLevel) + 1;
-      var pressureDiff = Mathf.Max(pumpPressure - output.WaterPressure, 0f);
-      var pressureDirection = input.IsWaterPump
-        ? input.IsOnlyDelivery ? +1 : -1
-        : output.IsOnlyDelivery ? -1 : +1;
-      if (input.LowerLimit >= output.LowerLimit)
-        return pressureDirection * pressureDiff;
-      else if (pumpLevel > output.LowerLimit)
-        return pressureDirection * pressureDiff;
-      else
+      var outOfRange = pumpLevel < output.LowerLimit;
+      if (outOfRange)
         return 0f;
+      return pumpPressure;
     }
 
     private static float GetPressure(WaterGate input, WaterGate output)
@@ -103,32 +105,41 @@ namespace Mods.OldGopher.Pipe.Scripts
       return water;
     }
 
-    private static float GetPumpLimit(WaterGate gate, bool hasDelivery)
+    private static float GetPumpLimit(WaterGate pump, float water, bool hasDelivery)
     {
-      if (hasDelivery && gate.IsOnlyRequester)
+      if (hasDelivery && pump.IsOnlyRequester)
         return 0f;
-      if (!hasDelivery && gate.IsOnlyDelivery)
+      if (!hasDelivery && pump.IsOnlyDelivery)
         return 0f;
-      return LimitWater(gate.WaterAvailable, pumpRate);
+      return LimitWater(water, pumpRate);
     }
 
-    public static float GetWaterTopLimit(WaterGate gate, float water, bool hasDelivery)
+    public static float LimitRequesterWater(WaterGate output, float water)
     {
       if (water <= 0f)
         return 0f;
-      if (gate.IsValve)
-        return GetSubmergeLimit(gate, water);
-      else if (gate.IsWaterPump)
-        return GetPumpLimit(gate, hasDelivery);
+      if (output.IsValve)
+        return GetSubmergeLimit(output, water);
+      else if (output.IsWaterPump)
+        return GetPumpLimit(output, water, hasDelivery: false);
       else
         return LimitWater(water);
     }
 
-    public static float GetWaterDelivered(WaterGate input, WaterGate output)
+    public static float GetDeliveryWater(WaterGate input, WaterGate output)
     {
-      var waterAvg = Mathf.Abs(input.WaterLevel - output.WaterLevel) / 2;
-      var water = GetWaterTopLimit(input, waterAvg, hasDelivery: true);
-      return water;
+      if (input.WaterAvailable <= 0f)
+        return 0f;
+      if (input.IsValve)
+        return 0f;
+      else if (input.IsWaterPump || output.IsWaterPump)
+        return GetPumpLimit(input, input.WaterAvailable, hasDelivery: true);
+      else
+      {
+        var water = Mathf.Max(input.WaterLevel - output.WaterLevel, 0f);
+        water = water > 0f ? water / 2 : 0f;
+        return LimitWater(water);
+      }
     }
 
     public static float LimitWater(float water, float maxValue = 0f)
@@ -173,33 +184,28 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private static bool distributeWater(PipeGroup group)
     {
-      ModUtils.Log($"\n[WaterService.distributeWater] start group={group.id} WaterGates={group.WaterGates.Count()}");
       if (group.Deliveries == 0 || group.Requesters == 0)
       {
         ModUtils.Log($"[WaterService.distributeWater] aborted by deliveries={group.Deliveries} requesters={group.Requesters}");
         return true;
       }
-      ModUtils.Log($"[WaterService.distributeWater.Reset] start");
       foreach (var context in group.WaterGates)
       {
         context.checkPumpRequested();
         context.Reset();
         context.gate.UpdateWaters();
       }
-      ModUtils.Log($"[WaterService.distributeWater.Reset] end");
       // discovery pressures
       var nonePressure = true;
       foreach (var delivery in DeliveryIterator(group.WaterGates))
         foreach (var interaction in delivery.Interactions.Values)
         {
-          ModUtils.Log($"[WaterService.pressures] loop gate={delivery.gate.id} iter");
           if (interaction.pressure != 0f)
             continue;
           var pressure = GetPressure(delivery.gate, interaction.GetOposite(delivery).gate);
-          ModUtils.Log($"[WaterService.pressures] 01 gate={delivery.gate.id} gate={interaction.GetOposite(delivery).gate.id} pressure={pressure}");
+          if (pressure <= 0f && interaction.GetOposite(delivery).gate.WaterAvailable <= 0f)
+            continue;
           interaction.setPressure(delivery, pressure);
-          ModUtils.Log($"[WaterService.pressures] 02 delivery={interaction.getDelivery().gate.id} delivery.pressureSum={interaction.getDelivery().pressureSum}");
-          ModUtils.Log($"[WaterService.pressures] 03 requester={interaction.getRequester().gate.id} requester.pressureSum={interaction.getRequester().pressureSum}");
           if (interaction.pressure != 0f)
             nonePressure = false;
         }
@@ -212,25 +218,18 @@ namespace Mods.OldGopher.Pipe.Scripts
       var deliveryRemoved = 0;
       foreach (var delivery in DeliveryIterator(group.WaterGates))
       {
-        ModUtils.Log($"[WaterService.remove_delivery] loop gate={delivery.gate.id}");
         if (delivery.pressureSum <= 0f)
         {
-          ModUtils.Log($"[WaterService.remove_delivery] gate={delivery.gate.id} removed");
           delivery.forceRequester = true;
           deliveryRemoved += 1;
         }
       }
       if (group.Deliveries - deliveryRemoved == 0)
-      {
-        ModUtils.Log($"[WaterService.distributeWater] aborted by deliveries={group.Deliveries - deliveryRemoved} after removed invalids");
         return true;
-      }
       // set quota
       foreach (var requester in RequesterIterator(group.WaterGates))
         foreach (var interaction in requester.Interactions.Values.Where(interaction => interaction.isRequester(requester) && requester.pressureSum != 0f))
         {
-          ModUtils.Log($"[WaterService.set_quota] loop gate={requester.gate.id} iter");
-          ModUtils.Log($"[WaterService.set_quota] 01 interaction.pressure={interaction.pressure} interaction.pressureSum={requester.pressureSum}");
           var quota = interaction.pressure / requester.pressureSum;
           interaction.setQuota(quota);
         }
@@ -238,14 +237,11 @@ namespace Mods.OldGopher.Pipe.Scripts
       foreach (var delivery in DeliveryIterator(group.WaterGates))
         foreach (var interaction in delivery.Interactions.Values.Where(interaction => interaction.isDelivery(delivery) && delivery.quotaSum != 0f))
         {
-          ModUtils.Log($"[WaterService.set_water_offer] loop gate={delivery.gate.id} iter");
-          var water = GetWaterDelivered(delivery.gate, interaction.getRequester().gate);
-          ModUtils.Log($"[WaterService.set_water_offer] 01 water={water}");
+          var water = GetDeliveryWater(delivery.gate, interaction.getRequester().gate);
           if (water == 0f)
             continue;
           var quota = interaction.quota / delivery.quotaSum;
           var waterQuota = water * quota;
-          ModUtils.Log($"[WaterService.set_water_offer] 02 interaction.quota={interaction.quota} delivery.quotaSum={delivery.quotaSum} quota={quota} waterQuota={waterQuota}");
           if (delivery.gate.IsWaterPump)
             interaction.setWaterBlockedByPump(waterQuota);
           interaction.setWaterOferted(waterQuota * delivery.gate.PowerEfficiency);
@@ -254,23 +250,19 @@ namespace Mods.OldGopher.Pipe.Scripts
       // discovery requesters water
       foreach (var requester in RequesterIterator(group.WaterGates))
       {
-        ModUtils.Log($"[WaterService.set_req_water] loop gate={requester.gate.id}");
-        var waterMove = GetWaterTopLimit(requester.gate, requester.waterOfertedSum, hasDelivery: false);
-        ModUtils.Log($"[WaterService.set_req_water] 01 waterOfertedSum={requester.waterOfertedSum} waterMove={waterMove}");
+        var waterMove = LimitRequesterWater(requester.gate, requester.waterOfertedSum);
         requester.WaterMove = waterMove * requester.gate.PowerEfficiency;
         requester.Contamination = requester.contaminationSum;
         requester.WaterUsed = requester.WaterMove > 0f
           ? (requester.WaterMove / requester.waterOfertedSum)
           : 0f;
-        ModUtils.Log($"[WaterService.set_req_water] 02 waterBlockedByPumpSum={requester.waterBlockedByPumpSum}");
-        var willMoveWaterWithPump = GetWaterTopLimit(requester.gate, requester.waterOfertedSum + requester.waterBlockedByPumpSum, hasDelivery: false);
+        var willMoveWaterWithPump = LimitRequesterWater(requester.gate, requester.waterOfertedSum + requester.waterBlockedByPumpSum);
         requester.AddPumpRequested(willMoveWaterWithPump);
         requester.SendPumpActivateEvent(willMoveWaterWithPump);
       }
       // discovery deliveries water
       foreach (var delivery in DeliveryIterator(group.WaterGates))
       {
-        ModUtils.Log($"[WaterService.set_del_water] loop gate={delivery.gate.id}");
         if (delivery.quotaSum == 0f)
           continue;
         foreach (var interaction in delivery.Interactions.Values)
@@ -279,7 +271,6 @@ namespace Mods.OldGopher.Pipe.Scripts
         }
         delivery.Contamination = delivery.gate.ContaminationPercentage;
       }
-      ModUtils.Log($"[WaterService.distributeWater] success");
       return false;
     }
 
@@ -290,27 +281,23 @@ namespace Mods.OldGopher.Pipe.Scripts
       {
         canFlow = context.gate.FlowNotChanged(context.WaterMove) && canFlow;
       }
-      ModUtils.Log($"[WaterService.distributeWater] canFlow={canFlow}");
       return !canFlow;
     }
 
     private static void StopWater(PipeGroup group)
     {
-      ModUtils.Log($"[WaterService.StopWater] start group={group.id}");
       foreach (var context in group.WaterGates)
       {
         context.gate.powered?.DisablePowerConsumption();
         context.gate.RemoveWaterParticles();
       }
-      ModUtils.Log($"[WaterService.StopWater] end");
     }
 
     private static void moveWater(PipeGroup group)
     {
-      var factor = Time.fixedDeltaTime * waterFactor;
       foreach (var context in group.WaterGates)
       {
-        context.gate.MoveWater(context.WaterMove * factor, context.Contamination);
+        context.gate.MoveWater(context.WaterMove * waterFactor, context.Contamination);
       }
     }
 

@@ -1,10 +1,11 @@
+using System;
+using System.Linq;
 using System.Collections.Generic;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.TickSystem;
 using Timberborn.BlockSystem;
 using Timberborn.SingletonSystem;
-using System.Linq;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -25,6 +26,8 @@ namespace Mods.OldGopher.Pipe.Scripts
     private BlockService blockService;
 
     private PipeGroupQueue pipeGroupQueue;
+
+    private TickCount beaverTick = new TickCount(60);
 
     [Inject]
     public void InjectDependencies(
@@ -57,18 +60,15 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private void Action_Group_RecalculateGates()
     {
-      ModUtils.Log($"[Manager.Action_Group_RecalculateGates] count={debounce_groupRecalculateGates.Count} DOING");
       if (debounce_groupRecalculateGates.IsEmpty)
         return;
       foreach (var group in debounce_groupRecalculateGates.Items)
       {
         if (GroupNotExist(group))
           continue;
-        ModUtils.Log($"[Manager.Action_Group_RecalculateGates] group={group.id} LOOP");
         group.recalculateGates();
       }
       debounce_groupRecalculateGates.Clear();
-      ModUtils.Log($"[Manager.Action_Group_RecalculateGates] DONE");
     }
 
     private void Action_Group_Remove(PipeGroupChange change)
@@ -113,7 +113,6 @@ namespace Mods.OldGopher.Pipe.Scripts
       var pipe = change.node;
       if (PipeLocation.TryGetValue(pipe.coordinates, out var exist))
       {
-        ModUtils.Log($"[Manager.Action_Pipe_HandleEvents] pipe={pipe?.id} exist={exist?.id} equal{exist == pipe}");
         if (exist == pipe)
           PipeLocation.Remove(pipe.coordinates);
       }
@@ -129,7 +128,6 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private void Action_Pipe_HandleEvents()
     {
-      ModUtils.Log($"[Manager.Action_Pipe_HandleEvents] count={debounce_pipeHandleEvents.Count} DOING");
       if (debounce_pipeHandleEvents.IsEmpty)
         return;
       HashSet<WaterGate> Gates = new HashSet<WaterGate>();
@@ -137,12 +135,10 @@ namespace Mods.OldGopher.Pipe.Scripts
       {
         if (PipeLocation.TryGetValue(coordinate, out var pipe))
         {
-          ModUtils.Log($"[Manager.Action_Pipe_HandleEvents] pipe={pipe.id} LOOP");
           pipe.CheckGates();
         }
       }
       debounce_pipeHandleEvents.Clear();
-      ModUtils.Log($"[Manager.Action_Pipe_HandleEvents] DONE");
     }
 
     private void Action_Gate_Check(PipeGroupChange change)
@@ -208,10 +204,8 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       if (change.blockObject?.IsFinished != true)
         return;
-      ModUtils.Log($"[Manager.EventTranslate] cord={change.blockObject?.Coordinates} size={change.blockObject?.Blocks.Size} flipped={change.blockObject?.FlipMode.IsFlipped}");
       foreach (var pos in ModUtils.getReflexPositions(change.blockObject))
       {
-        ModUtils.Log($"[Manager.OnBlockObjectUnset] position={pos}");
         debounce_pipeHandleEvents.Store(change.type, pos);
       }
     }
@@ -242,15 +236,24 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private void ShowPipeBeaver()
     {
-      if (!PipeBeaver.GetRandomChance())
-        return;
-      var group = ModUtils.GetRandomItem<PipeGroup>(Groups.Where(group => group.PipesCount == 1).ToList());
-      if (group == null)
-        return;
-      var pipe = ModUtils.GetRandomItem<PipeNode>(group.Pipes.Where(pipe => pipe.canBeaver).ToList());
-      if (pipe?.Beaver == null)
-        return;
-      pipe.Beaver.WildBeaverAppears();
+      try
+      {
+        if (!beaverTick.Skip())
+          return;
+        if (!PipeBeaver.GetRandomChance())
+          return;
+        var group = ModUtils.GetRandomItem<PipeGroup>(Groups.Where(group => group.PipesCount == 1).ToList());
+        if (group == null)
+          return;
+        var pipe = ModUtils.GetRandomItem<PipeNode>(group.Pipes.Where(pipe => pipe.canBeaver).ToList());
+        if (pipe == null)
+          return;
+        pipe.WildBeaverAppears();
+      }
+      catch (Exception err)
+      {
+        ModUtils.Log($"#ERROR [Manager.ShowPipeBeaver] err={err}");
+      }
     }
 
     public void Tick()

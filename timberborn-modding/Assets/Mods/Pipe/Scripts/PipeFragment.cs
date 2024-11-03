@@ -13,6 +13,9 @@ namespace Mods.OldGopher.Pipe.Scripts
     private readonly ILoc loc;
     private readonly DevModeManager devModeManager;
 
+    private static readonly string TakeToPipeLocKey = "Building.PipeWaterPump.TakeToPipe";
+    private static readonly string TakeFromPipeLocKey = "Building.PipeWaterPump.TakeFromPipe";
+
     private PipeNode pipeNode;
     private VisualElement root;
     private Label field;
@@ -20,7 +23,6 @@ namespace Mods.OldGopher.Pipe.Scripts
     private VisualElement debugView;
     private Label debugField;
     private Button debugButton;
-    private bool show = false;
 
     public PipeFragment(
       VisualElementLoader _visualElementLoader,
@@ -42,7 +44,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       root = new VisualElement();
       root.Add(CreatePumpView());
-      debugView = CreateDebugView();
+      root.Add(CreateDebugView());
       return root;
     }
 
@@ -56,26 +58,28 @@ namespace Mods.OldGopher.Pipe.Scripts
       field.text = "mode: ???";
       button = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
       button.text = "Toggle";
-      button.RegisterCallback<ClickEvent>((EventCallback<ClickEvent>)ToggleWaterPump, (TrickleDown)0);
+      button.RegisterCallback<ClickEvent>(ToggleWaterPump, (TrickleDown)0);
       return fragment;
     }
 
     private VisualElement CreateDebugView()
     {
       var fragment = visualElementLoader.LoadVisualElement("Game/EntityPanel/StreamGaugeFragment");
+      fragment.ToggleDisplayStyle(false);
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "GreatestDepthLabel", (string)null));
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "CurrentLabel", (string)null));
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "ContaminationLabel", (string)null));
       debugField = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
       debugField.text = "no debug";
+      debugButton = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
+      debugButton.text = "Test Particles";
+      debugButton.RegisterCallback<ClickEvent>(TestParticle, (TrickleDown)0);
       fragment.Remove(debugField);
       var box = new ScrollView();
       box.style.height = 500;
       box.Add(debugField);
       fragment.Add(box);
-      debugButton = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
-      debugButton.text = "Test Particles";
-      debugButton.RegisterCallback<ClickEvent>((EventCallback<ClickEvent>)TestParticle, (TrickleDown)0);
+      debugView = fragment;
       return fragment;
     }
 
@@ -94,19 +98,26 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private void ShowPumpView()
     {
-      field.text = $"mode: {pipeNode.GetWaterPumpState()}";
+      var state = pipeNode.GetWaterPumpState();
+      if (state == null)
+      {
+        field.text = "none";
+        return;
+      }
+      field.text = state ?? false
+        ? loc.T(TakeToPipeLocKey)
+        : loc.T(TakeFromPipeLocKey);
     }
 
     private void ShowDebugView()
     {
-      root.Add(debugView);
+      debugView.ToggleDisplayStyle(true);
       debugField.text = pipeNode.GetFragmentInfo();
     }
 
     private void RemoveDebugView()
     {
-      if (root.Contains(debugView))
-        root.Remove(debugView);
+      debugView.ToggleDisplayStyle(false);
     }
 
     public void ClearFragment()
@@ -117,25 +128,21 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void UpdateFragment()
     {
+      root.ToggleDisplayStyle(false);
       if (!pipeNode)
-      {
-        root.ToggleDisplayStyle(false);
         return;
-      }
-      show = false;
       if (pipeNode.IsWaterPump)
       {
         ShowPumpView();
-        show = true;
+        root.ToggleDisplayStyle(true);
       }
-      if (devModeManager.Enabled)// && ModUtils.enabled)
+      if (devModeManager.Enabled && ModUtils.enabled)
       {
         ShowDebugView();
-        show = true;
+        root.ToggleDisplayStyle(true);
       }
       else
         RemoveDebugView();
-      root.ToggleDisplayStyle(show);
     }
   }
 }

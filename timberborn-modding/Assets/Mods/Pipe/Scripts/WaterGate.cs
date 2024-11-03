@@ -12,7 +12,8 @@ namespace Mods.OldGopher.Pipe.Scripts
 {
   internal class WaterGate : BaseComponent,
                              IInitializableEntity,
-                             IDeletableEntity
+                             IDeletableEntity,
+                             IPersistentEntity
   {
     private static int lastId = 0;
 
@@ -44,7 +45,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public WaterGate gateConnected { get; private set; }
 
-    public TickCount tick = new TickCount(3);
+    public TickCount tick = new TickCount(10);
 
     private BlockObject blockObject;
 
@@ -170,6 +171,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         if (threadSafeWaterMap == null || !isEnabled)
           return false;
         var underwater = threadSafeWaterMap.CellIsUnderwater(coordinates);
+        ModUtils.Log($"[WaterGate.IsUnderwater] underwater={underwater}");
         return underwater;
       }
       catch (Exception err)
@@ -190,9 +192,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         }
         WaterLevel = threadSafeWaterMap.WaterHeightOrFloor(coordinates);
         WaterDetected = Mathf.Max(WaterLevel - LowerLimit, 0f);
-        WaterAvailable = IsOnlyRequester
-          ? 0f
-          : WaterService.LimitWater(WaterDetected);
+        WaterAvailable = WaterService.LimitWater(WaterDetected);
         WaterPressure = WaterService.CalcPressure(this);
         ContaminationPercentage = WaterAvailable > 0f
           ? threadSafeWaterMap.ColumnContamination(coordinates)
@@ -217,8 +217,8 @@ namespace Mods.OldGopher.Pipe.Scripts
     public void TestParticle()
     {
       SetWaterParticles(
-        UnityEngine.Random.Range(0.0f, 1.0f),
-        UnityEngine.Random.Range(0.0f, 1.0f)
+        UnityEngine.Random.Range(0f, WaterService.waterFactor),
+        UnityEngine.Random.Range(0f, WaterService.waterFactor)
       );
     }
     
@@ -247,7 +247,8 @@ namespace Mods.OldGopher.Pipe.Scripts
     
     private bool notHasEmptySpace()
     {
-      var obstacle = waterRadar.FindWaterObstacle(coordinates);
+      var obstacle = waterRadar.FindWaterObstacle(coordinates, pipeNode);
+      ModUtils.Log($"[WaterGate.notHasEmptySpace] id={id} obstacle={obstacle}");
       return obstacle == WaterObstacleType.BLOCK;
     }
 
@@ -263,16 +264,12 @@ namespace Mods.OldGopher.Pipe.Scripts
     private WaterGateState _CheckInput()
     {
       var pipe = waterRadar.FindPipe(coordinates);
-      if (pipeNode == pipe)
-      {
+      if (pipe == pipeNode)
         return WaterGateState.EMPTY;
-      }
       var connected = pipeNode.TryConnect(this, pipe);
       if (connected)
-      {
         return WaterGateState.CONNECTED;
-      }
-      var obstacle = waterRadar.FindWaterObstacle(coordinates);
+      var obstacle = waterRadar.FindWaterObstacle(coordinates, pipeNode);
       return obstacle == WaterObstacleType.BLOCK
         ? WaterGateState.BLOCKED
         : WaterGateState.EMPTY;

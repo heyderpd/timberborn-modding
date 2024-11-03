@@ -1,60 +1,67 @@
+using System;
 using UnityEngine;
+using System.Collections;
+using Bindito.Core;
+using Timberborn.Animations;
+using Timberborn.TimeSystem;
+using Timberborn.BaseComponentSystem;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
-  internal class PipeBeaver : MonoBehaviour
-{
-  [SerializeField]
-  public GameObject BeaverPrefab;
-
-  private GameObject Beaver = null;
-
-  private float initialPosition;
-
-  private float finalPosition;
-
-  private int state = 0;
-
-  private float upLimit = 0.35f;
-
-  private static int randomChance = 1;
-
-  static public bool GetRandomChance()
+  internal class PipeBeaver : BaseComponent
   {
-    return Random.value <= randomChance / 100;
-  }
+    private NonlinearAnimationManager nonlinearAnimationManager;
 
-  public void WildBeaverAppears()
-  {
-    ModUtils.Log($"Beaver.click Beaver={Beaver != null}");
-    if (Beaver == null && BeaverPrefab != null)
-    {
-      Beaver = Instantiate(BeaverPrefab, new Vector3(0, 0, 0), Quaternion.identity);
-      initialPosition = Beaver.transform.position.z;
-      finalPosition = initialPosition + upLimit;
-      ModUtils.Log($"Beaver.click Beaver={Beaver != null} created");
-    }
-  }
+    private WaterRadar waterRadar;
 
-  public void FixedUpdate()
-  {
-    ModUtils.Log($"Beaver.update Beaver={Beaver != null} moving");
-    if (Beaver == null)
-      return;
-    if (state == 0 && Beaver.transform.position.z < finalPosition)
+    private IAnimator animator;
+
+    private static int randomChance = 1;
+
+    [Inject]
+    public void InjectDependencies(
+      NonlinearAnimationManager _nonlinearAnimationManager,
+      WaterRadar _waterRadar
+    )
     {
-      Beaver.transform.Translate(Vector3.up * Time.deltaTime, Space.Self);
+      nonlinearAnimationManager = _nonlinearAnimationManager;
+      waterRadar = _waterRadar;
     }
-    else if (Beaver.transform.position.z > initialPosition)
+
+    public void Awake()
     {
-      state = 1;
-      Beaver.transform.Translate(Vector3.down * Time.deltaTime, Space.Self);
+      animator = GetComponentInChildren<IAnimator>();
     }
-    else
+
+    static public bool GetRandomChance()
     {
-      state = 0;
-      Destroy(Beaver);
+      return UnityEngine.Random.value <= randomChance / 100f;
+    }
+
+    public void WildBeaverAppears(WaterGate gate = null)
+    {
+      try
+      {
+        if (animator == null)
+          return;
+        if (gate != null && waterRadar.IsBlocked(gate.coordinates))
+          return;
+        StartCoroutine(Animation());
+      }
+      catch (Exception err)
+      {
+        ModUtils.Log($"#ERROR [PipeBeaver.WildBeaverAppears] err={err}");
+      }
+    }
+
+    private IEnumerator Animation()
+    {
+      animator.Speed = nonlinearAnimationManager.SpeedMultiplier;
+      animator.SetTime(0);
+      animator.Enabled = true;
+      yield return new WaitForSeconds(4);
+      animator.Enabled = false;
+      animator.SetTime(0);
     }
   }
-}
 }

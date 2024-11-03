@@ -11,7 +11,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 {
   internal static class ModUtils
   {
-    public static readonly bool enabled = true;
+    public static readonly bool enabled = false;
 
     public static readonly System.Random random = new System.Random();
 
@@ -186,14 +186,15 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public static float GetValueStep(float _value, float _valueMax, int _steps = 5)
     {
-      var value = Mathf.Min(_value, _valueMax);
-      value = Mathf.Max(value, 0f);
-      value = value / _valueMax;
+      var value = Mathf.Max(
+        Mathf.Min(_value, _valueMax),
+        0f
+      );
+      if (value == 0f)
+        return 0f;
       var steps = _valueMax / _steps;
       value = (int)(value / steps);
-      value = Mathf.Min(value * steps, 1f);
-      value = value * _valueMax;
-      ModUtils.Log($"[GetValueStep] value={_value} valueMax={_valueMax} result={value}");
+      value = value / _steps;
       return value;
     }
 

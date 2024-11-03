@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
@@ -14,13 +15,9 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private TickCount nodesTick = new TickCount();
 
-    public readonly HashSet<PipeNode> Pipes = new HashSet<PipeNode>();
+    public readonly HashSet<PipeNode> Pipes;
 
-    public ImmutableArray<GateContext> WaterGates { get; private set; } = new ImmutableArray<GateContext>();
-
-    public ImmutableArray<GateContext> InputPumps { get; private set; } = new ImmutableArray<GateContext>();
-
-    public ImmutableArray<GateContext> OutputPumps { get; private set; } = new ImmutableArray<GateContext>();
+    public ImmutableArray<GateContext> WaterGates { get; private set; }
 
     public bool NoDistribution = true;
 
@@ -41,6 +38,8 @@ namespace Mods.OldGopher.Pipe.Scripts
     )
     {
       pipeGroupQueue = _pipeGroupQueue;
+      Pipes = new HashSet<PipeNode>();
+      WaterGates = new ImmutableArray<GateContext>();
     }
 
     public void UpdatePipeCount()
@@ -93,6 +92,15 @@ namespace Mods.OldGopher.Pipe.Scripts
       pipeGroupQueue.Group_RecalculateGates(group);
     }
 
+    public bool CantWorkAlone()
+    {
+      if (Pipes.Count >= 2)
+        return false;
+      var pipe = Pipes.FirstOrDefault();
+      var WorkAlone = pipe?.canWorkAlone ?? false;
+      return !WorkAlone;
+    }
+
     public void ResetNodes()
     {
       foreach (var node in Pipes)
@@ -103,12 +111,10 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void recalculateGates()
     {
-      if (Pipes.Count == 0)
-      {
-        WaterGates.Clear();
-        return;
-      }
+      WaterGates.Clear();
       ResetNodes();
+      if (Pipes.Count == 0 || CantWorkAlone())
+        return;
       WaterGates = Pipes.ToList()
         .Where(node => node.hasGatesEnabled)
         .Aggregate(
@@ -129,28 +135,36 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void DoMoveWater()
     {
-      if (!isEnabled)
+      if (!isEnabled || CantWorkAlone())
         return;
       WaterService.MoveWater(this);
     }
 
     public string GetInfo()
     {
-      string info = $"Group[\n";
-      info += $"  id={id} enabled={isEnabled} requesters={Requesters} deliveries={Deliveries} interaction={Interaction}\n";
-      info += $"  pipes={Pipes.Count} gates={WaterGates.Length}\n";
-      info += $"  gates:\n";
-      foreach (var context in WaterGates.ToList())
-      {
-        info += context.gate.GetInfo(false);
-        info += $"    pressureSum={context.pressureSum} quotaSum={context.quotaSum}\n";
-        info += $"    waterOfertedSum={context.waterOfertedSum} contaminationSum={context.contaminationSum}\n";
-        info += $"    WaterUsed={context.WaterUsed} pumpRequested={context.pumpRequested}\n";
-        info += $"    Contamination={context.Contamination} WaterMove={context.WaterMove}\n";
-        info += $"  ];\n";
+      try {
+        string info = $"Group[\n";
+        info += $"  id={id} enabled={isEnabled} requesters={Requesters} deliveries={Deliveries} interaction={Interaction}\n";
+        info += $"  pipes={Pipes?.Count} gates={(WaterGates != null ? WaterGates.Length : -1)}\n";
+        info += $"  gates:\n";
+        if (WaterGates == null)
+          return info + $"];\n";
+        foreach (var context in WaterGates.ToList())
+        {
+          info += context.gate.GetInfo(false);
+          info += $"    forceDelivery={context.forceDelivery} forceRequester={context.forceRequester}\n";
+          info += $"    pressureSum={context.pressureSum} quotaSum={context.quotaSum}\n";
+          info += $"    waterOfertedSum={context.waterOfertedSum} contaminationSum={context.contaminationSum}\n";
+          info += $"    WaterUsed={context.WaterUsed} pumpRequested={context.pumpRequested}\n";
+          info += $"    Contamination={context.Contamination} WaterMove={context.WaterMove}\n";
+          info += $"  ];\n";
+        }
+        info += $"];\n";
+        return info;
+      } catch (Exception err) {
+        ModUtils.Log($"#ERROR err={err}");
+        return "";
       }
-      info += $"];\n";
-      return info;
     }
   }
 }
