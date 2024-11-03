@@ -1,0 +1,4 @@
+fazer uniao de modelos 
+muda pro modo object
+clica nos dois
+entao aperta CTRL + J
