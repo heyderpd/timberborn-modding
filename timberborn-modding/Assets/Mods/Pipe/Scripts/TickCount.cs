@@ -35,39 +35,17 @@ namespace Mods.Pipe.Scripts
 
   internal static class TimerControl
   {
-    private static float lastTime = 0f;
+    private static float nextTime = 0f;
 
-    private static float timeLimit = 0.5f;
+    private static float fixedDeltaTime = Time.fixedDeltaTime; // = 0.6
 
-    private static float GetNow()
-    {
-      return Time.fixedTime * Time.fixedDeltaTime;
-    }
-    
     public static bool Skip()
     {
-      try
-      {
-        float now = GetNow();
-        if (lastTime == 0)
-        {
-          lastTime = now;
-          return true;
-        }
-        float timeDiff = now - lastTime;
-        if (timeDiff >= timeLimit)
-        {
-          lastTime = now;
-          return false;
-        }
+      float now = Time.fixedTime;
+      if (now < nextTime)
         return true;
-      }
-      catch (Exception err)
-      {
-        Debug.Log($"#ERROR [TimerControl.Tick] err={err}");
-        lastTime = GetNow();
-        return true;
-      }
+      nextTime = now + fixedDeltaTime;
+      return false;
     }
   }
 }

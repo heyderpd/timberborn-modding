@@ -1,21 +1,24 @@
 ﻿using System.Collections.Generic;
 using Bindito.Core;
 using UnityEngine;
+using Timberborn.BaseComponentSystem;
 using Timberborn.BlockSystem;
 using Timberborn.SingletonSystem;
 using Timberborn.EntitySystem;
 using Timberborn.Persistence;
 using Timberborn.TickSystem;
+using System.Linq;
+using Moq;
 
 namespace Mods.Pipe.Scripts
 {
-  internal class PipeNode : TickableComponent,
+  internal class PipeNode : BaseComponent,
                             IInitializableEntity,
                             IDeletableEntity,
                             IFinishedStateListener,
                             IPersistentEntity
   {
-    public bool isEnabled { get; private set; } = true;
+    public bool isEnabled { get; private set; } = false;
 
     public bool hasGatesEnabled { get; private set; } = false;
 
@@ -23,11 +26,11 @@ namespace Mods.Pipe.Scripts
 
     public readonly int id = lastId++;
 
-    private EventBus eventBus;
-
     private BlockObject blockObject;
 
     private BlockService blockService;
+
+    private PipeGroupQueue pipeGroupQueue;
 
     public PipeGroup group { get; private set; }
 
@@ -38,11 +41,11 @@ namespace Mods.Pipe.Scripts
     [Inject]
     public void InjectDependencies(
       BlockService _blockService,
-      EventBus _eventBus
+      PipeGroupQueue _pipeGroupQueue
     )
     {
       blockService = _blockService;
-      eventBus = _eventBus;
+      pipeGroupQueue = _pipeGroupQueue;
     }
 
     public void Awake()
@@ -55,15 +58,15 @@ namespace Mods.Pipe.Scripts
 
     public void InitializeEntity()
     {
+      Debug.Log($"[PIPE.InitializeEntity] pipe={id}");
       coordinates = blockObject.Coordinates;
-      PipeGroupQueue.PipeNodeCreate(this);
-      //PipeGroupQueue.PipeNodeCheckGates(this);
     }
 
     public void DeleteEntity()
     {
+      Debug.Log($"[PIPE.DeleteEntity] pipe={id}");
       isEnabled = false;
-      PipeGroupQueue.PipeNodeRemove(group, this);
+      pipeGroupQueue.PipeNodeRemove(group, this);
     }
 
     public void Save(IEntitySaver entitySaver) { }
@@ -73,20 +76,17 @@ namespace Mods.Pipe.Scripts
     public void OnEnterFinishedState()
     {
       ((Behaviour)this).enabled = true;
-      eventBus.Register(this);
+      pipeGroupQueue.PipeNodeCreate(this);
     }
 
     public void OnExitFinishedState()
     {
       ((Behaviour)this).enabled = false;
-      eventBus.Unregister(this);
     }
 
-    public override void Tick()
+    public void SetEnabled()
     {
-      if (!isEnabled)
-        return;
-      PipeGroupManager.Tick(this.group);
+      isEnabled = true;
     }
 
     public void SetGroup(PipeGroup _group)
@@ -95,79 +95,89 @@ namespace Mods.Pipe.Scripts
       group.PipeAdd(this);
     }
 
+    public void ReleaseConnections()
+    {
+      foreach (var gate in waterGates)
+      {
+        gate.ReleaseConnection();
+      }
+    }
+
     public bool TryConnect(WaterGate startGate, PipeNode node)
     {
+      if (node == null)
+      {
+        Debug.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} node_is_null");
+        return false;
+      }
       if (group.Same(node?.group))
       {
-        Debug.Log($"PIPE.TryConnect pipe={id} thisGroup={group.id} otherGroup={node.group.id} not_same_group");
+        Debug.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} is_same_group");
         return true;
       }
       if (!node.isEnabled)
       {
-        Debug.Log($"PIPE.TryConnect pipe={id} thisGroup={group.id} otherGroup={node.group.id} node_disabled");
-        return true;
+        Debug.Log($"[PIPE.TryConnect] pipe={id} thisGroup={group?.id} otherGroup={node.group?.id} node_disabled");
+        return false;
       }
       WaterGate endGate = node.waterGates
         .Find((WaterGate gate) => 
-          WaterGateConfig.IsCompatibleGate(gate.waterGateSide, gate.waterGateSide)
+          WaterGateConfig.IsCompatibleGate(gate.Side, gate.Side)
           && gate.coordinates.Equals(coordinates));
       if (!endGate)
       {
-        Debug.Log($"PIPE.TryConnect thisPipe={id}.by_gate={startGate.id} otherPipe={node.GetInfo()} gate_not_found");
+        Debug.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.GetInfo()} gate_not_found");
         return false;
       }
-      startGate.SetDisabled();
-      endGate.SetDisabled();
-      startGate.gateConnected = endGate;
-      endGate.gateConnected = startGate;
-      PipeGroupQueue.PipeNodeJoin(node, this);
-      Debug.Log($"PIPE.TryConnect thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} connected");
+      startGate.SetConnection(endGate);
+      endGate.SetConnection(startGate);
+      pipeGroupQueue.PipeNodeJoin(node, this);
+      Debug.Log($"[PIPE.TryConnect] thisPipe={id}.by_gate={startGate.id} otherPipe={node.id}.by_gate={endGate.id} connected");
       return true;
     }
 
-    public void CheckGates()
+    public void CheckGates(bool recalculate = true)
     {
       if (!isEnabled)
         return;
-      var enabled = false;
+      var _hasChanges = false;
+      var _hasGatesEnabled = false;
       foreach (var gate in waterGates)
       {
-        var gateEnabled = gate.CheckInput();
-        enabled = enabled || gateEnabled;
+        var gateChanged = gate.CheckInput(recalculate: false);
+        _hasChanges = _hasChanges || gateChanged;
+        _hasGatesEnabled = _hasGatesEnabled || gate.isEnabled;
       }
-      hasGatesEnabled = enabled;
-      PipeGroupQueue.GroupRecalculeGates(group);
+      hasGatesEnabled = _hasGatesEnabled;
+      if (recalculate && _hasChanges)
+        pipeGroupQueue.GroupRecalculateGates(this);
     }
 
     private bool IsFar(BlockObject block)
     {
-      if (block == null)
-        return true;
       var blockCoordinates = block.Coordinates;
       var distance = Vector3Int.Distance(blockCoordinates, coordinates);
       var far = distance != 1f;
       return far;
     }
 
-    [OnEvent]
-    public void OnBlockObjectSet(BlockObjectSetEvent blockObjectSetEvent)
+    public void WaterGateCheckInput(BlockObject block)
     {
-      if (IsFar(blockObjectSetEvent?.BlockObject))
+      Debug.Log($"[PIPE.WaterGateCheckInput] ghost bursters 1 block.isnull={block == null} block.IsFinished={block.IsFinished} IsFar={IsFar(block)}");
+      if (!isEnabled || block == null || block?.IsFinished == false || IsFar(block))
         return;
-      //group.CheckPipe(this);
-    }
-
-    [OnEvent]
-    public void OnBlockObjectUnset(BlockObjectUnsetEvent blockObjectUnsetEvent)
-    {
-      if (IsFar(blockObjectUnsetEvent?.BlockObject))
+      WaterGate gate = waterGates
+        .FirstOrDefault((WaterGate gate) =>
+          gate.coordinates.Equals(block.Coordinates));
+      Debug.Log($"[PIPE.WaterGateCheckInput] ghost bursters 2 gate={gate == null}");
+      if (gate == null)
         return;
-      //group.CheckPipe(this);
+      gate.CheckInput();
     }
 
     public string GetInfo()
     {
-      string info = $" Node[id={id}, group={group?.id}, coordinates={this.coordinates}, enabled={isEnabled}, gates={waterGates.Count}:\n";
+      string info = $" Node[id={id}, group={group?.id}, coordinates={coordinates}, enabled={isEnabled}, gates={waterGates.Count}:\n";
       foreach (var gate in waterGates)
       {
         info += gate.GetInfo();

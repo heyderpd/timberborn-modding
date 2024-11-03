@@ -1,6 +1,0 @@
-{
-  "Id": "Buildings.IronTeeth",
-  "Paths#append": [
-    "Resources/materials/uberatlas/materials/ironteeth/PipeMetal.IronTeeth.mat"
-  ]
-}

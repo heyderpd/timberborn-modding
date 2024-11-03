@@ -8,6 +8,7 @@ using Timberborn.WaterSystem;
 using Timberborn.BlockSystem;
 using Timberborn.WaterObjects;
 using Timberborn.TerrainSystem;
+using Timberborn.Localization;
 
 namespace Mods.Pipe.Scripts
 {
@@ -15,8 +16,6 @@ namespace Mods.Pipe.Scripts
                              IInitializableEntity,
                              IDeletableEntity
   {
-    public bool internalGateEnabled { get; private set; } = true;
-
     private static int lastId = 0;
 
     public readonly int id = lastId++;
@@ -25,13 +24,17 @@ namespace Mods.Pipe.Scripts
     private Vector3Int waterCoordinates;
 
     [SerializeField]
-    public WaterGateSide waterGateSide;
+    public WaterGateSide Side;
 
-    private WaterGateFlow waterGateFlow = WaterGateFlow.STOP;
+    private WaterGateState State;
 
+    private WaterGateFlow Flow = WaterGateFlow.STOP;
+    
     public PipeNode pipeNode { get; private set; }
 
-    public WaterGate gateConnected;
+    public WaterGate gateConnected { get; private set; }
+
+    public TickCount tick = new TickCount(5);
 
     private BlockObject blockObject;
 
@@ -45,7 +48,11 @@ namespace Mods.Pipe.Scripts
 
     private IThreadSafeWaterMap threadSafeWaterMap;
 
+    private PipeGroupQueue pipeGroupQueue;
+
     public float Floor { get; private set; }
+
+    public float FloorOffset { get; private set; }
 
     public float WaterLevel { get; private set; }
 
@@ -55,18 +62,22 @@ namespace Mods.Pipe.Scripts
 
     public float ContaminationPercentage { get; private set; }
 
+    public bool internalGateEnabled { get; private set; } = true;
+
     [Inject]
     public void InjectDependencies(
       ITerrainService _terrainService,
       IWaterService _waterService,
       IThreadSafeWaterMap _threadSafeWaterMap,
-      BlockService _blockService
+      BlockService _blockService,
+      PipeGroupQueue _pipeGroupQueue
     )
     {
       terrainService = _terrainService;
       blockService = _blockService;
       waterService = _waterService;
       threadSafeWaterMap = _threadSafeWaterMap;
+      pipeGroupQueue = _pipeGroupQueue;
     }
 
     public void Awake()
@@ -78,7 +89,8 @@ namespace Mods.Pipe.Scripts
     public void InitializeEntity()
     {
       coordinates = blockObject.Transform(waterCoordinates);
-      Floor = (float)(coordinates.z) + WaterGateConfig.getFloorShift(waterGateSide);
+      FloorOffset = WaterGateConfig.getFloorShift(Side);
+      Floor = (float)(coordinates.z) + FloorOffset;
     }
 
     public void DeleteEntity() { }
@@ -89,7 +101,7 @@ namespace Mods.Pipe.Scripts
       {
         if (pipeNode == null)
           return false;
-        return internalGateEnabled && pipeNode.isEnabled;
+        return pipeNode.isEnabled && gateConnected == null && State == WaterGateState.EMPTY;
       }
     }
 
@@ -113,7 +125,6 @@ namespace Mods.Pipe.Scripts
     {
       try
       {
-        //Debug.Log($"#LOG GATE.GetWaters id={id} start");
         if (!isEnabled || !IsUnderwater())
         {
           WaterLevel = 0f;
@@ -128,7 +139,6 @@ namespace Mods.Pipe.Scripts
         else
           ContaminationPercentage = 0f;
         DesiredWater = Water;
-        Debug.Log($"[WaterGate.UpdateWaters] id={id} Water={Water} WaterConta={ContaminationPercentage} end");
         return true;
       } catch (Exception err)
       {
@@ -142,8 +152,21 @@ namespace Mods.Pipe.Scripts
       internalGateEnabled = false;
     }
 
+    public void SetConnection(WaterGate gate)
+    {
+      SetDisabled();
+      gateConnected = gate;
+    }
+
+    public void UnsetConnection()
+    {
+      gateConnected = null;
+      pipeGroupQueue.WaterGateCheckInput(this);
+    }
+
     public void ReleaseConnection()
     {
+      gateConnected?.UnsetConnection();
       gateConnected = null;
     }
 
@@ -151,49 +174,64 @@ namespace Mods.Pipe.Scripts
     {
       if (terrainService.Underground(coordinates))
       {
-        //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={false} by terrain");
         return true;
       }
       var obstacle = blockService.GetObjectsWithComponentAt<WaterObstacle>(coordinates).FirstOrDefault();
-      //Debug.Log($"GATE.notHasEmptySpace pipeNode={pipeNode.id} gate={id} isObstacle={obstacle != null}");
       return obstacle != null;
     }
 
-    public bool CheckInput()
+    public bool CheckInput(bool recalculate = true)
+    {
+      var oldState = State;
+      _CheckInput();
+      var changed = State == WaterGateState.CONNECTED || oldState != State;
+      if (recalculate && changed)
+        pipeGroupQueue.GroupRecalculateGates(pipeNode);
+      return changed;
+    }
+
+    private void _CheckInput()
     {
       if (terrainService.Underground(coordinates))
       {
-        //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={false} by terrain");
-        return internalGateEnabled = false;
+        Debug.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=BLOCKED by underground");
+        State = WaterGateState.BLOCKED;
+        return;
       }
       var block = blockService.GetObjectsWithComponentAt<BlockObject>(coordinates).FirstOrDefault();
-      if (block == null)
+      if (block == null || block?.IsFinished == false)
       {
-        //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={true} by empty");
-        return internalGateEnabled = true;
+        Debug.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=EMPTY by block=null IsFinished={block?.IsFinished}");
+        State = WaterGateState.EMPTY;
+        return;
       }
       var pipe = block.GetComponentFast<PipeNode>();
-      var connected = pipe != null ? pipeNode.TryConnect(this, pipe) : false;
+      var connected = pipeNode.TryConnect(this, pipe);
       if (connected)
       {
-        //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={false} by connected");
-        return internalGateEnabled = false;
+        Debug.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State=CONNECTED by connected=true");
+        State = WaterGateState.CONNECTED;
+        return;
       }
-      var obstacle = block.GetComponentFast<WaterObstacle>();
-      //Debug.Log($"GATE.CheckClearInput pipeNode={pipeNode.id} gate={id} internalGateEnabled={obstacle == null} by obstacle");
-      return internalGateEnabled = obstacle == null;
+      var obstacle = block.GetComponentFast<WaterObstacle>(); 
+      State = obstacle != null
+        ? WaterGateState.BLOCKED
+        : WaterGateState.EMPTY;
+      Debug.Log($"[WATER.CheckInput] node={pipeNode?.id} gate={id} State={State} by WaterObstacle");
     }
 
-    public bool CheckFlowChanged(float water)
+    public bool FlowNotChanged(float water)
     {
       var newFlow = WaterGateFlow.STOP;
       if (water > 0f)
         newFlow = WaterGateFlow.OUT;
       if (water < 0f)
         newFlow = WaterGateFlow.IN;
-      if (waterGateFlow == newFlow)
+      if (Flow == newFlow)
         return true;
-      waterGateFlow = newFlow;
+      if (tick.Skip())
+        return true;
+      Flow = newFlow;
       return false;
     }
 
@@ -201,6 +239,7 @@ namespace Mods.Pipe.Scripts
     {
       if (!isEnabled || notHasEmptySpace())
         return;
+      Debug.Log($"WATER.MoveWater pipe={pipeNode.id}");
       float waterAbs = Mathf.Abs(water);
       float contaminatedWater = waterAbs * ContaminationPercentage;
       float cleanWater = waterAbs - contaminatedWater;
@@ -244,9 +283,12 @@ namespace Mods.Pipe.Scripts
 
     public string GetInfo()
     {
-      string info = $"Gate[\n node={pipeNode?.id}\n gate={id}\n cord={coordinates.ToString()}\n side={waterGateSide}\n flow={waterGateFlow}\n ";
-      info += $" gateConnected={gateConnected?.id}\n enabled={isEnabled}\n ";
-      info += $" Floor={Floor.ToString("0.00")}\n WaterLevel={WaterLevel.ToString("0.00")}\n Water={Water.ToString("0.00")}\n DesiredWater={DesiredWater.ToString("0.00")}\n";
+      string info = $"Gate[\n";
+      info += $"  node={pipeNode?.id} gate={id} cord={coordinates.ToString()}\n ";
+      info += $"  state={State} side={Side} flow={Flow}\n ";
+      info += $"  gateConnected={gateConnected?.id} enabled={isEnabled}\n ";
+      info += $"  Floor={Floor.ToString("0.00")} WaterLevel={WaterLevel.ToString("0.00")}\n ";
+      info += $"  Water={Water.ToString("0.00")} DesiredWater={DesiredWater.ToString("0.00")}\n ";
       info += $"];\n";
       return info;
     }

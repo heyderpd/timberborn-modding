@@ -8,11 +8,13 @@ namespace Mods.Pipe.Scripts
   {
     public void Configure(IContainerDefinition containerDefinition)
     {
+      containerDefinition.Bind<PipeGroupQueue>().AsSingleton();
+      containerDefinition.Bind<PipeGroupManager>().AsSingleton();
       containerDefinition.Bind<PipeFragment>().AsSingleton();
       //containerDefinition.MultiBind<TemplateModule>().ToProvider(ProvideTemplateModule).AsSingleton();
       containerDefinition.MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();
     }
-
+    
     /*private static TemplateModule ProvideTemplateModule() // apresenta sinalizacoes virtuais ao selecionar o objeto
     {
       TemplateModule.Builder builder = new TemplateModule.Builder();

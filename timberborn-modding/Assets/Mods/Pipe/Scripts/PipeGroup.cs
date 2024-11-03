@@ -20,6 +20,15 @@ namespace Mods.Pipe.Scripts
 
     private int PipesCount => Pipes.Count;
 
+    private PipeGroupQueue pipeGroupQueue;
+
+    public PipeGroup(
+      PipeGroupQueue _pipeGroupQueue
+    )
+    {
+      pipeGroupQueue = _pipeGroupQueue;
+    }
+
     public bool Same(PipeGroup group)
     {
       return group != null && this.Equals(group);
@@ -56,11 +65,11 @@ namespace Mods.Pipe.Scripts
         pipe.SetGroup(group);
       }
       Clear();
+      pipeGroupQueue.GroupRecalculeGates(group);
     }
 
-    public void recalculeGates()
+    public void recalculateGates()
     {
-      Debug.Log($"GROUP.discovery group={id} start");
       if (Pipes.Count == 0)
       {
         WaterGates.Clear();

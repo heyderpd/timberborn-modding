@@ -272,8 +272,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   waterCoordinates: {x: 0, y: -1, z: 0}
-  waterGateSide: 1
-  gateConnected: {fileID: 0}
+  Side: 1
   DesiredWater: 0
 --- !u!114 &-1302879299329295200
 MonoBehaviour:
@@ -288,8 +287,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   waterCoordinates: {x: -1, y: 0, z: 0}
-  waterGateSide: 2
-  gateConnected: {fileID: 0}
+  Side: 2
   DesiredWater: 0
 --- !u!114 &4971155771503057506
 MonoBehaviour:

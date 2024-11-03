@@ -1,15 +1,19 @@
 ﻿
 using System.Collections.Generic;
+using Timberborn.BaseComponentSystem;
+using Timberborn.BlockSystem;
 using Timberborn.Common;
+using UnityEngine;
 
 namespace Mods.Pipe.Scripts
 {
   public enum PipeGroupChangeTypes
   {
-    GROUP_RECALCULE_GATES,
+    GROUP_RECALCULATE_GATES,
     PIPE_CREATE,
     PIPE_REMOVE,
     PIPE_JOIN,
+    PIPE_CHECK_CHANGES,
     PIPE_CHECK_GATES,
     GATE_CHECK_INPUT
   }
@@ -22,15 +26,18 @@ namespace Mods.Pipe.Scripts
 
     public readonly PipeNode secondNode;
 
+    public readonly BlockObject blockObject;
+
     public readonly WaterGate gate;
 
     public readonly PipeGroupChangeTypes type;
-
+    
     public PipeGroupChange(
       PipeGroupChangeTypes _type,
       PipeGroup _group = null,
       PipeNode _node = null,
       PipeNode _secondNode = null,
+      BlockObject _blockObject = null,
       WaterGate _gate = null
     )
     {
@@ -38,33 +45,47 @@ namespace Mods.Pipe.Scripts
       group = _group;
       node = _node;
       secondNode = _secondNode;
+      blockObject = _blockObject;
       gate = _gate;
     }
   }
   
-  internal static class PipeGroupQueue
+  internal class PipeGroupQueue
   {
-    private static readonly Queue<PipeGroupChange> changes = new Queue<PipeGroupChange>();
+    private readonly Queue<PipeGroupChange> changes = new Queue<PipeGroupChange>();
 
-    public static bool HasChanges => !changes.IsEmpty();
+    public bool HasChanges => !changes.IsEmpty();
 
-    public static PipeGroupChange Dequeue()
+    public PipeGroupChange Dequeue()
     {
-      return changes.Dequeue(); ;
+      return changes.Dequeue();
     }
 
-    public static void GroupRecalculeGates(PipeGroup group)
+    public void GroupRecalculeGates(PipeGroup group)
     {
+      Debug.Log($"[Changes.GroupRecalculeGates] WILL group={group?.id}");
       if (group == null)
         return;
       changes.Enqueue(new PipeGroupChange(
-        _type: PipeGroupChangeTypes.GROUP_RECALCULE_GATES,
+        _type: PipeGroupChangeTypes.GROUP_RECALCULATE_GATES,
         _group: group
       ));
     }
 
-    public static void PipeNodeJoin(PipeNode node, PipeNode secondNode)
+    public void GroupRecalculateGates(PipeNode node)
     {
+      Debug.Log($"[Changes.GroupRecalculateGates] WILL group={node?.group?.id} node={node?.id}");
+      if (node == null)
+        return;
+      changes.Enqueue(new PipeGroupChange(
+        _type: PipeGroupChangeTypes.GROUP_RECALCULATE_GATES,
+        _node: node
+      ));
+    }
+
+    public void PipeNodeJoin(PipeNode node, PipeNode secondNode)
+    {
+      Debug.Log($"[Changes.PipeNodeJoin] WILL group={node?.group?.id} node={node?.id}");
       if (node == null || secondNode == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -74,8 +95,9 @@ namespace Mods.Pipe.Scripts
       ));
     }
 
-    public static void PipeNodeCreate(PipeNode node)
+    public void PipeNodeCreate(PipeNode node)
     {
+      Debug.Log($"[Changes.PipeNodeCreate] WILL group={node?.group?.id} node={node?.id}");
       if (node == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -84,8 +106,9 @@ namespace Mods.Pipe.Scripts
       ));
     }
 
-    public static void PipeNodeRemove(PipeGroup group, PipeNode node)
+    public void PipeNodeRemove(PipeGroup group, PipeNode node)
     {
+      Debug.Log($"[Changes.PipeNodeRemove] WILL group={node?.group?.id} node={node?.id}");
       if (group == null || node == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -95,8 +118,9 @@ namespace Mods.Pipe.Scripts
       ));
     }
 
-    public static void PipeNodeCheckGates(PipeNode node)
+    public void PipeNodeCheckGates(PipeNode node)
     {
+      Debug.Log($"[Changes.PipeNodeCheckGates] WILL group={node?.group?.id} node={node?.id}");
       if (node == null)
         return;
       changes.Enqueue(new PipeGroupChange(
@@ -105,8 +129,20 @@ namespace Mods.Pipe.Scripts
       ));
     }
 
-    public static void WaterGateCheckInput(WaterGate gate)
+    public void PipeNodeCheckChanges(BlockObject blockObject)
     {
+      Debug.Log($"[Changes.PipeNodeCheckChanges] WILL");
+      if (blockObject == null)
+        return;
+      changes.Enqueue(new PipeGroupChange(
+        _type: PipeGroupChangeTypes.PIPE_CHECK_CHANGES,
+        _blockObject: blockObject
+      ));
+    }
+
+    public void WaterGateCheckInput(WaterGate gate)
+    {
+      Debug.Log($"[Changes.ActionGateCheckInput] WILL group={gate?.pipeNode.group?.id} node={gate?.pipeNode.id} gate={gate.id}");
       if (gate == null)
         return;
       changes.Enqueue(new PipeGroupChange(

@@ -2,51 +2,37 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using static UnityEngine.UIElements.UxmlAttributeDescription;
 
 namespace Mods.Pipe.Scripts
 {
   internal static class MoveWater
   {
-    static float maximumWaterInFlow = 5.00f;
+    static readonly float maximumFlow = 1.00f;
 
-    static float maximumWaterOutFlow = 5.00f;
-
-    static float minimumWaterFlow = 0.01f;
-
-    static float minimumDelivereWaters = 0.01f;
+    static readonly float minimumFlow = 0.001f;
     
-    static float waterPerSecond = 1.00f;
+    static readonly float waterPercentPerSecond = 0.50f;
     
-    private static float LimitWater(float expectedWater, bool inflow)
+    private static float LimitWater(float expectedWater)
     {
       float water = Mathf.Abs(expectedWater);
-      float maxWater = inflow ? maximumWaterInFlow : maximumWaterOutFlow;
-      water = Mathf.Min(water, maxWater);
-      water = water >= minimumWaterFlow ? water : 0f;
+      water = Mathf.Min(water, maximumFlow);
+      water = water >= minimumFlow ? water : 0f;
       return water;
-    }
-
-    private static float GetWaterUp(WaterGate gate, float expectedWaterLevel)
-    {
-      if (expectedWaterLevel > gate.Floor)
-        return expectedWaterLevel - gate.Floor;
-      else
-        return gate.Water;
-    }
-
-    private static float GetWaterLow(WaterGate gate, float expectedWaterLevel)
-    {
-      return expectedWaterLevel - gate.WaterLevel;
     }
 
     private static float GetDeliveryWater(WaterGate gate, float average)
     {
-      return LimitWater(GetWaterUp(gate, average), true);
+      var limited = LimitWater(gate.Water);
+      return limited;
     }
 
     private static float GetReceiveryWater(WaterGate gate, float average)
     {
-      return GetWaterLow(gate, average);
+      var water = average - gate.WaterLevel;
+      var limited = LimitWater(water);
+      return limited;
     }
 
     private static float getWaterLevel(List<WaterGate> Gates)
@@ -62,22 +48,20 @@ namespace Mods.Pipe.Scripts
             return sum + gate.WaterLevel;
           }
         );
-      if (waterSum <= 0)
+      Debug.Log($"[MoveWater.getWaterLevel] waterSum={waterSum}");
+      if (waterSum <= minimumFlow)
         return float.NaN;
       return average / Gates.Count;
     }
 
-    private static float GetWaterPercentPerSecond()
+    private static bool calculateFlow(List<WaterGate> Gates)
     {
-      return waterPerSecond;
-      //return Time.fixedDeltaTime * waterPerSecond;
-      //return Mathf.Min(Time.fixedDeltaTime, 1f) * waterPerSecond; // Time.fixedDeltaTime = 0.6
-    }
-
-    private static bool calculateFlow(List<WaterGate> Gates, float average)
-    {
-      float delivereWaters = 0f, receivertWaters = 0f;
-      var (deliverers, receivers) = Gates
+      float average = getWaterLevel(Gates);
+      Debug.Log($"[MoveWater.calculateFlow] average={average}");
+      if (float.IsNaN(average))
+        return false;
+      float delivereWaters = 0f, requestersWaters = 0f;
+      var (deliverers, requesters) = Gates
         .Aggregate(
           new Tuple<List<WaterGate>, List<WaterGate>>(new List<WaterGate>(), new List<WaterGate>()),
           (Tuple<List<WaterGate>, List<WaterGate>> lists, WaterGate gate) =>
@@ -88,11 +72,13 @@ namespace Mods.Pipe.Scripts
               deliverers.Add(gate);
               gate.DesiredWater = GetDeliveryWater(gate, average);
               delivereWaters += gate.DesiredWater;
+              Debug.Log($"[MoveWater.calculateFlow] Pre deliverers gate.DesiredWater={gate.DesiredWater}");
             } else if (gate.WaterLevel < average)
             {
               requesters.Add(gate);
               gate.DesiredWater = GetReceiveryWater(gate, average);
-              receivertWaters += gate.DesiredWater;
+              requestersWaters += gate.DesiredWater;
+              Debug.Log($"[MoveWater.calculateFlow] Pre requesters gate.DesiredWater={gate.DesiredWater}");
             } else
             {
               gate.DesiredWater = 0f;
@@ -100,37 +86,36 @@ namespace Mods.Pipe.Scripts
             return lists;
           }
         );
-      if (deliverers.Count == 0 || receivers.Count == 0 || delivereWaters < minimumDelivereWaters)
+      Debug.Log($"[MoveWater.calculateFlow] deliverers={deliverers.Count} receivers={requesters.Count} receivers={delivereWaters} receivers={requestersWaters} check={(deliverers.Count == 0 || requesters.Count == 0 || delivereWaters < minimumFlow || requestersWaters < minimumFlow)}");
+      if (deliverers.Count == 0 || requesters.Count == 0 || delivereWaters < minimumFlow || requestersWaters < minimumFlow)
         return false;
-      var waterUsed = receivers
+      var waterUsed = requesters
         .Aggregate(
           0f,
           (float waterUsed, WaterGate gate) =>
           {
-            float water = LimitWater(
-              delivereWaters * (gate.DesiredWater / receivertWaters),
-              false
-            );
-            gate.DesiredWater = water;
+            float water = delivereWaters * (gate.DesiredWater / requestersWaters);
+            gate.DesiredWater = Mathf.Min(water, gate.DesiredWater);
+            Debug.Log($"[MoveWater.Do] Final requesters gate.DesiredWater={gate.DesiredWater}");
             waterUsed += gate.DesiredWater;
             return waterUsed;
           }
         );
-      float waterNotUsed = delivereWaters - waterUsed;
+      float waterUsedPercent = waterUsed / delivereWaters;
+      Debug.Log($"[MoveWater.calculateFlow] delivereWaters={delivereWaters} waterUsed={waterUsed} waterUsedPercent={waterUsedPercent}");
       deliverers
         .ForEach((WaterGate gate) =>
-        {
-          float water = gate.DesiredWater;
-          if (waterNotUsed > 0f)
-            water -= (waterNotUsed * (water / delivereWaters));
-          gate.DesiredWater = water - gate.Water;
-        });
+          {
+            float water = gate.DesiredWater * waterUsedPercent;
+            Debug.Log($"[MoveWater.calculateFlow] Final deliverers gate.DesiredWater={gate.DesiredWater} water={-water}");
+            gate.DesiredWater = -water;
+          });
       bool canFlow = Gates
         .Aggregate(
           true,
           (bool canFlow, WaterGate gate) =>
           {
-            canFlow = gate.CheckFlowChanged(gate.DesiredWater) && canFlow;
+            canFlow = gate.FlowNotChanged(gate.DesiredWater) && canFlow;
             return canFlow;
           }
         );
@@ -139,7 +124,6 @@ namespace Mods.Pipe.Scripts
 
     private static void moveWater(List<WaterGate> Gates)
     {
-      float waterPercentPerSecond = GetWaterPercentPerSecond();
       Gates
         .ForEach((WaterGate gate) =>
         {
@@ -151,11 +135,8 @@ namespace Mods.Pipe.Scripts
     {
       if (Gates.Count <= 1)
         return false;
-      float average = getWaterLevel(Gates);
-      if (float.IsNaN(average))
-        return false;
-      bool newFlow = calculateFlow(Gates, average);
-      if (!newFlow)
+      bool canFlow = calculateFlow(Gates);
+      if (!canFlow)
         return false;
       moveWater(Gates);
       return true;

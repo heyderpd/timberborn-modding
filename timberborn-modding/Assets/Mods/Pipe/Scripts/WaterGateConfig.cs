@@ -1,5 +1,12 @@
 ﻿namespace Mods.Pipe.Scripts
 {
+  internal enum WaterGateState
+  {
+    EMPTY,
+    BLOCKED,
+    CONNECTED
+  }
+
   internal enum WaterGateFlow
   {
     STOP,
