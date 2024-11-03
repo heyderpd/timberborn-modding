@@ -20,18 +20,23 @@ namespace Mods.OldGopher.Pipe.Scripts
     public readonly int id = lastId++;
 
     [SerializeField]
-    public WaterGateSide Side;
+    public WaterGateType Type;
 
     [SerializeField]
-    public WaterGateType Type = WaterGateType.BOTH;
-
-    [SerializeField]
-    public bool StopWhenSubmerged = false;
+    public WaterGateMode Mode = WaterGateMode.BOTH;
 
     public WaterGateState State { get; private set; }
 
     private WaterGateFlow? Flow = null;
-    
+
+    public bool CantAffectWaterLevel => Mode != WaterGateMode.BOTH;
+
+    public bool IsValve => Type == WaterGateType.VALVE;
+
+    public bool IsWaterPump => Type == WaterGateType.WATERPUMP;
+
+    public bool IsInput => Mode == WaterGateMode.ONLY_IN;
+
     public PipeNode pipeNode { get; private set; }
 
     public WaterGate gateConnected { get; private set; }
@@ -61,8 +66,6 @@ namespace Mods.OldGopher.Pipe.Scripts
     public float WaterLevel { get; private set; }
 
     public float Water { get; private set; }
-
-    public float DesiredWater;
 
     public float ContaminationPercentage { get; private set; }
 
@@ -97,12 +100,11 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void InitializeEntity()
     {
-      coordinates = blockObject.Transform(WaterGateConfig.getCoordinates(Side));
-      LowerLimit = (float)(coordinates.z) + WaterGateConfig.getLowerLimitShift(Side);
-      HigthLimit = (float)(coordinates.z) + WaterGateConfig.getHigthLimitShift(Side);
+      coordinates = blockObject.Transform(WaterGateConfig.getCoordinates(Type));
+      LowerLimit = (float)(coordinates.z) + WaterGateConfig.getLowerLimitShift(Type);
+      HigthLimit = (float)(coordinates.z) + WaterGateConfig.getHigthLimitShift(Type);
       waterParticle.Initialize(colors, this);
       WaterAdded += waterParticle.OnWaterAdded;
-      //SetWaterParticles(UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f));
     }
 
     public void DeleteEntity() { }
@@ -150,7 +152,6 @@ namespace Mods.OldGopher.Pipe.Scripts
           ContaminationPercentage = threadSafeWaterMap.ColumnContamination(coordinates);
         else
           ContaminationPercentage = 0f;
-        DesiredWater = Water;
         return true;
       } catch (Exception err)
       {
@@ -162,46 +163,76 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
     }
 
+    public void ToggleWaterPump()
+    {
+      if (!IsWaterPump)
+        return;
+      Mode = Mode == WaterGateMode.ONLY_OUT
+        ? WaterGateMode.ONLY_IN
+        : WaterGateMode.ONLY_OUT;
+    }
+
+    public void TestParticle()
+    {
+      SetWaterParticles(
+        UnityEngine.Random.Range(0.0f, 1.0f),
+        UnityEngine.Random.Range(0.0f, 1.0f)
+      );
+    }
+
     public bool CanDelivereryWater(float average)
     {
-      if (Type == WaterGateType.ONLY_OUT)
+      ModUtils.Log($"[WaterGate.CanDelivereryWater] type={Mode} average={average} IsWaterPump={IsWaterPump} Water={Water} WaterLevel={WaterLevel} check01={Water > 0f} check02={WaterLevel > average}");
+      if (Mode == WaterGateMode.ONLY_OUT)
         return false;
-      return WaterLevel > average;
+      if (IsWaterPump)
+        return true;
+      return Water > 0f && WaterLevel > average;
     }
 
     public bool CanRequestWater(float average)
     {
-      if (Type == WaterGateType.ONLY_IN)
+      ModUtils.Log($"[WaterGate.CanRequestWater] type={Mode} average={average} LowerLimit={LowerLimit} WaterLevel={WaterLevel} check01={average > LowerLimit} check02={average > WaterLevel}");
+      if (Mode == WaterGateMode.ONLY_IN)
         return false;
-      return WaterLevel < average;
+      if (IsWaterPump)
+        return true;
+      return average > LowerLimit && average > WaterLevel;
     }
 
-    private float LimitWater(float expectedWater)
+    public static float LimitWater(float expectedWater)
     {
       float water = Mathf.Abs(expectedWater);
       water = Mathf.Min(water, WaterService.maximumFlow);
-      water = water >= WaterService.minimumFlow ? water : 0f;
+      water = water > WaterService.minimumFlow ? water : 0f;
       return water;
     }
 
     public float GetDeliveryWater(float average)
     {
+      if (IsWaterPump)
+        return WaterService.maximumFlow;
       var limited = LimitWater(Water);
       return limited;
     }
 
+    private float GetRequesterWaterWithSubmergeLimit(float average)
+    {
+      if (WaterLevel > HigthLimit && HigthLimit > average && LowerLimit > average)
+        return 0f;
+      var maximumWater = WaterLevel > LowerLimit
+        ? HigthLimit - WaterLevel
+        : HigthLimit - LowerLimit;
+      maximumWater = Math.Max(maximumWater, 0f);
+      return maximumWater;
+    }
+
     public float GetRequesterWater(float average)
     {
-      if (StopWhenSubmerged)
-      {
-        if (WaterLevel > HigthLimit && HigthLimit > average && LowerLimit > average)
-          return 0f;
-        var maximumWater = WaterLevel > LowerLimit
-          ? HigthLimit - WaterLevel
-          : HigthLimit - LowerLimit;
-        maximumWater = Math.Max(maximumWater, 0f);
-        return maximumWater;
-      }
+      if (IsWaterPump)
+        return WaterService.maximumFlow;
+      if (IsValve)
+        return GetRequesterWaterWithSubmergeLimit(average);
       var water = average - WaterLevel;
       var limited = LimitWater(water);
       return limited;
@@ -232,7 +263,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     
     private bool notHasEmptySpace()
     {
-      var obstacle = waterRadar.FindWaterObstacle(coordinates, Side);
+      var obstacle = waterRadar.FindWaterObstacle(coordinates);
       return obstacle == WaterObstacleType.BLOCK;
     }
 
@@ -247,7 +278,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private WaterGateState _CheckInput()
     {
-      var pipe = blockService.GetObjectsWithComponentAt<PipeNode>(coordinates).FirstOrDefault();
+      var pipe = waterRadar.FindPipe(coordinates);
       ModUtils.Log($"[WATER.CheckInput] 01 node={pipe?.id} gate={id} finding_pipe");
       var connected = pipeNode.TryConnect(this, pipe);
       if (connected)
@@ -255,7 +286,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         ModUtils.Log($"[WATER.CheckInput] 02 node={pipeNode?.id} gate={id} State=CONNECTED by connected=true");
         return WaterGateState.CONNECTED;
       }
-      var obstacle = waterRadar.FindWaterObstacle(coordinates, Side);
+      var obstacle = waterRadar.FindWaterObstacle(coordinates);
       ModUtils.Log($"[WATER.CheckInput] 03 node={pipe?.id} gate={id} obstacle={obstacle}");
       return obstacle == WaterObstacleType.BLOCK
         ? WaterGateState.BLOCKED
@@ -341,11 +372,16 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
     }
 
-    public string GetInfo()
+    public string GetInfo(bool endString = true)
     {
-      string info = $"Gate[node={pipeNode?.id}_gate={id} enabled={isEnabled} state={State}\n";
-      info += $"\tgateConnected={gateConnected?.id} WaterLevel={WaterLevel.ToString("0.00")}\n";
-      info += $"\twater={Water.ToString("0.00")} conta={ContaminationPercentage.ToString("0.00")} desire={DesiredWater.ToString("0.00")}];\n";
+      string info = $"  Gate[\n";
+      info += $"    id={id} pipe={pipeNode?.id} enabled={isEnabled}\n";
+      info += $"    connected={gateConnected?.id}\n";
+      info += $"    type={Type} mode={Mode} state={State}\n";
+      info += $"    lower={LowerLimit.ToString("0.00")} higth={HigthLimit.ToString("0.00")} level={WaterLevel.ToString("0.00")}\n";
+      info += $"    detected={Water.ToString("0.00")} conta={ContaminationPercentage.ToString("0.00")}\n";
+      if (endString)
+        info += $"  ];\n";
       return info;
     }
   }

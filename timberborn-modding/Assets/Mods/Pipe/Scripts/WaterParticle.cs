@@ -32,7 +32,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (initialized)
         return;
       initialized = true;
-      attachmentId = WaterGateConfig.getParticleAttachmentId(waterGate.Side);
+      attachmentId = WaterGateConfig.getParticleAttachmentId(waterGate.Type);
       if (attachmentId == "")
         return;
       colors = _colors;

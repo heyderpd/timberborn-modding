@@ -1,7 +1,6 @@
-using System;
 using System.Linq;
 using System.Collections.Generic;
-using UnityEngine;
+using System;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -13,128 +12,180 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public static readonly float waterPercentPerSecond = ModUtils.waterPower;
 
-    private static float getWaterLevel(List<WaterGate> Gates)
+    private static float getWaterLevel(PipeGroup group)
     {
-      bool success = true;
+      float count = 0;
       float waterSum = 0f;
-      float average = Gates
+      float levelSum = group.WaterGates
         .Aggregate(
           0f,
-          (float sum, WaterGate gate) =>
+          (float levelSum, GateContext context) =>
           {
-            success = gate.UpdateWaters() && success;
-            waterSum += gate.Water;
-            return sum + gate.WaterLevel;
+            context.Reset();
+            var success = context.gate.UpdateWaters();
+            if (!success || context.gate.CantAffectWaterLevel)
+              return levelSum;
+            count += 1;
+            waterSum += context.gate.Water;
+            return levelSum + context.gate.WaterLevel;
           }
         );
-      //ModUtils.Log($"[MoveWater.getWaterLevel] waterSum={waterSum}");
-      if (!success || waterSum <= minimumFlow)
+      ModUtils.Log($"[WaterService.getWaterLevel] waterSum={waterSum} levelSum={levelSum} Gates.Count={group.WaterGates.Length} count={count}");
+      var average = levelSum / count;
+      if (float.IsNaN(average) || minimumFlow >= waterSum)
         return float.NaN;
-      return average / Gates.Count;
+      group.WaterAverage = average;
+      ModUtils.Log($"[WaterService.getWaterLevel] average={average}");
+      return average;
     }
 
-    //TODO: improve deliverers and requesters to only discovery it when necessary
-    private static Tuple<bool, float> calculateFlow(List<WaterGate> Gates, float average)
+    private static bool discoveryDistribution(PipeGroup group, float average)
     {
-      float delivereWaters = 0f, requestersWaters = 0f, contamination = 0f;
-      var (deliverers, requesters) = Gates
-        .Aggregate(
-          new Tuple<List<WaterGate>, List<WaterGate>>(new List<WaterGate>(), new List<WaterGate>()),
-          (Tuple<List<WaterGate>, List<WaterGate>> lists, WaterGate gate) =>
-          {
-            var (deliverers, requesters) = lists;
-            if (gate.CanDelivereryWater(average))
-            {
-              deliverers.Add(gate);
-              gate.DesiredWater = gate.GetDeliveryWater(average);
-              delivereWaters += gate.DesiredWater;
-              contamination += gate.ContaminationPercentage;
-              //ModUtils.Log($"[MoveWater.calculateFlow] Pre deliverers gate.DesiredWater={gate.DesiredWater}");
-            } else if (gate.CanRequestWater(average))
-            {
-              requesters.Add(gate);
-              gate.DesiredWater = gate.GetRequesterWater(average);
-              requestersWaters += gate.DesiredWater;
-              //ModUtils.Log($"[MoveWater.calculateFlow] Pre requesters gate.DesiredWater={gate.DesiredWater}");
-            } else
-            {
-              gate.DesiredWater = 0f;
-            }
-            return lists;
-          }
-        );
-      //ModUtils.Log($"[MoveWater.calculateFlow] deliverers={deliverers.Count} receivers={requesters.Count} receivers={delivereWaters} receivers={requestersWaters} check={(deliverers.Count == 0 || requesters.Count == 0 || delivereWaters < minimumFlow || requestersWaters < minimumFlow)}");
-      if (deliverers.Count == 0 || requesters.Count == 0 || delivereWaters < minimumFlow || requestersWaters < minimumFlow)
-        return new Tuple<bool, float>(false, 0f);
-      var waterUsed = requesters
-        .Aggregate(
-          0f,
-          (float waterUsed, WaterGate gate) =>
-          {
-            float water = delivereWaters * (gate.DesiredWater / requestersWaters);
-            gate.DesiredWater = Mathf.Min(water, gate.DesiredWater);
-            //ModUtils.Log($"[MoveWater.Do] Final requesters gate.DesiredWater={gate.DesiredWater}");
-            waterUsed += gate.DesiredWater;
-            return waterUsed;
-          }
-        );
-      float waterUsedPercent = waterUsed / delivereWaters;
-      //ModUtils.Log($"[MoveWater.calculateFlow] delivereWaters={delivereWaters} waterUsed={waterUsed} waterUsedPercent={waterUsedPercent}");
-      deliverers
-        .ForEach((WaterGate gate) =>
-          {
-            float water = gate.DesiredWater * waterUsedPercent;
-            //ModUtils.Log($"[MoveWater.calculateFlow] Final deliverers gate.DesiredWater={gate.DesiredWater} water={-water}");
-            gate.DesiredWater = -water;
-          });
-      bool canFlow = Gates
-        .Aggregate(
-          true,
-          (bool canFlow, WaterGate gate) =>
-          {
-            canFlow = gate.FlowNotChanged(gate.DesiredWater) && canFlow;
-            return canFlow;
-          }
-        );
-      contamination = contamination / deliverers.Count;
-      return new Tuple<bool, float>(canFlow, contamination);
-    }
-
-    private static void StopWater(List<WaterGate> Gates)
-    {
-      Gates
-        .ForEach((WaterGate gate) =>
-        {
-          gate.RemoveWaterParticles();
-        });
-    }
-
-    private static void moveWater(List<WaterGate> Gates, float contamination)
-    {
-      Gates
-        .ForEach((WaterGate gate) =>
-        {
-          gate.MoveWater(gate.DesiredWater * waterPercentPerSecond, contamination);
-        });
-    }
-
-    public static bool Do(PipeGroup group)
-    {
-      if (group.WaterGates.Count <= 1)
-        return false;
-      var average = getWaterLevel(group.WaterGates);
-      if (float.IsNaN(average))
+      var contamination = 0f;
+      var Deliverers = new List<GateContext>();
+      var Requesters = new List<GateContext>();
+      foreach (var context in group.WaterGates) // oN
       {
-        StopWater(group.WaterGates);
+        context.Reset();
+        context.Contamination = context.gate.ContaminationPercentage;
+        if (context.gate.CanDelivereryWater(average))
+        {
+          Deliverers.Add(context);
+          context.DesiredWater = context.gate.GetDeliveryWater(average);
+          context.DeliveryType = WaterGateFlow.IN;
+        }
+        else if (context.gate.CanRequestWater(average))
+        {
+          Requesters.Add(context);
+          context.DesiredWater = context.gate.GetRequesterWater(average);
+          context.DeliveryType = WaterGateFlow.OUT;
+        }
+        else
+        {
+          context.DesiredWater = 0f;
+          context.DeliveryType = WaterGateFlow.STOP;
+        }
+      }
+      ModUtils.Log($"[WaterService.discoveryDistribution] 01 deliverers={Deliverers.Count} requesters={Requesters.Count}");
+      if (Deliverers.Count == 0 || Requesters.Count == 0)
+      {
+        ModUtils.Log($"[WaterService.discoveryDistribution] 02 aborted by deliverers or requesters");
+        return true;
+      }
+      // reset requesters and sum desires in deliveries
+      foreach (var delivery in Deliverers) // oN^2
+      {
+        foreach (var requester in delivery?.lowestGates)
+        {
+          if (delivery.IsEqual(requester))
+            continue;
+          requester.Reset();
+          delivery.DeliveryWaterRequested += requester.context.DesiredWater;
+        }
+      }
+      // discovery requester quota per delivery
+      foreach (var delivery in Deliverers) // oN^2
+      {
+        foreach (var requester in delivery?.lowestGates)
+        {
+          if (delivery.IsEqual(requester))
+            continue;
+          requester.RequesterWaterQuota = delivery.DesiredWater * (requester.context.DesiredWater / delivery.DeliveryWaterRequested);
+          requester.context.RequesterWaterDelivered += requester.RequesterWaterQuota;
+        }
+      }
+      // set WaterMove on requesters
+      foreach (var requester in Requesters) // oN
+      {
+        requester.WaterMove = WaterGate.LimitWater(requester.RequesterWaterDelivered);
+        requester.RequesterWaterUnused = requester.RequesterWaterDelivered - requester.WaterMove;
+        ModUtils.Log($"[WaterService.discoveryDistribution] 03 RequesterWaterDelivered={requester.RequesterWaterDelivered} WaterMove={requester.WaterMove} RequesterWaterUnused={requester.RequesterWaterUnused}");
+      }
+      // set WaterMove on deliverers
+      foreach (var delivery in Deliverers) // oN^2
+      {
+        foreach (var requester in delivery?.lowestGates)
+        {
+          if (delivery.IsEqual(requester))
+            continue;
+          delivery.DeliveryWaterReturned += requester.context.RequesterWaterUnused * (requester.RequesterWaterQuota / delivery.DeliveryWaterRequested);
+          ModUtils.Log($"[WaterService.discoveryDistribution] 04 RequesterWaterUnused={requester.context.RequesterWaterUnused} RequesterWaterQuota={requester.RequesterWaterQuota} DeliveryWaterRequested={delivery.DeliveryWaterRequested} addQuote={requester.context.RequesterWaterUnused * (requester.RequesterWaterQuota / delivery.DeliveryWaterRequested)}");
+        }
+        var DeliveryWaterMove = delivery.DesiredWater * (1 - (delivery.DeliveryWaterReturned / delivery.DeliveryWaterRequested));
+        ModUtils.Log($"[WaterService.discoveryDistribution] 05 DesiredWater={delivery.DesiredWater} DeliveryWaterReturned={delivery.DeliveryWaterReturned} DeliveryWaterRequested={delivery.DeliveryWaterRequested} DeliveryWaterMove={DeliveryWaterMove} WaterMove={delivery.WaterMove}");
+        delivery.WaterMove -= DeliveryWaterMove;
+        if (delivery.WaterMove < 0)
+          contamination += delivery.gate.ContaminationPercentage;
+        ModUtils.Log($"[WaterService.discoveryDistribution] 06 WaterMove={delivery.WaterMove}");
+      }
+      // set contamination on requesters
+      ModUtils.Log($"[WaterService.discoveryDistribution] 07 contamination={contamination} Count={Deliverers.Count}");
+      contamination = contamination / Deliverers.Count;
+      ModUtils.Log($"[WaterService.discoveryDistribution] 08 contamination={contamination}");
+      foreach (var requester in Requesters) // oN
+      {
+        requester.Contamination = contamination;
+      }
+      return false;
+    }
+
+    private static bool checkFlowChanged(PipeGroup group)
+    {
+      var canFlow = true;
+      foreach (var context in group.WaterGates)
+      {
+        canFlow = context.gate.FlowNotChanged(context.WaterMove) && canFlow;
+      }
+      ModUtils.Log($"[WaterService.CheckFlowNotChanged] canFlow={canFlow}");
+      return !canFlow;
+    }
+
+    private static void StopWater(PipeGroup group)
+    {
+      foreach (var context in group.WaterGates)
+      {
+        context.gate.RemoveWaterParticles();
+      }
+    }
+
+    private static void moveWater(PipeGroup group)
+    {
+      foreach (var context in group.WaterGates)
+      {
+        ModUtils.Log($"[WaterService.moveWater] WaterMove={context.WaterMove} Contamination={context.Contamination}");
+        context.gate.MoveWater(context.WaterMove * waterPercentPerSecond, context.Contamination);
+      }
+    }
+
+    private static bool _moveWater(PipeGroup group)
+    {
+      if (group.WaterGates.Length <= 1)
+        return false;
+      var average = getWaterLevel(group);
+      if (float.IsNaN(average))
+        return false;
+      if (discoveryDistribution(group, average))
+        return false;
+      if (checkFlowChanged(group))
+        return false;
+      moveWater(group);
+      return true;
+    }
+
+    public static bool MoveWater(PipeGroup group)
+    {
+      try
+      {
+        var success = _moveWater(group);
+        if (!success)
+          StopWater(group);
+        return success;
+      }
+      catch (Exception err)
+      {
+        ModUtils.Log($"#ERROR [WaterService.MoveWater] err={err}");
         return false;
       }
-      group.WaterAverage = average;
-      var (canFlow, contamination) = calculateFlow(group.WaterGates, average);
-      if (!canFlow)
-        return false;
-      //ModUtils.Log($"[MoveWater.calculateFlow] average={average} contamination={contamination}");
-      moveWater(group.WaterGates, contamination);
-      return true;
     }
   }
 }

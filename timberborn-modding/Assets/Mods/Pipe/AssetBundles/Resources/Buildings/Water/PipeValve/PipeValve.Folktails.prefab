@@ -84,9 +84,8 @@ GameObject:
   - component: {fileID: 114536901920753065}
   - component: {fileID: 114790364128370181}
   - component: {fileID: 114709933830190137}
-  - component: {fileID: -1818964738542828118}
   - component: {fileID: 4572859139449537309}
-  - component: {fileID: -1302879299329295200}
+  - component: {fileID: -1818964738542828118}
   - component: {fileID: 4971155771503057506}
   m_Layer: 0
   m_Name: PipeValve.Folktails
@@ -245,7 +244,7 @@ MonoBehaviour:
   _displayNameLocKey: Building.PipeValve.DisplayName
   _descriptionLocKey: Building.PipeValve.Description
   _flavorDescriptionLocKey: 
-  _imagePath: Buildings/Water/PipeStraight/PipeStraightIcon
+  _imagePath: Buildings/Water/PipeValve/PipeValveIcon
 --- !u!114 &114709933830190137
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -260,23 +259,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _progressThresholds:
   - 0
---- !u!114 &-1818964738542828118
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1307462774176390}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Side: 1
-  Type: 2
-  StopWhenSubmerged: 0
-  HigthLimit: 0
-  DesiredWater: 0
 --- !u!114 &4572859139449537309
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -289,12 +271,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Side: 6
-  Type: 1
+  Type: 6
+  Mode: 2
   StopWhenSubmerged: 1
   HigthLimit: 0
   DesiredWater: 0
---- !u!114 &-1302879299329295200
+--- !u!114 &-1818964738542828118
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -306,8 +288,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Side: 0
-  Type: 2
+  Type: 5
+  Mode: 2
   StopWhenSubmerged: 0
   HigthLimit: 0
   DesiredWater: 0

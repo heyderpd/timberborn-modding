@@ -274,6 +274,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Side: 1
+  Type: 0
+  Mode: 2
+  StopWhenSubmerged: 0
+  HigthLimit: 0
   DesiredWater: 0
 --- !u!114 &9169811475458214475
 MonoBehaviour:
@@ -288,6 +292,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Side: 2
+  Type: 2
+  Mode: 2
+  StopWhenSubmerged: 0
+  HigthLimit: 0
   DesiredWater: 0
 --- !u!114 &6829483168243557917
 MonoBehaviour:
@@ -302,6 +310,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Side: 3
+  Type: 3
+  Mode: 2
+  StopWhenSubmerged: 0
+  HigthLimit: 0
   DesiredWater: 0
 --- !u!114 &-1302879299329295200
 MonoBehaviour:
@@ -316,6 +328,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Side: 0
+  Type: 1
+  Mode: 2
+  StopWhenSubmerged: 0
+  HigthLimit: 0
   DesiredWater: 0
 --- !u!114 &4971155771503057506
 MonoBehaviour:

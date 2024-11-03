@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using Bindito.Core;
-using Timberborn.Common;
+using UnityEngine;
 using Timberborn.TickSystem;
 using Timberborn.BlockSystem;
 using Timberborn.SingletonSystem;
@@ -11,7 +11,9 @@ namespace Mods.OldGopher.Pipe.Scripts
   {
     private readonly HashSet<PipeGroup> Groups = new HashSet<PipeGroup>();
 
-    private readonly PipeGroupChangeDebounce<BlockObject> debounce_gateCheckByBlockEvent = new PipeGroupChangeDebounce<BlockObject>(PipeGroupChangeTypes.GATE_CHECK_BY_BLOCKEVENT);
+    private readonly Dictionary<Vector3Int, PipeNode> PipeLocation = new Dictionary<Vector3Int, PipeNode>();
+
+    private readonly PipeGroupChangeDebounce<Vector3Int> debounce_pipeHandleEvents = new PipeGroupChangeDebounce<Vector3Int>(PipeGroupChangeTypes.GATE_CHECK_BY_BLOCKEVENT);
 
     private readonly PipeGroupChangeDebounce<PipeGroup> debounce_groupRecalculateGates = new PipeGroupChangeDebounce<PipeGroup>(PipeGroupChangeTypes.GROUP_RECALCULATE_GATES);
 
@@ -42,7 +44,6 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private bool GroupNotExist(PipeGroup group)
     {
-      ModUtils.Log($"[Manager._GroupNotExist] group={group?.id} groupC1={group == null} groupC2={group?.isEnabled != true} groupC3={!Groups.Contains(group)}");
       return group == null || group?.isEnabled != true || !Groups.Contains(group);
     }
     
@@ -98,14 +99,24 @@ namespace Mods.OldGopher.Pipe.Scripts
       pipe.SetGroup(group);
       pipe.SetEnabled();
       pipe.CheckGates();
+      if (PipeLocation.ContainsKey(pipe.coordinates))
+        PipeLocation.Remove(pipe.coordinates);
+      PipeLocation.Add(pipe.coordinates, pipe);
     }
 
     private void Action_Pipe_Remove(PipeGroupChange change)
     {
       if (GroupNotExist(change.node.group))
         return;
-      change.node.group.PipeRemove(change.node);
-      TailRecursion.groupRecreate(this, pipeGroupQueue, change.node);
+      var pipe = change.node;
+      if (PipeLocation.TryGetValue(pipe.coordinates, out var exist))
+      {
+        ModUtils.Log($"[Manager.Action_Pipe_HandleEvents] pipe={pipe?.id} exist={exist?.id} equal{exist == pipe}");
+        if (exist == pipe)
+          PipeLocation.Remove(pipe.coordinates);
+      }
+      change.node.group.PipeRemove(pipe);
+      TailRecursion.groupRecreate(this, pipeGroupQueue, pipe);
       change.node.Disconnection();
     }
 
@@ -114,34 +125,22 @@ namespace Mods.OldGopher.Pipe.Scripts
       change.node?.CheckGates();
     }
 
-    private void Action_Gate_Check_ByBlockEvent()
+    private void Action_Pipe_HandleEvents()
     {
-      ModUtils.Log($"[Manager.Action_Gate_Check_ByBlockEvent] count={debounce_gateCheckByBlockEvent.Count} DOING");
-      if (debounce_gateCheckByBlockEvent.IsEmpty)
+      ModUtils.Log($"[Manager.Action_Pipe_HandleEvents] count={debounce_pipeHandleEvents.Count} DOING");
+      if (debounce_pipeHandleEvents.IsEmpty)
         return;
       HashSet<WaterGate> Gates = new HashSet<WaterGate>();
-      foreach (var block in debounce_gateCheckByBlockEvent.Items)
+      foreach (var coordinate in debounce_pipeHandleEvents.Items)
       {
-        if (block?.IsFinished == false)
-          continue;
-        var _gates = ModUtils.getNearWaterGates(blockService, block);
-        if (_gates != null)
-          Gates.AddRange(_gates);
-      }
-      ModUtils.Log($"[Manager.Action_Gate_Check_ByBlockEvent] Gates={Gates.Count} COUNT");
-      if (Gates.Count > 0)
-      {
-        foreach (var gate in Gates)
+        if (PipeLocation.TryGetValue(coordinate, out var pipe))
         {
-          ModUtils.Log($"[Manager.Action_Gate_Check_ByBlockEvent] gate={gate.id} LOOP");
-          var changed = gate.CheckInput();
-          if (changed)
-            pipeGroupQueue.Group_RecalculateGates(gate.pipeNode);
+          ModUtils.Log($"[Manager.Action_Pipe_HandleEvents] pipe={pipe.id} LOOP");
+          pipe.CheckGates();
         }
       }
-      Gates.Clear();
-      debounce_gateCheckByBlockEvent.Clear();
-      ModUtils.Log($"[Manager.Action_Gate_Check_ByBlockEvent] DONE");
+      debounce_pipeHandleEvents.Clear();
+      ModUtils.Log($"[Manager.Action_Pipe_HandleEvents] DONE");
     }
 
     private void Action_Gate_Check(PipeGroupChange change)
@@ -154,7 +153,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     private bool ConsumeChanges()
     {
       debounce_groupRecalculateGates.Clear();
-      debounce_gateCheckByBlockEvent.Clear();
+      debounce_pipeHandleEvents.Clear();
       if (!pipeGroupQueue.HasChanges)
         return false;
       while (pipeGroupQueue.HasChanges)
@@ -187,7 +186,7 @@ namespace Mods.OldGopher.Pipe.Scripts
             break;
 
           case PipeGroupChangeTypes.GATE_CHECK_BY_BLOCKEVENT:
-            debounce_gateCheckByBlockEvent.Store(change.type, change.blockObject);
+            Translate_Pipe_HandleEvents(change);
             break;
 
           case PipeGroupChangeTypes.GATE_CHECK:
@@ -198,23 +197,37 @@ namespace Mods.OldGopher.Pipe.Scripts
             break;
         }
       }
+      Action_Pipe_HandleEvents();
       Action_Group_RecalculateGates();
-      Action_Gate_Check_ByBlockEvent();
       return true;
     }
 
-    [OnEvent]
-    public void OnBlockObjectSet(BlockObjectSetEvent blockEvent)
+    private void Translate_Pipe_HandleEvents(PipeGroupChange change)
     {
-      ModUtils.Log($"[Manager.OnBlockObjectSet] called IsFinished={blockEvent?.BlockObject?.IsFinished} size={blockEvent?.BlockObject?.Blocks?.Size}");
-      pipeGroupQueue.Gate_CheckByBlockEvent(blockEvent?.BlockObject);
+      if (change.blockObject?.IsFinished != true)
+        return;
+      ModUtils.Log($"[Manager.EventTranslate] cord={change.blockObject?.Coordinates} size={change.blockObject?.Blocks.Size} flipped={change.blockObject?.FlipMode.IsFlipped}");
+      foreach (var pos in ModUtils.getReflexPositions(change.blockObject))
+      {
+        ModUtils.Log($"[Manager.OnBlockObjectUnset] position={pos}");
+        debounce_pipeHandleEvents.Store(change.type, pos);
+      }
+    }
+
+    [OnEvent]
+    public void OnBlockObjectSet(EnteredFinishedStateEvent blockEvent)
+    {
+      ModUtils.Log($"[Manager.OnBlockObjectSet] IsFinished={blockEvent?.BlockObject?.IsFinished}");
+      if (blockEvent?.BlockObject?.IsFinished == true)
+        pipeGroupQueue.Gate_CheckByBlockEvent(blockEvent?.BlockObject);
     }
 
     [OnEvent]
     public void OnBlockObjectUnset(BlockObjectUnsetEvent blockEvent)
     {
-      ModUtils.Log($"[Manager.OnBlockObjectUnset] called IsFinished={blockEvent?.BlockObject?.IsFinished}");
-      pipeGroupQueue.Gate_CheckByBlockEvent(blockEvent?.BlockObject);
+      ModUtils.Log($"[Manager.OnBlockObjectUnset] IsFinished={blockEvent?.BlockObject?.IsFinished}");
+      if (blockEvent?.BlockObject?.IsFinished == true)
+        pipeGroupQueue.Gate_CheckByBlockEvent(blockEvent?.BlockObject);
     }
 
     private void DoMoveWater()

@@ -249,8 +249,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Side: 1
-  DesiredWater: 0
+  Type: 0
+  Mode: 2
+  HigthLimit: 0
 --- !u!114 &3908924080598491517
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -263,8 +264,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0dbb3fb4ceadf154cb6260444d6b21f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Side: 0
-  DesiredWater: 0
+  Type: 1
+  Mode: 2
+  HigthLimit: 0
 --- !u!114 &2918800193914806410
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -277,6 +279,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9152e3e0a89013c4c931c2bdadf12d91, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  canWorkAlone: 1
 --- !u!1 &1017939095831443
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,6 +6,8 @@ using Timberborn.Persistence;
 using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
+using System.Drawing;
+using Amazon.Runtime.Internal.Util;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -18,6 +20,9 @@ namespace Mods.OldGopher.Pipe.Scripts
     public bool isEnabled { get; private set; } = false;
 
     public bool hasGatesEnabled { get; private set; } = false;
+
+    [SerializeField]
+    public bool canWorkAlone;
 
     private static int lastId = 0;
 
@@ -34,6 +39,10 @@ namespace Mods.OldGopher.Pipe.Scripts
     public List<WaterGate> waterGates { get; private set; }
 
     public Vector3Int coordinates { get; private set; }
+
+    public bool IsWaterPump => waterGates?.Any((WaterGate gate) => gate.IsWaterPump) ?? false;
+
+    public bool CanWork => group?.HasMoreThanOnePipe ?? canWorkAlone;
 
     [Inject]
     public void InjectDependencies(
@@ -86,6 +95,36 @@ namespace Mods.OldGopher.Pipe.Scripts
       isEnabled = true;
     }
 
+    public string GetWaterPumpState()
+    {
+      if (!IsWaterPump)
+        return "";
+      var gate = waterGates.FirstOrDefault((WaterGate gate) => gate.IsWaterPump);
+      if (!gate)
+        return "";
+      return gate.Mode == WaterGateMode.ONLY_IN
+        ? "pulling water"
+        : "pushing water";
+    }
+
+    public void ToggleWaterPump()
+    {
+      if (!IsWaterPump)
+        return;
+      var gate = waterGates.FirstOrDefault((WaterGate gate) => gate.IsWaterPump);
+      if (!gate)
+        return;
+      gate.ToggleWaterPump();
+    }
+
+    public void TestParticle()
+    {
+      foreach (var gate in waterGates)
+      {
+        gate.TestParticle();
+      }
+    }
+
     public void SetGroup(PipeGroup _group)
     {
       group = _group;
@@ -121,7 +160,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
       WaterGate endGate = node.GetGate(coordinates);
       bool IsCompatibleGate = endGate
-        ? WaterGateConfig.IsCompatibleGate(startGate.Side, endGate.Side)
+        ? WaterGateConfig.IsCompatibleGate(startGate.Type, endGate.Type)
         : false;
       if (!endGate || !IsCompatibleGate)
       {
@@ -153,6 +192,8 @@ namespace Mods.OldGopher.Pipe.Scripts
         _hasGatesEnabled = _hasGatesEnabled || gate.isEnabled;
       }
       hasGatesEnabled = _hasGatesEnabled;
+      if (!CanWork)
+        hasGatesEnabled = false;
       if (recalculate && _hasChanges)
         pipeGroupQueue.Group_RecalculateGates(this);
       return _hasChanges;
@@ -209,16 +250,19 @@ namespace Mods.OldGopher.Pipe.Scripts
       return -1f;
     }
 
-    public List<GateVisualElement> GetFragmentInfo()
+    public string GetFragmentInfo()
     {
-      return waterGates
-        .Select((WaterGate gate) => new GateVisualElement(gate))
-        .ToList();
-      /*var gate = waterGates.FirstOrDefault();
-      return $"gate.HigthLimit={gate?.Water.ToString("0.00")}";
-      string info = GetInfo();
-      info += group?.GetInfo() ?? "NO_GROUP";
-      return info;*/
+      string info = $"Pipe[\n";
+      info += $"  id={id} enabled={isEnabled} cord={coordinates.ToString()}\n";
+      info += $"  gates:\n";
+      foreach (var gate in waterGates.ToList())
+      {
+        info += gate.GetInfo();
+      }
+      info += $"];\n";
+      info += $"group:\n";
+      info += group?.GetInfo() ?? "NONE";
+      return info;
     }
   }
 }

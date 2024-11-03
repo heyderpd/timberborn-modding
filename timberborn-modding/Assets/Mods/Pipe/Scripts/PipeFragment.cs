@@ -1,77 +1,12 @@
-﻿using System;
-using System.Linq;
-using System.Collections.Generic;
-using UnityEngine.UIElements;
-using Timberborn.CoreUI;
+﻿using UnityEngine.UIElements;
 using Timberborn.BaseComponentSystem;
+using Timberborn.CoreUI;
 using Timberborn.EntityPanelSystem;
-using Timberborn.Localization;
 using Timberborn.Debugging;
+using Timberborn.Localization;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
-  internal struct GateVisualElement
-  {
-    public readonly WaterGate gate;
-
-    public string PipeId => gate?.pipeNode.id.ToString() ?? "";
-
-    public string Id => gate?.id.ToString() ?? "";
-
-    public string WaterLevel => gate?.WaterLevel.ToString("0.00") ?? "";
-
-    public string WaterDetected => gate?.Water.ToString("0.00") ?? "";
-
-    public string WaterContamination => gate?.ContaminationPercentage.ToString("0.00") ?? "";
-
-    public string WaterChange => gate?.DesiredWater.ToString("0.00") ?? "";
-
-    public bool StopWhenSubmerged => gate?.StopWhenSubmerged ?? false;
-
-    public string Side => gate?.Side.ToString() ?? "";
-
-    public string Type => gate?.Type.ToString() ?? "";
-
-    public GateVisualElement(
-      WaterGate _gate
-    )
-    {
-      gate = _gate;
-    }
-  }
-
-  internal struct PipeVisualElement
-  {
-    public readonly PipeNode pipe;
-
-    public string Id => pipe?.id.ToString() ?? "";
-
-    public PipeVisualElement(
-      PipeNode _pipe
-    )
-    {
-      pipe = _pipe;
-    }
-  }
-
-  internal struct GroupVisualElement
-  {
-    public readonly PipeVisualElement pipe;
-
-    public readonly List<GateVisualElement> pipeGates;
-
-    public readonly List<GateVisualElement> groupGates;
-
-    public GroupVisualElement(
-      PipeNode _pipe
-    )
-    {
-      pipe = new PipeVisualElement(_pipe);
-      pipeGates = _pipe.waterGates.Select((WaterGate gate) => new GateVisualElement(gate)).ToList();
-      groupGates = _pipe.group?.WaterGates.Select((WaterGate gate) => new GateVisualElement(gate)).ToList();
-    }
-  }
-
   public class PipeFragment : IEntityPanelFragment
   {
     private readonly VisualElementLoader visualElementLoader;
@@ -79,14 +14,13 @@ namespace Mods.OldGopher.Pipe.Scripts
     private readonly DevModeManager devModeManager;
 
     private PipeNode pipeNode;
-    private GroupVisualElement pipeNodeVisual;
-
     private VisualElement root;
-    private Label text;
-    private TextField field;
-    private Action<float> setter;
-    private Func<float> getter;
-    private Func<bool> focused;
+    private Label field;
+    private Button button;
+    private VisualElement debugView;
+    private Label debugField;
+    private Button debugButton;
+    private bool show = false;
 
     public PipeFragment(
       VisualElementLoader _visualElementLoader,
@@ -99,58 +33,80 @@ namespace Mods.OldGopher.Pipe.Scripts
       devModeManager = _devModeManager;
     }
 
-    public VisualElement InitializeFragment()
-    {
-      root = visualElementLoader.LoadVisualElement("Common/EntityPanel/WaterSourceFragment");
-      return root;
-
-      /*VisualElement item = visualElementLoader.LoadVisualElement("Common/EntityPanel/WaterSetting");
-
-      setter = value => pipeNode.SetGateValue(value);
-      getter = () => pipeNode.GetGateValue();
-      ((TextElement)UQueryExtensions.Q<Label>(item, "Text", (string)null)).text = "Item01";
-      field = UQueryExtensions.Q<TextField>(item, "Value", (string)null);
-
-      INotifyValueChangedExtensions.RegisterValueChangedCallback<string>((INotifyValueChanged<string>)(object)field, (EventCallback<ChangeEvent<string>>)delegate (ChangeEvent<string> value)
-      {
-        if (float.TryParse(value.newValue, out var result))
-        {
-          setter(result);
-          ((BaseField<string>)(object)field).SetValueWithoutNotify(getter().ToString(CultureInfo.InvariantCulture));
-        }
-      });
-      focused = () => field.IsFocused();
-
-      text = new Label();
-
-      root.Add(text);
-      root.Add(item);
-      return root;*/
-    }
-
-    private void MountItemProp(VisualElement box, string name, string value)
-    {
-      VisualElement item = visualElementLoader.LoadVisualElement("Common/EntityPanel/WaterSetting");
-      UQueryExtensions.Q<Label>(item, "Text", (string)null).text = name;
-      UQueryExtensions.Q<TextField>(item, "Value", (string)null).SetValueWithoutNotify(value);
-      box.Add(item);
-    }
-
-    private void MountItem(GateVisualElement gate)
-    {
-      var box = new Box();
-      var gateId = new Label();
-      gateId.text = $"gate.id={gate.Id}";
-      box.Add(gateId);
-      MountItemProp(box, "Type", gate.Type);
-      MountItemProp(box, "WaterLevel", gate.WaterLevel);
-      MountItemProp(box, "WaterChange", gate.WaterChange);
-      root.Add(box);
-    }
-
     public void ShowFragment(BaseComponent entity)
     {
       pipeNode = entity.GetComponentFast<PipeNode>();
+    }
+
+    public VisualElement InitializeFragment()
+    {
+      root = new VisualElement();
+      root.Add(CreatePumpView());
+      debugView = CreateDebugView();
+      return root;
+    }
+
+    private VisualElement CreatePumpView()
+    {
+      var fragment = visualElementLoader.LoadVisualElement("Game/EntityPanel/StreamGaugeFragment");
+      fragment.Remove(UQueryExtensions.Q<Label>(fragment, "GreatestDepthLabel", (string)null));
+      fragment.Remove(UQueryExtensions.Q<Label>(fragment, "CurrentLabel", (string)null));
+      fragment.Remove(UQueryExtensions.Q<Label>(fragment, "ContaminationLabel", (string)null));
+      field = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
+      field.text = "mode: ???";
+      button = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
+      button.text = "Toggle";
+      button.RegisterCallback<ClickEvent>((EventCallback<ClickEvent>)ToggleWaterPump, (TrickleDown)0);
+      return fragment;
+    }
+
+    private VisualElement CreateDebugView()
+    {
+      var fragment = visualElementLoader.LoadVisualElement("Game/EntityPanel/StreamGaugeFragment");
+      fragment.Remove(UQueryExtensions.Q<Label>(fragment, "GreatestDepthLabel", (string)null));
+      fragment.Remove(UQueryExtensions.Q<Label>(fragment, "CurrentLabel", (string)null));
+      fragment.Remove(UQueryExtensions.Q<Label>(fragment, "ContaminationLabel", (string)null));
+      debugField = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
+      debugField.text = "no debug";
+      fragment.Remove(debugField);
+      var box = new ScrollView();
+      box.style.height = 500;
+      box.Add(debugField);
+      fragment.Add(box);
+      debugButton = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
+      debugButton.text = "Test Particles";
+      debugButton.RegisterCallback<ClickEvent>((EventCallback<ClickEvent>)TestParticle, (TrickleDown)0);
+      return fragment;
+    }
+
+    private void ToggleWaterPump(ClickEvent evt)
+    {
+      if (!pipeNode.IsWaterPump)
+        return;
+      pipeNode?.ToggleWaterPump();
+      UpdateFragment();
+    }
+
+    private void TestParticle(ClickEvent evt)
+    {
+      pipeNode?.TestParticle();
+    }
+
+    private void ShowPumpView()
+    {
+      field.text = $"mode: {pipeNode.GetWaterPumpState()}";
+    }
+
+    private void ShowDebugView()
+    {
+      root.Add(debugView);
+      debugField.text = pipeNode.GetFragmentInfo();
+    }
+
+    private void RemoveDebugView()
+    {
+      if (root.Contains(debugView))
+        root.Remove(debugView);
     }
 
     public void ClearFragment()
@@ -159,33 +115,27 @@ namespace Mods.OldGopher.Pipe.Scripts
       pipeNode = null;
     }
 
-    public bool ProcessInput()
-    {
-      return focused();
-    }
-
-    public void UpdateInfo()
-    {
-      root.Clear();
-      pipeNodeVisual.pipeGates.ForEach((GateVisualElement gate) => MountItem(gate));
-      //pipeNodeVisual.groupGates.ForEach((GateVisualElement gate) => MountItem(gate));
-    }
-
     public void UpdateFragment()
     {
-      if (!pipeNode || !devModeManager.Enabled)
+      if (!pipeNode)
       {
         root.ToggleDisplayStyle(false);
         return;
       }
-      /*((VisualElement)field).parent.ToggleDisplayStyle(true);
-      if (focused())
+      show = false;
+      if (pipeNode.IsWaterPump)
       {
-        ((BaseField<string>)(object)field).SetValueWithoutNotify(getter().ToString(CultureInfo.InvariantCulture));
-      }*/
-      root.ToggleDisplayStyle(true);
-      pipeNodeVisual = new GroupVisualElement(pipeNode);
-      UpdateInfo();
+        ShowPumpView();
+        show = true;
+      }
+      if (devModeManager.Enabled && ModUtils.enabled)
+      {
+        ShowDebugView();
+        show = true;
+      }
+      else
+        RemoveDebugView();
+      root.ToggleDisplayStyle(show);
     }
   }
 }

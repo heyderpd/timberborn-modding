@@ -9,7 +9,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     CONNECTED
   }
 
-  internal enum WaterGateType
+  internal enum WaterGateMode
   {
     ONLY_IN,
     ONLY_OUT,
@@ -23,7 +23,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     OUT
   }
 
-  internal enum WaterGateSide
+  internal enum WaterGateType
   {
     BACK,
     FRONT,
@@ -50,114 +50,114 @@ namespace Mods.OldGopher.Pipe.Scripts
 
   internal static class WaterGateConfig
   {
-    public static Vector3Int getCoordinates(WaterGateSide gate)
+    public static Vector3Int getCoordinates(WaterGateType gate)
     {
       switch (gate)
       {
-        case WaterGateSide.BACK:
+        case WaterGateType.BACK:
           return new Vector3Int(0, -1, 0);
-        case WaterGateSide.FRONT:
+        case WaterGateType.FRONT:
           return new Vector3Int(0, +1, 0);
-        case WaterGateSide.LEFT:
+        case WaterGateType.LEFT:
           return new Vector3Int(-1, 0, 0);
-        case WaterGateSide.RIGHT:
+        case WaterGateType.RIGHT:
           return new Vector3Int(+1, 0, 0);
-        case WaterGateSide.BOTTON:
+        case WaterGateType.BOTTON:
           return new Vector3Int(0, 0, -1);
-        case WaterGateSide.TOP:
+        case WaterGateType.TOP:
           return new Vector3Int(0, 0, +1);
-        case WaterGateSide.VALVE:
+        case WaterGateType.VALVE:
           return new Vector3Int(0, 0,  0);
-        case WaterGateSide.WATERPUMP:
+        case WaterGateType.WATERPUMP:
           return new Vector3Int(0, +1, 0);
         default:
           return new Vector3Int(0, 0, 0);
       }
     }
 
-    public static float getLowerLimitShift(WaterGateSide gate)
+    public static float getLowerLimitShift(WaterGateType gate)
     {
       switch (gate)
       {
-        case WaterGateSide.VALVE:
-        case WaterGateSide.TOP:
+        case WaterGateType.VALVE:
+        case WaterGateType.TOP:
           return 0f;
-        case WaterGateSide.BOTTON:
+        case WaterGateType.BOTTON:
           return 1f;
-        case WaterGateSide.FRONT:
-        case WaterGateSide.BACK:
-        case WaterGateSide.LEFT:
-        case WaterGateSide.RIGHT:
+        case WaterGateType.FRONT:
+        case WaterGateType.BACK:
+        case WaterGateType.LEFT:
+        case WaterGateType.RIGHT:
           return 0.25f;
-        case WaterGateSide.WATERPUMP:
+        case WaterGateType.WATERPUMP:
           return 0.10f;
         default:
           return 0f;
       }
     }
 
-    public static float getHigthLimitShift(WaterGateSide gate)
+    public static float getHigthLimitShift(WaterGateType gate)
     {
       switch (gate)
       {
-        case WaterGateSide.VALVE:
-        case WaterGateSide.TOP:
+        case WaterGateType.VALVE:
+        case WaterGateType.TOP:
           return 0.5f;
-        case WaterGateSide.BOTTON:
+        case WaterGateType.BOTTON:
           return 1f;
-        case WaterGateSide.FRONT:
-        case WaterGateSide.BACK:
-        case WaterGateSide.LEFT:
-        case WaterGateSide.RIGHT:
+        case WaterGateType.FRONT:
+        case WaterGateType.BACK:
+        case WaterGateType.LEFT:
+        case WaterGateType.RIGHT:
           return 0.75f;
-        case WaterGateSide.WATERPUMP:
+        case WaterGateType.WATERPUMP:
           return 0.90f;
         default:
           return 1f;
       }
     }
 
-    public static bool IsCompatibleGate(WaterGateSide gate, WaterGateSide opposite)
+    public static bool IsCompatibleGate(WaterGateType gate, WaterGateType opposite)
     {
       switch (gate)
       {
-        case WaterGateSide.TOP:
-          return opposite == WaterGateSide.BOTTON;
-        case WaterGateSide.BOTTON:
-          return opposite == WaterGateSide.TOP;
-        case WaterGateSide.FRONT:
-        case WaterGateSide.BACK:
-        case WaterGateSide.LEFT:
-        case WaterGateSide.RIGHT:
-          return opposite == WaterGateSide.FRONT
-            || opposite == WaterGateSide.BACK
-            || opposite == WaterGateSide.LEFT
-            || opposite == WaterGateSide.RIGHT;
-        case WaterGateSide.VALVE:
+        case WaterGateType.TOP:
+          return opposite == WaterGateType.BOTTON;
+        case WaterGateType.BOTTON:
+          return opposite == WaterGateType.TOP;
+        case WaterGateType.FRONT:
+        case WaterGateType.BACK:
+        case WaterGateType.LEFT:
+        case WaterGateType.RIGHT:
+          return opposite == WaterGateType.FRONT
+            || opposite == WaterGateType.BACK
+            || opposite == WaterGateType.LEFT
+            || opposite == WaterGateType.RIGHT;
+        case WaterGateType.VALVE:
         default:
           return false;
       }
     }
 
-    public static string getParticleAttachmentId(WaterGateSide gate)
+    public static string getParticleAttachmentId(WaterGateType gate)
     {
       switch (gate)
       {
-        case WaterGateSide.BACK:
+        case WaterGateType.BACK:
           return "Water1.PipeBox";
-        case WaterGateSide.FRONT:
+        case WaterGateType.FRONT:
           return "Water2.PipeBox";
-        case WaterGateSide.LEFT:
+        case WaterGateType.LEFT:
           return "Water3.PipeBox";
-        case WaterGateSide.RIGHT:
+        case WaterGateType.RIGHT:
           return "Water4.PipeBox";
-        case WaterGateSide.TOP:
+        case WaterGateType.TOP:
           return "Water5.PipeBox";
-        case WaterGateSide.BOTTON:
+        case WaterGateType.BOTTON:
           return "Water6.PipeBox";
-        case WaterGateSide.VALVE:
+        case WaterGateType.VALVE:
           return "Water7.PipeBox";
-        case WaterGateSide.WATERPUMP:
+        case WaterGateType.WATERPUMP:
           return "Water8.PipeBox";
         default:
           return "";

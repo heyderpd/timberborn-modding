@@ -242,7 +242,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _displayNameLocKey: Building.PipeVertical.DisplayName
-  _descriptionLocKey: Building.PipeVertical.Description
+  _descriptionLocKey: Building.PipeGeneric.Description
   _flavorDescriptionLocKey: 
   _imagePath: Buildings/Water/PipeVertical/PipeVerticalIcon
 --- !u!114 &114709933830190137
@@ -272,6 +272,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Side: 5
+  Type: 4
+  Mode: 2
+  StopWhenSubmerged: 0
+  HigthLimit: 0
   DesiredWater: 0
 --- !u!114 &-1302879299329295200
 MonoBehaviour:
@@ -286,6 +290,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Side: 4
+  Type: 5
+  Mode: 2
+  StopWhenSubmerged: 0
+  HigthLimit: 0
   DesiredWater: 0
 --- !u!114 &4971155771503057506
 MonoBehaviour:

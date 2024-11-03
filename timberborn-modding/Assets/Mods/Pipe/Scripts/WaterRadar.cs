@@ -31,49 +31,38 @@ namespace Mods.OldGopher.Pipe.Scripts
       blockService = _blockService;
     }
 
-    public WaterObstacleType FindWaterObstacle(Vector3Int coordinate, WaterGateSide? Side = null)
+    public PipeNode FindPipe(Vector3Int coordinate)
     {
-      var Ceiling = Side == WaterGateSide.TOP ? 0f : 0.75f;
-      ModUtils.Log($"[WaterRadar.FindWaterObstacle] 01 Underground={terrainService.Underground(coordinate)} Ceiling={Ceiling}");
+      ModUtils.Log($"[WaterRadar.FindPipe] 01 Underground={terrainService.Underground(coordinate)}");
+      if (terrainService.Underground(coordinate))
+        return null;
+      var block = blockService.GetMiddleObjectAt(coordinate);
+      ModUtils.Log($"[WaterRadar.FindPipe] 02 IsFinished={block?.IsFinished != true}");
+      if (block?.IsFinished != true)
+        return null;
+      var pipe = block.GetComponentFast<PipeNode>();
+      ModUtils.Log($"[WaterRadar.FindPipe] 03 block={pipe == null}");
+      if (pipe != null)
+        return pipe;
+      return null;
+    }
+
+    public WaterObstacleType FindWaterObstacle(Vector3Int coordinate)
+    {
+      ModUtils.Log($"[WaterRadar.FindWaterObstacle] 01 Underground={terrainService.Underground(coordinate)}");
       if (terrainService.Underground(coordinate))
         return WaterObstacleType.BLOCK;
-      var floodgate = blockService.GetObjectsWithComponentAt<Floodgate>(coordinate).FirstOrDefault();
-      var hasFloodgateObstacle = floodgate?.enabled == true && floodgate?.Height > Ceiling;
-      ModUtils.Log($"[WaterRadar.FindWaterObstacle] 02 floodgate={floodgate} enabled={floodgate?.enabled} Height={floodgate?.Height} hasFloodgateObstacle={hasFloodgateObstacle}");
-      if (hasFloodgateObstacle)
+      var blockMiddle = blockService.GetMiddleObjectAt(coordinate);
+      var waterObstacleMiddle = blockMiddle?.IsFinished == true && blockMiddle?.GetComponentFast<WaterObstacle>() != null;
+      ModUtils.Log($"[WaterRadar.FindWaterObstacle] 03 blockMiddle={blockMiddle} waterObstacleMiddle={waterObstacleMiddle}");
+      if (waterObstacleMiddle)
         return WaterObstacleType.BLOCK;
-      if (floodgate == null)
-      {
-        var blockMiddle = blockService.GetMiddleObjectAt(coordinate);
-        var waterObstacleMiddle = blockMiddle?.IsFinished == true && blockMiddle?.GetComponentFast<WaterObstacle>() != null;
-        ModUtils.Log($"[WaterRadar.FindWaterObstacle] 03 blockMiddle={blockMiddle} waterObstacleMiddle={waterObstacleMiddle}");
-        if (waterObstacleMiddle)
-          return WaterObstacleType.BLOCK;
-      }
       var blockBottom = blockService.GetBottomObjectAt(coordinate);
       var hasWaterObstacleBottom = blockBottom?.IsFinished == true && blockBottom?.GetComponentFast<WaterObstacle>() != null;
       ModUtils.Log($"[WaterRadar.FindWaterObstacle] 04 blockBottom={blockBottom} hasWaterObstacleBottom={hasWaterObstacleBottom}");
       if (hasWaterObstacleBottom)
         return WaterObstacleType.HORIZONTAL;
       return WaterObstacleType.EMPTY;
-    }
-
-    public Vector3Int FloorFinderSlower(Vector3Int coordinate)
-    {
-      int floor = coordinate.z;
-      var offset = new Vector3Int(coordinate.x, coordinate.y, coordinate.z);
-      while (offset.z > 0)
-      {
-        var found = FindWaterObstacle(offset);
-        if (found != WaterObstacleType.EMPTY)
-        {
-          floor = offset.z + (found == WaterObstacleType.BLOCK ? 1 : 0);
-          break;
-        }
-        offset.z -= 1;
-      }
-      var floorCoordinate = new Vector3Int(coordinate.x, coordinate.y, floor);
-      return floorCoordinate;
     }
   }
 }

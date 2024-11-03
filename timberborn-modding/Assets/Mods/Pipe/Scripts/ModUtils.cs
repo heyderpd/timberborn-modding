@@ -1,9 +1,12 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using UnityEngine;
 using Timberborn.BlockSystem;
 using Timberborn.Common;
+using Timberborn.Coordinates;
+using UnityEngine.UIElements;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
@@ -11,13 +14,20 @@ namespace Mods.OldGopher.Pipe.Scripts
   {
     public static readonly bool enabled = true;
 
-    public static readonly float waterPower = 0.3f; // 1f handle 3 watersources and 0.3f handle 1 or 1 cms.
+    public static readonly int waterTick = 3;
 
-    private static readonly ImmutableList<Vector3Int> coordOffsets = ImmutableList.Create(
+    // default=0.3f reason: 1f handle 3 watersources and 0.3f handle 1 or 1 cms.
+    // withTick=1f reason: with 3 tick I need move 3x the water in one move to stay at 1 cms.
+    public static readonly float waterPower = 1f;
+
+    private static readonly ImmutableArray<Vector3Int> coordOffsets = ImmutableArray.Create(
+      // z
       new Vector3Int(0, 0, 1),
       new Vector3Int(0, 0, -1),
+      // y
       new Vector3Int(0, 1, 0),
       new Vector3Int(0, -1, 0),
+      // x
       new Vector3Int(1, 0, 0),
       new Vector3Int(-1, 0, 0)
     );
@@ -58,6 +68,108 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (origin.z != destine.z)
         return false;
       return true;
+    }
+
+    private static Tuple<int, int, int, int, int, int> getRectifyRef(BlockObject block)
+    {
+      int xp = block.Coordinates.x;
+      int yp = block.Coordinates.y;
+      int zp = block.Coordinates.z;
+      int xl = block.Blocks.Size.x - 1;
+      int yl = block.Blocks.Size.y - 1;
+      int zl = block.Blocks.Size.z - 1;
+      if (block.Orientation == Orientation.Cw90 || block.Orientation == Orientation.Cw270)
+      {
+        int aux = xl;
+        xl = yl;
+        yl = aux;
+      }
+      if (block.FlipMode.IsFlipped)
+      {
+        if (block.Orientation == Orientation.Cw0 || block.Orientation == Orientation.Cw180)
+          xp = xp - xl;
+        else
+          yp = yp - yl;
+      }
+      if (block.Orientation == Orientation.Cw180)
+        yp = yp - yl;
+      if (block.Orientation == Orientation.Cw270)
+        xp = xp - xl;
+      ModUtils.Log($"[TailRecursion.getRectifyRef] xp={xp} yp={yp} zp={zp} | xl={xl} yl={yl} zl={zl}");
+      return new Tuple<int, int, int, int, int, int>(xp, yp, zp, xl, yl, zl);
+    }
+
+    public static IEnumerable<Vector3Int> getReflexPositions(BlockObject block)
+    {
+      if (block?.IsFinished != true)
+        yield break;
+      var (xp, yp, zp, xl, yl, zl) = getRectifyRef(block);
+      // near in body
+      ModUtils.Log($"[TailRecursion.getReflexPositions] body");
+      for (var x = 0; x <= xl + 0; x++)
+      {
+        for (var y = 0; y <= yl + 0; y++)
+        {
+          for (var z = 0; z <= zl + 0; z++)
+          {
+            yield return new Vector3Int(x + xp, y + yp, z + zp);
+          }
+        }
+      }
+      // near in axis X
+      ModUtils.Log($"[TailRecursion.getReflexPositions] near X");
+      for (var y = 0; y <= yl + 0; y++)
+      {
+        for (var z = 0; z <= zl + 0; z++)
+        {
+          yield return new Vector3Int(
+            xp - 1,
+            y + yp,
+            z + zp
+          );
+          yield return new Vector3Int(
+            xp + xl + 1,
+            y + yp,
+            z + zp
+          );
+        }
+      }
+      // near in axis Y
+      ModUtils.Log($"[TailRecursion.getReflexPositions] near Y");
+      for (var x = 0; x <= xl + 0; x++)
+      {
+        for (var z = 0; z <= zl + 0; z++)
+        {
+          yield return new Vector3Int(
+            x + xp,
+            yp - 1,
+            z + zp
+          );
+          yield return new Vector3Int(
+            x + xp,
+            yp + yl + 1,
+            z + zp
+          );
+        }
+      }
+      // near in axis Z
+      ModUtils.Log($"[TailRecursion.getReflexPositions] near Z");
+      for (var x = 0; x <= xl + 0; x++)
+      {
+        for (var y = 0; y <= yl + 0; y++)
+        {
+          yield return new Vector3Int(
+            x + xp,
+            y + yp,
+            zp - 1
+          );
+          yield return new Vector3Int(
+            x + xp,
+            y + yp,
+            zp + zl + 1
+          );
+        }
+      }
     }
 
     public static HashSet<WaterGate> getNearWaterGates(BlockService blockService, BlockObject block)
