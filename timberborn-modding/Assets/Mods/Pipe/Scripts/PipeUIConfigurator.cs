@@ -8,7 +8,7 @@ namespace Mods.Pipe.Scripts
   {
     public void Configure(IContainerDefinition containerDefinition)
     {
-      containerDefinition.Bind<PipeWaterFragment>().AsSingleton();
+      containerDefinition.Bind<PipeFragment>().AsSingleton();
       //containerDefinition.MultiBind<TemplateModule>().ToProvider(ProvideTemplateModule).AsSingleton();
       containerDefinition.MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();
     }
@@ -22,19 +22,19 @@ namespace Mods.Pipe.Scripts
 
     private class EntityPanelModuleProvider : IProvider<EntityPanelModule>
     {
-      private readonly PipeWaterFragment _pipeWaterFragment;
+      private readonly PipeFragment pipeFragment;
 
       public EntityPanelModuleProvider(
-        PipeWaterFragment pipeWaterFragment
+        PipeFragment _pipeFragment
       )
       {
-        _pipeWaterFragment = pipeWaterFragment;
+        pipeFragment = _pipeFragment;
       }
 
       public EntityPanelModule Get()
       {
         var builder = new EntityPanelModule.Builder();
-        builder.AddSideFragment(_pipeWaterFragment);
+        builder.AddSideFragment(pipeFragment);
         return builder.Build();
       }
     }

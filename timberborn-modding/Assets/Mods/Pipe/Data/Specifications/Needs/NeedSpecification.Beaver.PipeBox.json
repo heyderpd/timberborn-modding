@@ -1,11 +1,11 @@
 {
-  "Id": "Pipe",
+  "Id": "PipeBox",
   "BackwardCompatibleIds": [
   ],
-  "Order": 40,
-  "NeedGroupId": "SocialLife",
+  "Order": 81,
+  "NeedGroupId": "Water",
   "CharacterType": "Beaver",
-  "DisplayNameLocKey": "Building.Pipe.DisplayName",
+  "DisplayNameLocKey": "Building.PipeBox.DisplayName",
   "StartingValue": 0.0,
   "MinimumValue": 0.0,
   "MaximumValue": 1.0,

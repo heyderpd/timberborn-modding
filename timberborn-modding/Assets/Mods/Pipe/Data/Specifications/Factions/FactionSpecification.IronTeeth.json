@@ -1,5 +1,6 @@
 {
   "Needs#append": [
-    "Pipe"
+    "PipeBox",
+    "PipeStraight"
   ]
 }
