@@ -1,0 +1,25 @@
+- start the project in unity -
+fork the example project in https://github.com/mechanistry/timberborn-modding
+add project from folder, actualy will use version 6000.0.16f1
+and module "mac build suport mono" to suport mac assets build
+add command "-disable-assembly-updater"
+when open ignore safemode
+
+- to get the game assets -
+open AssetRipper
+in "file.setting" change seting "script export" to dll export without renaming
+in "file.open_file" select the game exe
+in "export.export_all" select the empty folder
+choose "export_to_unity" to export and wait
+
+- to move exported assests -
+move "MonoBehaviour" and "Plugins" from the exported assets, dont import it in unity. to the folder "ExportedDll"
+in "ExportAssets\ExportedProject\Assets" rename "Assets" to Timberborn"
+move "Timberborn" to "timberborn-modding\Assets\Resources"
+
+- to decompile dll to c# -
+using ILSPY https://apps.microsoft.com/detail/xp8c26vdwlp4t4
+open the dll in "ExportedDll\Plugins" select all "timberborn*.dll"
+after loading all dlls select "file.save_as_code" and set folder "ExportedCode"
+
+original tutorial https://www.youtube.com/watch?v=FwPBRgJs5Gk
