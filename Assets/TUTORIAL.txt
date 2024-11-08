@@ -1,0 +1,27 @@
+- to create an icon -
+create a png image and in unity configure it exactly the same as the original icon
+or copy another original icon and edit it
+
+- blender minimal setup -
+use especific blender version 3.6 https://www.blender.org/download/lts/3-6/
+install the plugin timbermesh exporter https://github.com/mechanistry/timbermesh/releases
+
+- to export 3d models from unity to blender -
+on unity go to package manager and find and install "FBX exporter"
+open an prefab right click on model and choose "export to fbx"
+select export format to "binary" and export It
+
+- to export models from blender to unity -
+get the plugin timbermesh exporter
+on blender go to prference addons and choose the timbermesh zip
+to export right click the Collection and "export to timbermesh"
+
+- valid blender model to export to timbermesh -
+any model needs to be in a separate collection and the name needs to be the same as the final model, such as "pipeBox.folktails"
+all textures need to be opaque and rename the "_" to "."
+use the same camel case sensitive name of the textures that you found in the original game assets
+the animation needs to be directly in a model and the model name needs to start with "#NameModelAnimated"
+all parts of the model that do not start with "#" will be merged in one mesh on export
+for entrances and dynamic positions, you need to start with "#"
+
+original tutorial https://www.youtube.com/watch?v=W82e6f9ugac
