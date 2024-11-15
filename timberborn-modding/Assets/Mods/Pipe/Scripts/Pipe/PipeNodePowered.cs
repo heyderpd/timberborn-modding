@@ -7,13 +7,13 @@ namespace Mods.OldGopher.Pipe.Scripts
   {
     private MechanicalNode mechanicalNode;
 
-    public bool Active = true;
-
     private bool GraphValid => mechanicalNode?.Graph?.Valid ?? false;
 
     private bool NodeInvalid => mechanicalNode == null;
 
     private bool NodeActiveAndPowered => mechanicalNode?.ActiveAndPowered ?? false;
+
+    public bool Active = true;
 
     public void Awake()
     {
@@ -36,7 +36,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void EnablePowerConsumption()
     {
-      if (NodeInvalid)
+      if (NodeInvalid || !Active)
         return;
       mechanicalNode.Active = true;
       if (GraphValid)

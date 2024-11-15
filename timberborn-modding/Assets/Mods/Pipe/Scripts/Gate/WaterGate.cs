@@ -29,6 +29,8 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private static readonly PropertyKey<bool> ModeConfigKey = new PropertyKey<bool>("WaterGateMode");
 
+    private static readonly PropertyKey<bool> WaterPumpPowerConfigKey = new PropertyKey<bool>("WaterPumpPower");
+
     public WaterGateState State { get; private set; }
 
     private WaterGateFlow? Flow = null;
@@ -85,6 +87,10 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private event EventHandler<WaterAdditionEvent> WaterAdded;
 
+    private PipeWaterPumpGear pumpGear;
+
+    private event EventHandler<WaterAdditionEvent> pumpGearAnimation;
+
     [Inject]
     public void InjectDependencies(
       IWaterService _waterService,
@@ -109,7 +115,10 @@ namespace Mods.OldGopher.Pipe.Scripts
       pipeNode = GetComponentFast<PipeNode>();
       waterParticle = GameObjectFast.AddComponent<WaterParticle>();
       if (IsWaterPump)
+      {
         powered = GetComponentFast<PipeNodePowered>();
+        pumpGear = GetComponentFast<PipeWaterPumpGear>();
+      }
     }
 
     public void InitializeEntity()
@@ -119,6 +128,8 @@ namespace Mods.OldGopher.Pipe.Scripts
       HigthLimit = (float)(coordinates.z) + WaterGateConfig.getHigthLimitShift(Type);
       waterParticle.Initialize(colors, this);
       WaterAdded += waterParticle.OnWaterAdded;
+      if (IsWaterPump)
+        pumpGearAnimation += pumpGear.OnAnimationEvent;
     }
 
     public void DeleteEntity() { }
@@ -130,6 +141,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       bool waterPumpMode = Mode == WaterGateMode.ONLY_IN;
       IObjectSaver component = entitySaver.GetComponent(WaterGateKey);
       component.Set(ModeConfigKey, waterPumpMode);
+      component.Set(WaterPumpPowerConfigKey, powered?.Active ?? false);
     }
 
     [BackwardCompatible(2023, 9, 22)]
@@ -142,6 +154,11 @@ namespace Mods.OldGopher.Pipe.Scripts
       Mode = waterPumpMode
         ? WaterGateMode.ONLY_IN
         : WaterGateMode.ONLY_OUT;
+      if (powered && component.Has(WaterPumpPowerConfigKey))
+      {
+        bool waterPumpPower = component.Get(WaterPumpPowerConfigKey);
+        powered.Active = waterPumpPower;
+      }
     }
 
     public bool isEnabled
@@ -310,6 +327,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private void SetWaterParticles(float Water, float ContaminatedPercentage)
     {
+      this.pumpGearAnimation?.Invoke(this, new WaterAdditionEvent(Water, 0f));
       if (WaterLevel < HigthLimit)
         this.WaterAdded?.Invoke(this, new WaterAdditionEvent(Water, ContaminatedPercentage));
       else
