@@ -59,11 +59,11 @@ namespace Mods.OldGopher.Pipe.Scripts
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "GreatestDepthLabel", (string)null));
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "CurrentLabel", (string)null));
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "ContaminationLabel", (string)null));
-      modeField = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
-      modeField.text = "???";
-      modeButton = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
-      modeButton.text = "Toggle";
-      modeButton.RegisterCallback<ClickEvent>(ToggleWaterPumpPower, (TrickleDown)0);
+      powerField = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
+      powerField.text = "???";
+      powerButton = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
+      powerButton.text = "Toggle";
+      powerButton.RegisterCallback<ClickEvent>(ToggleWaterPumpPower, (TrickleDown)0);
       return fragment;
     }
 
@@ -73,11 +73,11 @@ namespace Mods.OldGopher.Pipe.Scripts
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "GreatestDepthLabel", (string)null));
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "CurrentLabel", (string)null));
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "ContaminationLabel", (string)null));
-      powerField = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
-      powerField.text = "???";
-      powerButton = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
-      powerButton.text = "Toggle";
-      powerButton.RegisterCallback<ClickEvent>(ToggleWaterPumpMode, (TrickleDown)0);
+      modeField = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
+      modeField.text = "???";
+      modeButton = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
+      modeButton.text = "Toggle";
+      modeButton.RegisterCallback<ClickEvent>(ToggleWaterPumpMode, (TrickleDown)0);
       return fragment;
     }
 
