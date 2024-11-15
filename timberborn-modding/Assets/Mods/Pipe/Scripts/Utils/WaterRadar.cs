@@ -6,13 +6,6 @@ using Timberborn.TerrainSystem;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
-  internal enum WaterObstacleType
-  {
-    BLOCK,
-    HORIZONTAL,
-    EMPTY
-  }
-
   internal class WaterRadar
   {
     private ITerrainService terrainService;

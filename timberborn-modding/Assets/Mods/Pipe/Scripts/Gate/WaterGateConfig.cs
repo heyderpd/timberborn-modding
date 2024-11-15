@@ -2,52 +2,6 @@
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
-  internal enum WaterGateState
-  {
-    EMPTY,
-    BLOCKED,
-    CONNECTED
-  }
-
-  internal enum WaterGateMode
-  {
-    ONLY_IN,
-    ONLY_OUT,
-    BOTH
-  }
-
-  internal enum WaterGateFlow
-  {
-    STOP,
-    IN,
-    OUT
-  }
-
-  internal enum WaterGateType
-  {
-    BACK,
-    FRONT,
-    LEFT,
-    RIGHT,
-    BOTTON,
-    TOP,
-    VALVE,
-    WATERPUMP
-  }
-
-  public readonly struct WaterAddition
-  {
-    public float Water { get; }
-
-    public float ContaminatedPercentage { get; }
-
-    public WaterAddition(float _Water, float _ContaminatedPercentage)
-    {
-      Water = _Water;
-      ContaminatedPercentage = _ContaminatedPercentage;
-    }
-  }
-
   internal static class WaterGateConfig
   {
     public static Vector3Int getCoordinates(WaterGateType gate)
