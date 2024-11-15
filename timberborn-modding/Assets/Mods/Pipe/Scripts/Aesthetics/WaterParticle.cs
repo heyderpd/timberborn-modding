@@ -56,12 +56,12 @@ namespace Mods.OldGopher.Pipe.Scripts
       force.space = ParticleSystemSimulationSpace.World;
     }
 
-    private bool HasWater(WaterAddition Event)
+    private bool HasWater(WaterAdditionEvent Event)
     {
       return Event.Water > 0;
     }
 
-    private void SetColor(WaterAddition Event)
+    private void SetColor(WaterAdditionEvent Event)
     {
       if (!HasWater(Event))
         return;
@@ -74,7 +74,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       particlesMainModule.startColor = startColor;
     }
 
-    private void SetWaterFlow(WaterAddition Event)
+    private void SetWaterFlow(WaterAdditionEvent Event)
     {
       if (!HasWater(Event))
         return;
@@ -93,7 +93,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       shape.radius = radius;
     }
 
-    private void SetAnimation(WaterAddition Event)
+    private void SetAnimation(WaterAdditionEvent Event)
     {
       if (HasWater(Event))
         particlesRunner.Play();
@@ -106,7 +106,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       particlesRunner.Stop();
     }
 
-    public void OnWaterAdded(object sender, WaterAddition Event)
+    public void OnWaterAdded(object sender, WaterAdditionEvent Event)
     {
       if (!particlesRunner)
         return;

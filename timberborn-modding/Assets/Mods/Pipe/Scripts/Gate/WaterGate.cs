@@ -83,7 +83,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private WaterParticle waterParticle;
 
-    private event EventHandler<WaterAddition> WaterAdded;
+    private event EventHandler<WaterAdditionEvent> WaterAdded;
 
     [Inject]
     public void InjectDependencies(
@@ -304,9 +304,9 @@ namespace Mods.OldGopher.Pipe.Scripts
     private void SetWaterParticles(float Water, float ContaminatedPercentage)
     {
       if (WaterLevel < HigthLimit)
-        this.WaterAdded?.Invoke(this, new WaterAddition(Water, ContaminatedPercentage));
+        this.WaterAdded?.Invoke(this, new WaterAdditionEvent(Water, ContaminatedPercentage));
       else
-        this.WaterAdded?.Invoke(this, new WaterAddition(0f, 0f));
+        this.WaterAdded?.Invoke(this, new WaterAdditionEvent(0f, 0f));
     }
 
     public void MoveWater(float water, float contamination)

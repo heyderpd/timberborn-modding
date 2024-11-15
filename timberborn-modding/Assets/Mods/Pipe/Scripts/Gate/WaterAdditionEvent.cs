@@ -2,13 +2,13 @@
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
-  public readonly struct WaterAddition
+  public readonly struct WaterAdditionEvent
   {
     public float Water { get; }
 
     public float ContaminatedPercentage { get; }
 
-    public WaterAddition(float _Water, float _ContaminatedPercentage)
+    public WaterAdditionEvent(float _Water, float _ContaminatedPercentage)
     {
       Water = _Water;
       ContaminatedPercentage = _ContaminatedPercentage;
