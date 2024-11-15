@@ -13,13 +13,17 @@ namespace Mods.OldGopher.Pipe.Scripts
     private readonly ILoc loc;
     private readonly DevModeManager devModeManager;
 
+    private static readonly string PowerOnLocKey = "Building.PipeWaterPump.PowerOn";
+    private static readonly string PowerOffLocKey = "Building.PipeWaterPump.PowerOff";
     private static readonly string TakeToPipeLocKey = "Building.PipeWaterPump.TakeToPipe";
     private static readonly string TakeFromPipeLocKey = "Building.PipeWaterPump.TakeFromPipe";
 
     private PipeNode pipeNode;
     private VisualElement root;
-    private Label field;
-    private Button button;
+    private Label powerField;
+    private Button powerButton;
+    private Label modeField;
+    private Button modeButton;
     private VisualElement debugView;
     private Label debugField;
     private Button debugButton;
@@ -43,22 +47,37 @@ namespace Mods.OldGopher.Pipe.Scripts
     public VisualElement InitializeFragment()
     {
       root = new VisualElement();
-      root.Add(CreatePumpView());
+      root.Add(CreatePumpPowerView());
+      root.Add(CreatePumpModeView());
       root.Add(CreateDebugView());
       return root;
     }
 
-    private VisualElement CreatePumpView()
+    private VisualElement CreatePumpPowerView()
     {
       var fragment = visualElementLoader.LoadVisualElement("Game/EntityPanel/StreamGaugeFragment");
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "GreatestDepthLabel", (string)null));
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "CurrentLabel", (string)null));
       fragment.Remove(UQueryExtensions.Q<Label>(fragment, "ContaminationLabel", (string)null));
-      field = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
-      field.text = "mode: ???";
-      button = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
-      button.text = "Toggle";
-      button.RegisterCallback<ClickEvent>(ToggleWaterPump, (TrickleDown)0);
+      modeField = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
+      modeField.text = "???";
+      modeButton = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
+      modeButton.text = "Toggle";
+      modeButton.RegisterCallback<ClickEvent>(ToggleWaterPumpPower, (TrickleDown)0);
+      return fragment;
+    }
+
+    private VisualElement CreatePumpModeView()
+    {
+      var fragment = visualElementLoader.LoadVisualElement("Game/EntityPanel/StreamGaugeFragment");
+      fragment.Remove(UQueryExtensions.Q<Label>(fragment, "GreatestDepthLabel", (string)null));
+      fragment.Remove(UQueryExtensions.Q<Label>(fragment, "CurrentLabel", (string)null));
+      fragment.Remove(UQueryExtensions.Q<Label>(fragment, "ContaminationLabel", (string)null));
+      powerField = UQueryExtensions.Q<Label>(fragment, "DepthLabel", (string)null);
+      powerField.text = "???";
+      powerButton = UQueryExtensions.Q<Button>(fragment, "ResetGreatestDepthButton", (string)null);
+      powerButton.text = "Toggle";
+      powerButton.RegisterCallback<ClickEvent>(ToggleWaterPumpMode, (TrickleDown)0);
       return fragment;
     }
 
@@ -83,11 +102,19 @@ namespace Mods.OldGopher.Pipe.Scripts
       return fragment;
     }
 
-    private void ToggleWaterPump(ClickEvent evt)
+    private void ToggleWaterPumpPower(ClickEvent evt)
     {
       if (!pipeNode.IsWaterPump)
         return;
-      pipeNode?.ToggleWaterPump();
+      pipeNode?.ToggleWaterPumpPower();
+      UpdateFragment();
+    }
+
+    private void ToggleWaterPumpMode(ClickEvent evt)
+    {
+      if (!pipeNode.IsWaterPump)
+        return;
+      pipeNode?.ToggleWaterPumpMode();
       UpdateFragment();
     }
 
@@ -98,13 +125,17 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private void ShowPumpView()
     {
-      var state = pipeNode.GetWaterPumpState();
-      if (state == null)
+      var (modeState, powerState) = pipeNode.GetWaterPumpState();
+      if (modeState == null)
       {
-        field.text = "none";
+        powerField.text = "...";
+        modeField.text = "...";
         return;
       }
-      field.text = state ?? false
+      powerField.text = powerState ?? false
+        ? loc.T(PowerOnLocKey)
+        : loc.T(PowerOffLocKey);
+      modeField.text = modeState ?? false
         ? loc.T(TakeToPipeLocKey)
         : loc.T(TakeFromPipeLocKey);
     }
