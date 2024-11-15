@@ -93,25 +93,35 @@ namespace Mods.OldGopher.Pipe.Scripts
       isEnabled = true;
     }
 
-    public bool? GetWaterPumpState()
+    public (bool?, bool?) GetWaterPumpState()
     {
       if (!IsWaterPump)
-        return null;
+        return (null, null);
       var gate = waterGates.FirstOrDefault((WaterGate gate) => gate.IsWaterPump);
       if (!gate)
-        return null;
-      return gate.Mode == WaterGateMode.ONLY_IN;
+        return (null, null);
+      return (gate.Mode == WaterGateMode.ONLY_IN, gate.powered.Active);
     }
 
-    public void ToggleWaterPump()
+    public void ToggleWaterPumpMode()
     {
       if (!IsWaterPump || waterGates == null)
         return;
       var gate = waterGates.FirstOrDefault(gate => gate.IsWaterPump);
       if (!gate)
         return;
-      gate.ToggleWaterPump();
+      gate.ToggleWaterPumpMode();
       pipeGroupQueue.Group_RecalculateGates(this);
+    }
+
+    public void ToggleWaterPumpPower()
+    {
+      if (!IsWaterPump || waterGates == null)
+        return;
+      var gate = waterGates.FirstOrDefault(gate => gate.IsWaterPump);
+      if (!gate)
+        return;
+      gate.ToggleWaterPumpPower();
     }
 
     public void WildBeaverAppears()

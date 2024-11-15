@@ -205,13 +205,20 @@ namespace Mods.OldGopher.Pipe.Scripts
       }
     }
 
-    public void ToggleWaterPump()
+    public void ToggleWaterPumpMode()
     {
       if (!IsWaterPump)
         return;
       Mode = Mode == WaterGateMode.ONLY_OUT
         ? WaterGateMode.ONLY_IN
         : WaterGateMode.ONLY_OUT;
+    }
+
+    public void ToggleWaterPumpPower()
+    {
+      if (!IsWaterPump || !powered)
+        return;
+      powered.Active = !powered.Active;
     }
 
     public void TestParticle()
