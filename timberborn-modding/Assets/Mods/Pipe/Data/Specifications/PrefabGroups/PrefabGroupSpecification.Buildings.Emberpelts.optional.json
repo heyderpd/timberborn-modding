@@ -1,0 +1,15 @@
+{
+  "Id": "Buildings.Emberpelts",
+  "Paths#append": [
+    "Buildings/Water/PipeBox/PipeBox.Emberpelts",
+    "Buildings/Water/PipeStraight/PipeStraight.Emberpelts",
+    "Buildings/Water/PipeTurn/PipeTurn.Emberpelts",
+    "Buildings/Water/PipeTIntersection/PipeTIntersection.Emberpelts",
+    "Buildings/Water/PipeXIntersection/PipeXIntersection.Emberpelts",
+    "Buildings/Water/PipeUpward/PipeUpward.Emberpelts",
+    "Buildings/Water/PipeVertical/PipeVertical.Emberpelts",
+    "Buildings/Water/PipeDownward/PipeDownward.Emberpelts",
+    "Buildings/Water/PipeValve/PipeValve.Emberpelts",
+    "Buildings/Water/PipeWaterPump/PipeWaterPump.Emberpelts"
+  ]
+}

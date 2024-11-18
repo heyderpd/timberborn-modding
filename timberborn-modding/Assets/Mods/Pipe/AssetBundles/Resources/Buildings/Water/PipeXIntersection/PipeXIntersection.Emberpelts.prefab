@@ -90,7 +90,7 @@ GameObject:
   - component: {fileID: -1302879299329295200}
   - component: {fileID: 4971155771503057506}
   m_Layer: 0
-  m_Name: PipeXIntersection.IronTeeth
+  m_Name: PipeXIntersection.Emberpelts
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: -731835049, guid: b5f268a4cb31a93ed707a95d3a502b0e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _prefabName: PipeXIntersection.IronTeeth
+  _prefabName: PipeXIntersection.Emberpelts
   _backwardCompatiblePrefabNames: []
   _requiredFeatureToggle: 
   _disablingFeatureToggle: 
@@ -474,7 +474,7 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings\Water\PipeXIntersection\PipeXIntersection.IronTeeth.Model
+  _modelName: Buildings\Water\PipeXIntersection\PipeXIntersection.Emberpelts.Model
 --- !u!1 &1842394135998225
 GameObject:
   m_ObjectHideFlags: 0
@@ -541,4 +541,4 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings\Water\PipeIncomplete\PipeIncomplete.IronTeeth.Model
+  _modelName: Buildings\Water\PipeIncomplete\PipeIncomplete.Emberpelts.Model
