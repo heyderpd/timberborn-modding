@@ -47,7 +47,9 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public WaterGate gateConnected { get; private set; }
 
-    public TickCount tick = new TickCount(10);
+    public TickCount flowTick = new TickCount(10);
+
+    public TickCount retryDetectionTick = new TickCount(60);
 
     private BlockObject blockObject;
 
@@ -276,6 +278,14 @@ namespace Mods.OldGopher.Pipe.Scripts
       return obstacle == WaterObstacleType.BLOCK;
     }
 
+    public void retryDetection()
+    {
+      if (!isEnabled || retryDetectionTick.Skip())
+        return;
+      ModUtils.Log($"[WaterGate.retryDetection] DO!");
+      CheckInput();
+    }
+
     public bool CheckInput()
     {
       var oldState = State;
@@ -314,7 +324,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       ModUtils.Log($"[WaterGate.FlowNotChanged] water={water} newFlow={newFlow} Flow={Flow}");
       if (Flow != null && Flow == newFlow)
         return true;
-      if (Flow != null && tick.Skip())
+      if (Flow != null && flowTick.Skip())
         return true;
       Flow = newFlow;
       return false;
@@ -336,6 +346,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public void MoveWater(float water, float contamination)
     {
+      retryDetection();
       SetWaterParticles(water, contamination);
       if (!isEnabled || notHasEmptySpace())
         return;
