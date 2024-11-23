@@ -1,5 +1,6 @@
-using System.Collections.Immutable;
 using System.Linq;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.BlockSystem;
@@ -11,11 +12,16 @@ namespace Mods.OldGopher.Pipe.Scripts
 {
   internal class WaterRadar
   {
-    private ImmutableArray<string> InvalidBuilds = new ImmutableArray<string>{ "floodgate", "levee", "sluice" };
+    private ImmutableArray<string> invalidBuilds;
 
     private ITerrainService terrainService;
 
     private BlockService blockService;
+
+    public WaterRadar()
+    {
+      invalidBuilds = (new List<string> { "floodgate", "levee", "sluice" }).ToImmutableArray();
+    }
 
     [Inject]
     public void InjectDependencies(
@@ -25,6 +31,15 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       terrainService = _terrainService;
       blockService = _blockService;
+    }
+
+    public bool IsOutOfMap(Vector3Int coordinate)
+    {
+      ModUtils.Log($"[WaterRadar.IsOutOfMap] coordinate={coordinate} coordinate={coordinate.x < 0} coordinate={terrainService.Size.x < coordinate.x} coordinate={coordinate.y < 0} coordinate={terrainService.Size.y < coordinate.y}");
+      return coordinate.x < 0
+        || terrainService.Size.x < coordinate.x
+        || coordinate.y < 0
+        || terrainService.Size.y < coordinate.y;
     }
 
     public PipeNode FindPipe(Vector3Int coordinate)
@@ -50,7 +65,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         if (pipe != null && pipe == pipeOrigin)
           return WaterObstacleType.EMPTY;
         var prafabName = blockMiddle?.GetComponentFast<Prefab>()?.Name.ToLower() ?? "";
-        if (prafabName != "" && InvalidBuilds.FirstOrDefault(name => prafabName.Contains(name)) != null)
+        if (prafabName != "" && invalidBuilds.FirstOrDefault(name => prafabName.Contains(name)) != null)
           return WaterObstacleType.BLOCK;
         if (blockMiddle?.GetComponentFast<WaterObstacle>() != null)
           return WaterObstacleType.BLOCK;
