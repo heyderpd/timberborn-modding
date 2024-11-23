@@ -1,13 +1,18 @@
+using System.Collections.Immutable;
+using System.Linq;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.BlockSystem;
 using Timberborn.WaterObjects;
 using Timberborn.TerrainSystem;
+using Timberborn.PrefabSystem;
 
 namespace Mods.OldGopher.Pipe.Scripts
 {
   internal class WaterRadar
   {
+    private ImmutableArray<string> InvalidBuilds = new ImmutableArray<string>{ "floodgate", "levee", "sluice" };
+
     private ITerrainService terrainService;
 
     private BlockService blockService;
@@ -40,12 +45,16 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (terrainService.Underground(coordinate))
         return WaterObstacleType.BLOCK;
       var blockMiddle = blockService.GetMiddleObjectAt(coordinate);
-      var pipe = blockMiddle?.IsFinished == true ? blockMiddle?.GetComponentFast<PipeNode>() : null;
-      if (pipe != null && pipe == pipeOrigin)
-        return WaterObstacleType.EMPTY;
-      var waterObstacleMiddle = blockMiddle?.IsFinished == true && blockMiddle?.GetComponentFast<WaterObstacle>() != null;
-      if (waterObstacleMiddle)
-        return WaterObstacleType.BLOCK;
+      if (blockMiddle?.IsFinished == true) {
+        var pipe = blockMiddle?.GetComponentFast<PipeNode>();
+        if (pipe != null && pipe == pipeOrigin)
+          return WaterObstacleType.EMPTY;
+        var prafabName = blockMiddle?.GetComponentFast<Prefab>()?.Name.ToLower() ?? "";
+        if (prafabName != "" && InvalidBuilds.FirstOrDefault(name => prafabName.Contains(name)) != null)
+          return WaterObstacleType.BLOCK;
+        if (blockMiddle?.GetComponentFast<WaterObstacle>() != null)
+          return WaterObstacleType.BLOCK;
+      }
       var blockBottom = blockService.GetBottomObjectAt(coordinate);
       var hasWaterObstacleBottom = blockBottom?.IsFinished == true && blockBottom?.GetComponentFast<WaterObstacle>() != null;
       if (hasWaterObstacleBottom)
