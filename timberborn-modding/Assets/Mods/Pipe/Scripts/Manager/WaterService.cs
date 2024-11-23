@@ -244,15 +244,18 @@ namespace Mods.OldGopher.Pipe.Scripts
           var waterQuota = water * quota;
           if (delivery.gate.IsWaterPump)
             interaction.setWaterBlockedByPump(waterQuota);
-          interaction.setWaterOferted(waterQuota * delivery.gate.PowerEfficiency);
-          interaction.setContamination(delivery.gate.ContaminationPercentage * quota);
+          var waterOferted = waterQuota * delivery.gate.PowerEfficiency;
+          interaction.setWaterOferted(waterOferted);
+          interaction.setContamination(waterOferted * delivery.gate.ContaminationPercentage);
         }
       // discovery requesters water
       foreach (var requester in RequesterIterator(group.WaterGates))
       {
         var waterMove = LimitRequesterWater(requester.gate, requester.waterOfertedSum);
         requester.WaterMove = waterMove * requester.gate.PowerEfficiency;
-        requester.Contamination = requester.contaminationSum;
+        requester.Contamination = requester.waterOfertedSum > 0f
+          ? requester.contaminationSum / requester.waterOfertedSum
+          : 0f;
         requester.WaterUsed = requester.WaterMove > 0f
           ? (requester.WaterMove / requester.waterOfertedSum)
           : 0f;
