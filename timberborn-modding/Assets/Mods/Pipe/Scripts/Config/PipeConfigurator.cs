@@ -41,6 +41,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       TemplateModule.Builder builder = new TemplateModule.Builder();
       builder.AddDecorator<WaterGate, BuildingParticleAttachment>();
+      builder.AddDecorator<PipeNode, PipeStatus>();
       return builder.Build();
     }
   }
