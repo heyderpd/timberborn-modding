@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.EntitySystem;
@@ -45,6 +45,8 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public PipeNode pipeNode { get; private set; }
 
+    public PipeStatus pipeStatus { get; private set; }
+    
     public WaterGate gateConnected { get; private set; }
 
     public TickCount flowTick = new TickCount(10);
@@ -115,6 +117,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       blockObject = GetComponentFast<BlockObject>();
       pipeNode = GetComponentFast<PipeNode>();
+      pipeStatus = GetComponentFast<PipeStatus>();
       waterParticle = GameObjectFast.AddComponent<WaterParticle>();
       if (IsWaterPump)
       {
@@ -273,6 +276,8 @@ namespace Mods.OldGopher.Pipe.Scripts
     
     private bool notHasEmptySpace()
     {
+      if (waterRadar.IsOutOfMap(coordinates))
+        return true;
       var obstacle = waterRadar.FindWaterObstacle(coordinates, pipeNode);
       ModUtils.Log($"[WaterGate.notHasEmptySpace] id={id} obstacle={obstacle}");
       return obstacle == WaterObstacleType.BLOCK;
@@ -282,7 +287,7 @@ namespace Mods.OldGopher.Pipe.Scripts
     {
       if (!isEnabled || retryDetectionTick.Skip())
         return;
-      ModUtils.Log($"[WaterGate.retryDetection] DO!");
+      pipeGroupQueue.Gate_Check(this);
       CheckInput();
     }
 
@@ -292,6 +297,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       State = _CheckInput();
       if (State != WaterGateState.CONNECTED)
         Disconnection();
+      pipeStatus.SetBlocked(this, State == WaterGateState.BLOCKED);
       return oldState != State;
     }
 
