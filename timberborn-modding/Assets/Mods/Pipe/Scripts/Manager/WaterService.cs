@@ -49,7 +49,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       return GatesIterator(false, Gates, reference, checkWater);
     }
 
-    private static float CalcPressure(float FloorLevel, float WaterLevel)
+    public static float CalcPressure(float FloorLevel, float WaterLevel)
     {
       var levelPressure = FloorLevel * FloorLevel;
       var waterPressure = WaterLevel > 0f
@@ -57,11 +57,6 @@ namespace Mods.OldGopher.Pipe.Scripts
         : 0f;
       var pressure = Mathf.Max(levelPressure, waterPressure);
       return pressure;
-    }
-
-    public static float CalcPressure(WaterGate gate)
-    {
-      return CalcPressure(gate.LowerLimit, gate.WaterLevel);
     }
 
     public static float CalcPumpPressure(float pumpLevel)
