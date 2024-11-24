@@ -7,7 +7,7 @@ use especific blender version 3.6 https://www.blender.org/download/lts/3-6/
 install the plugin timbermesh exporter https://github.com/mechanistry/timbermesh/releases
 
 - to export 3d models from unity to blender -
-on unity go to package manager and find and install "FBX exporter"
+on unity go to package manager (window/package manager/unity registry) and find and install "FBX exporter"
 open an prefab right click on model and choose "export to fbx"
 select export format to "binary" and export It
 
