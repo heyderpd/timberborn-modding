@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.EntitySystem;
@@ -49,9 +49,9 @@ namespace Mods.OldGopher.Pipe.Scripts
     
     public WaterGate gateConnected { get; private set; }
 
-    public TickCount flowTick = new TickCount(10);
+    public TickCount flowTick = new TickCount(20);
 
-    public TickCount retryDetectionTick = new TickCount(60);
+    public TickCount retryDetectionTick = new TickCount(90);
 
     private BlockObject blockObject;
 
@@ -193,7 +193,6 @@ namespace Mods.OldGopher.Pipe.Scripts
         if (threadSafeWaterMap == null || !isEnabled)
           return false;
         var underwater = threadSafeWaterMap.CellIsUnderwater(coordinates);
-        ModUtils.Log($"[WaterGate.IsUnderwater] underwater={underwater}");
         return underwater;
       }
       catch (Exception err)
@@ -252,7 +251,7 @@ namespace Mods.OldGopher.Pipe.Scripts
         UnityEngine.Random.Range(0f, WaterService.waterFactor)
       );
     }
-    
+
     public bool CheckConnection(WaterGate gate)
     {
       return gateConnected == gate && gate.gateConnected == this;
@@ -281,7 +280,6 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (waterRadar.IsOutOfMap(coordinates))
         return true;
       var obstacle = waterRadar.FindWaterObstacle(coordinates, pipeNode);
-      ModUtils.Log($"[WaterGate.notHasEmptySpace] id={id} obstacle={obstacle}");
       return obstacle == WaterObstacleType.BLOCK;
     }
 
@@ -290,7 +288,6 @@ namespace Mods.OldGopher.Pipe.Scripts
       if (!isEnabled || retryDetectionTick.Skip())
         return;
       pipeGroupQueue.Gate_Check(this);
-      CheckInput();
     }
 
     public bool CheckInput()
@@ -329,11 +326,11 @@ namespace Mods.OldGopher.Pipe.Scripts
         newFlow = WaterGateFlow.OUT;
       if (water < 0f)
         newFlow = WaterGateFlow.IN;
-      ModUtils.Log($"[WaterGate.FlowNotChanged] water={water} newFlow={newFlow} Flow={Flow}");
       if (Flow != null && Flow == newFlow)
         return true;
       if (Flow != null && flowTick.Skip())
         return true;
+      ModUtils.Log($"[WaterGate.FlowNotChanged] water={water} newFlow={newFlow} Flow={Flow}");
       Flow = newFlow;
       return false;
     }
@@ -404,7 +401,7 @@ namespace Mods.OldGopher.Pipe.Scripts
       string info = $"  Gate[\n";
       info += $"    id={id} pipe={pipeNode?.id} enabled={isEnabled}\n";
       info += $"    connected={gateConnected?.id} success={SuccessWhenCheckWater}\n";
-      info += $"    type={Type} mode={Mode} state={State}\n";
+      info += $"    type={Type} mode={Mode} state={State} flow={Flow}\n";
       info += $"    IsOnlyRequester={IsOnlyRequester} IsOnlyDelivery={IsOnlyDelivery}\n";
       info += $"    lower={LowerLimit.ToString("0.00")} higth={HigthLimit.ToString("0.00")} level={WaterLevel.ToString("0.00")}\n";
       info += $"    detected={WaterDetected.ToString("0.00")} available={WaterAvailable.ToString("0.00")} conta={ContaminationPercentage.ToString("0.00")} pressure={WaterPressure.ToString("0.00")}\n";
