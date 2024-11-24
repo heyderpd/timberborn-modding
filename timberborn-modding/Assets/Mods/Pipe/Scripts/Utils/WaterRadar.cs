@@ -12,16 +12,11 @@ namespace Mods.OldGopher.Pipe.Scripts
 {
   internal class WaterRadar
   {
-    private ImmutableArray<string> invalidBuilds;
+    private ImmutableArray<string> invalidBuilds = ImmutableArray.Create("floodgate", "levee", "sluice");
 
     private ITerrainService terrainService;
 
     private BlockService blockService;
-
-    public WaterRadar()
-    {
-      invalidBuilds = (new List<string> { "floodgate", "levee", "sluice" }).ToImmutableArray();
-    }
 
     [Inject]
     public void InjectDependencies(
@@ -35,11 +30,10 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     public bool IsOutOfMap(Vector3Int coordinate)
     {
-      ModUtils.Log($"[WaterRadar.IsOutOfMap] coordinate={coordinate} coordinate={coordinate.x < 0} coordinate={terrainService.Size.x < coordinate.x} coordinate={coordinate.y < 0} coordinate={terrainService.Size.y < coordinate.y}");
       return coordinate.x < 0
-        || terrainService.Size.x < coordinate.x
+        || terrainService.Size.x <= coordinate.x
         || coordinate.y < 0
-        || terrainService.Size.y < coordinate.y;
+        || terrainService.Size.y <= coordinate.y;
     }
 
     public PipeNode FindPipe(Vector3Int coordinate)

@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using UnityEngine;
 using Timberborn.BlockSystem;
-using Timberborn.Common;
 using Timberborn.Coordinates;
 
 namespace Mods.OldGopher.Pipe.Scripts
