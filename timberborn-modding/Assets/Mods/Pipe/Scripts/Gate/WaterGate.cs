@@ -212,10 +212,12 @@ namespace Mods.OldGopher.Pipe.Scripts
           SuccessWhenCheckWater = false;
           return;
         }
-        WaterLevel = threadSafeWaterMap.WaterHeightOrFloor(coordinates);
+        WaterLevel = waterRadar.IsOutOfMap(coordinates)
+          ? 0f
+          : threadSafeWaterMap.WaterHeightOrFloor(coordinates);
         WaterDetected = Mathf.Max(WaterLevel - LowerLimit, 0f);
         WaterAvailable = WaterService.LimitWater(WaterDetected);
-        WaterPressure = WaterService.CalcPressure(this);
+        WaterPressure = WaterService.CalcPressure(LowerLimit, WaterLevel);
         ContaminationPercentage = WaterAvailable > 0f
           ? threadSafeWaterMap.ColumnContamination(coordinates)
           : 0f;
