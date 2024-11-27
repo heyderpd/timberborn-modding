@@ -7,6 +7,13 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.emka.timberborn-harmony": {
+      "version": "https://github.com/eMkaQQ/timberborn-harmony.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "ea777883a0436c7c2f70bf7ff8d801592a266cff"
+    },
     "com.unity.burst": {
       "version": "1.8.17",
       "depth": 2,
