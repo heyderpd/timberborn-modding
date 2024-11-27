@@ -4,7 +4,7 @@ using Timberborn.Animations;
 using Timberborn.TimeSystem;
 using Timberborn.BaseComponentSystem;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class PipeWaterPumpGear : BaseComponent
   {

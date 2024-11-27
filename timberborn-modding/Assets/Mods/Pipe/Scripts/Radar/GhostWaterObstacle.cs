@@ -2,7 +2,7 @@ using UnityEngine;
 using Timberborn.BlockSystem;
 using Timberborn.Common;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class GhostWaterObstacle
   {

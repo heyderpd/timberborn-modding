@@ -4,7 +4,7 @@ using System.Reflection;
 using HarmonyLib;
 using Timberborn.BaseComponentSystem;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   [HarmonyPatch]
   internal class SettingsPatch: BaseComponent

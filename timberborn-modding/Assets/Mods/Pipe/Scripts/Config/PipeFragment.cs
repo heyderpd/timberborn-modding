@@ -5,7 +5,7 @@ using Timberborn.EntityPanelSystem;
 using Timberborn.Debugging;
 using Timberborn.Localization;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   public class PipeFragment : IEntityPanelFragment
   {

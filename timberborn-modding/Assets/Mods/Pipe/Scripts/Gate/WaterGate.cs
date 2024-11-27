@@ -8,7 +8,7 @@ using Timberborn.BlockSystem;
 using Timberborn.Persistence;
 using Timberborn.CoreUI;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class WaterGate : BaseComponent,
                              IInitializableEntity,

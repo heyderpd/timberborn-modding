@@ -6,7 +6,7 @@ using Timberborn.StatusSystem;
 using Timberborn.BuildingsBlocking;
 using Timberborn.BlockSystem;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class PipeStatus : BaseComponent, IFinishedStateListener
   {

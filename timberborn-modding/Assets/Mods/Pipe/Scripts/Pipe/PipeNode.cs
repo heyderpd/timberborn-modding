@@ -6,7 +6,7 @@ using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class PipeNode : BaseComponent,
                             IInitializableEntity,

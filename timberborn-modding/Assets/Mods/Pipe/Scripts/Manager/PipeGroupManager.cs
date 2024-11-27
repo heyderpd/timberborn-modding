@@ -7,7 +7,7 @@ using Timberborn.TickSystem;
 using Timberborn.BlockSystem;
 using Timberborn.SingletonSystem;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class PipeGroupManager : ITickableSingleton, ILoadableSingleton
   {

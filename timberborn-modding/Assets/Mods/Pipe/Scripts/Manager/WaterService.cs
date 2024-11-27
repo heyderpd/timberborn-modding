@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using UnityEngine;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal static class WaterService
   {

@@ -7,7 +7,7 @@ using Timberborn.Buildings;
 using Timberborn.BaseComponentSystem;
 using Timberborn.ModelAttachmentSystem;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class WaterParticle : BaseComponent
   {

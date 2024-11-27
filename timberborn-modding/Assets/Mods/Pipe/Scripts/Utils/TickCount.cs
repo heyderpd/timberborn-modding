@@ -7,7 +7,7 @@ using Timberborn.BlockSystem;
 using Timberborn.Common;
 using Timberborn.Coordinates;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class TickCount
   {

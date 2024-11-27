@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal static class WaterGateConfig
   {

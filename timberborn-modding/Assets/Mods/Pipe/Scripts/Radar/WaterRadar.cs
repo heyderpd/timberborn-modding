@@ -14,7 +14,7 @@ using Timberborn.BaseComponentSystem;
 using Timberborn.Common;
 using System;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class WaterRadar
   {

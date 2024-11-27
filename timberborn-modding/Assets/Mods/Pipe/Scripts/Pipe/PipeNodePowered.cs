@@ -1,7 +1,7 @@
 ﻿using Timberborn.BaseComponentSystem;
 using Timberborn.MechanicalSystem;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   internal class PipeNodePowered : BaseComponent
   {

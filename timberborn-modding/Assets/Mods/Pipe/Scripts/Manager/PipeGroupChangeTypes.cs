@@ -2,7 +2,7 @@
 using Timberborn.Common;
 using Timberborn.BlockSystem;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   public enum PipeGroupChangeTypes
   {

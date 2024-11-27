@@ -3,7 +3,7 @@ using Timberborn.Buildings;
 using Timberborn.EntityPanelSystem;
 using Timberborn.TemplateSystem;
 
-namespace Mods.OldGopher.Pipe.Scripts
+namespace Mods.OldGopher.Pipe
 {
   [Context("Game")]
   public class PipeWaterConfigurator : IConfigurator
