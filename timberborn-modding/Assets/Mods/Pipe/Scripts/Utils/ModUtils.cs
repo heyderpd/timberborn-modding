@@ -10,7 +10,7 @@ namespace Mods.OldGopher.Pipe.Scripts
 {
   internal static class ModUtils
   {
-    public static readonly bool enabled = false;
+    public static readonly bool enabled = true;
 
     public static readonly System.Random random = new System.Random();
 
@@ -66,19 +66,24 @@ namespace Mods.OldGopher.Pipe.Scripts
 
     private static Tuple<int, int, int, int, int, int> getRectifyRef(BlockObject block)
     {
+      return getRectifyRef(new GhostBlockObject(block));
+    }
+
+    private static Tuple<int, int, int, int, int, int> getRectifyRef(GhostBlockObject block)
+    {
       int xp = block.Coordinates.x;
       int yp = block.Coordinates.y;
       int zp = block.Coordinates.z;
-      int xl = block.Blocks.Size.x - 1;
-      int yl = block.Blocks.Size.y - 1;
-      int zl = block.Blocks.Size.z - 1;
+      int xl = block.Size.x - 1;
+      int yl = block.Size.y - 1;
+      int zl = block.Size.z - 1;
       if (block.Orientation == Orientation.Cw90 || block.Orientation == Orientation.Cw270)
       {
         int aux = xl;
         xl = yl;
         yl = aux;
       }
-      if (block.FlipMode.IsFlipped)
+      if (block.IsFlipped)
       {
         if (block.Orientation == Orientation.Cw0 || block.Orientation == Orientation.Cw180)
           xp = xp - xl;
