@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using Bindito.Core;
 using UnityEngine;
@@ -7,12 +6,6 @@ using Timberborn.BlockSystem;
 using Timberborn.WaterObjects;
 using Timberborn.TerrainSystem;
 using Timberborn.PrefabSystem;
-using NUnit.Framework.Internal;
-using System.Reflection;
-using Timberborn.AreaSelectionSystem;
-using Timberborn.BaseComponentSystem;
-using Timberborn.Common;
-using System;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -60,7 +53,6 @@ namespace Mods.OldGopher.Pipe
       if (terrainService.Underground(coordinate))
         return WaterObstacleType.BLOCK;
       var blockMiddle = blockService.GetMiddleObjectAt(coordinate);
-      extractWaterObstacleSpec(blockMiddle);
       if (blockMiddle?.IsFinished == true)
       {
         var pipe = blockMiddle?.GetComponentFast<PipeNode>();

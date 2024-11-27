@@ -1,6 +1,4 @@
-﻿using UnityEngine;
-
-namespace Mods.OldGopher.Pipe
+﻿namespace Mods.OldGopher.Pipe
 {
   public readonly struct WaterAdditionEvent
   {

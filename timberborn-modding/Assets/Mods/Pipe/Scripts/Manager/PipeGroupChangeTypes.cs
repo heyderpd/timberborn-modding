@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using Timberborn.Common;
-using Timberborn.BlockSystem;
-
-namespace Mods.OldGopher.Pipe
+﻿namespace Mods.OldGopher.Pipe
 {
   public enum PipeGroupChangeTypes
   {
