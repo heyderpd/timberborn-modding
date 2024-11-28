@@ -1,30 +1,29 @@
-using System.Linq;
-using System.Collections.Immutable;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.BlockSystem;
 using Timberborn.WaterObjects;
 using Timberborn.TerrainSystem;
-using Timberborn.PrefabSystem;
 
 namespace Mods.OldGopher.Pipe
 {
   internal class WaterRadar
   {
-    private ImmutableArray<string> invalidBuilds = ImmutableArray.Create("floodgate", "levee", "sluice");
-
     private ITerrainService terrainService;
 
     private BlockService blockService;
 
+    private WaterObstacleMap waterObstacleMap;
+
     [Inject]
     public void InjectDependencies(
       ITerrainService _terrainService,
-      BlockService _blockService
+      BlockService _blockService,
+      WaterObstacleMap _waterObstacleMap
     )
     {
       terrainService = _terrainService;
       blockService = _blockService;
+      waterObstacleMap = _waterObstacleMap;
     }
 
     public bool IsOutOfMap(Vector3Int coordinate)
@@ -35,35 +34,57 @@ namespace Mods.OldGopher.Pipe
         || terrainService.Size.y <= coordinate.y;
     }
 
-    public PipeNode FindPipe(Vector3Int coordinate)
+    public bool Underground(Vector3Int coordinate)
     {
-      if (terrainService.Underground(coordinate))
-        return null;
+      if (IsOutOfMap(coordinate))
+        return true;
+      return terrainService.Underground(coordinate);
+    }
+
+    public bool IsInvalidCoordinate(Vector3Int coordinate)
+    {
+      if (IsOutOfMap(coordinate))
+        return false;
+      if (Underground(coordinate))
+        return false;
+      return true;
+    }
+
+    public BlockObject GetMiddleObjectAt(Vector3Int coordinate)
+    {
       var block = blockService.GetMiddleObjectAt(coordinate);
       if (block?.IsFinished != true)
         return null;
-      var pipe = block.GetComponentFast<PipeNode>();
+      return block;
+    }
+
+    private PipeNode FindPipe(BlockObject block)
+    {
+      var pipe = block?.GetComponentFast<PipeNode>() ?? null;
       if (pipe != null)
         return pipe;
       return null;
     }
 
-    public WaterObstacleType FindWaterObstacle(Vector3Int coordinate, PipeNode pipeOrigin = null)
+    private (PipeNode, WaterObstacleType) FindMiddleWaterObstacle(Vector3Int coordinate, bool checkOutOfMap)
     {
+      if (checkOutOfMap && IsOutOfMap(coordinate))
+        return (null, WaterObstacleType.BLOCK);
       if (terrainService.Underground(coordinate))
-        return WaterObstacleType.BLOCK;
-      var blockMiddle = blockService.GetMiddleObjectAt(coordinate);
-      if (blockMiddle?.IsFinished == true)
-      {
-        var pipe = blockMiddle?.GetComponentFast<PipeNode>();
-        if (pipe != null && pipe == pipeOrigin)
-          return WaterObstacleType.EMPTY;
-        var prafabName = blockMiddle?.GetComponentFast<Prefab>()?.Name.ToLower() ?? "";
-        if (prafabName != "" && invalidBuilds.FirstOrDefault(name => prafabName.Contains(name)) != null)
-          return WaterObstacleType.BLOCK;
-        if (blockMiddle?.GetComponentFast<WaterObstacle>() != null)
-          return WaterObstacleType.BLOCK;
-      }
+        return (null, WaterObstacleType.BLOCK);
+      var blockMiddle = GetMiddleObjectAt(coordinate);
+      var existWaterObstacle = HarmonyModStarter.Failed
+        ? SimpleObstacleMap.Exist(blockMiddle)
+        : waterObstacleMap.Exist(coordinate);
+      var obstacle = existWaterObstacle
+        ? WaterObstacleType.BLOCK
+        : WaterObstacleType.EMPTY;
+      var pipe = FindPipe(blockMiddle);
+      return (pipe, obstacle);
+    }
+
+    private WaterObstacleType FindBottomWaterObstacle(Vector3Int coordinate)
+    {
       var blockBottom = blockService.GetBottomObjectAt(coordinate);
       var hasWaterObstacleBottom = blockBottom?.IsFinished == true && blockBottom?.GetComponentFast<WaterObstacle>() != null;
       if (hasWaterObstacleBottom)
@@ -71,7 +92,16 @@ namespace Mods.OldGopher.Pipe
       return WaterObstacleType.EMPTY;
     }
 
-    public bool IsBlocked(Vector3Int coordinate)
+    public (PipeNode, WaterObstacleType) FindWaterObstacle(Vector3Int coordinate, bool checkOutOfMap = true)
+    {
+      var (pipe, obstacle) = FindMiddleWaterObstacle(coordinate, checkOutOfMap);
+      if (pipe != null || obstacle == WaterObstacleType.BLOCK)
+        return (pipe, obstacle);
+      obstacle = FindBottomWaterObstacle(coordinate);
+      return (null, obstacle);
+    }
+
+    public bool IsBlockedAnyObject(Vector3Int coordinate)
     {
       var block = blockService.GetObjectsAt(coordinate);
       return !block.IsEmpty();

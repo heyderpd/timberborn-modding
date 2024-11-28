@@ -277,10 +277,7 @@ namespace Mods.OldGopher.Pipe
     
     private bool notHasEmptySpace()
     {
-      if (waterRadar.IsOutOfMap(coordinates))
-        return true;
-      var obstacle = waterRadar.FindWaterObstacle(coordinates, pipeNode);
-      return obstacle == WaterObstacleType.BLOCK;
+      return _CheckInput(tryConnect: false) == WaterGateState.BLOCKED;
     }
 
     public void retryDetection()
@@ -300,15 +297,13 @@ namespace Mods.OldGopher.Pipe
       return oldState != State;
     }
 
-    private WaterGateState _CheckInput()
+    private WaterGateState _CheckInput(bool tryConnect = true)
     {
-      var pipe = waterRadar.FindPipe(coordinates);
+      var (pipe, obstacle) = waterRadar.FindWaterObstacle(coordinates);
       if (pipe == pipeNode)
         return WaterGateState.EMPTY;
-      var connected = pipeNode.TryConnect(this, pipe);
-      if (connected)
+      if (tryConnect && pipeNode.TryConnect(this, pipe))
         return WaterGateState.CONNECTED;
-      var obstacle = waterRadar.FindWaterObstacle(coordinates, pipeNode);
       return obstacle == WaterObstacleType.BLOCK
         ? WaterGateState.BLOCKED
         : WaterGateState.EMPTY;

@@ -44,7 +44,7 @@ namespace Mods.OldGopher.Pipe
       {
         if (animator == null)
           return;
-        if (gate != null && waterRadar.IsBlocked(gate.coordinates))
+        if (gate != null && waterRadar.IsBlockedAnyObject(gate.coordinates))
           return;
         StartCoroutine(Animation());
       }
