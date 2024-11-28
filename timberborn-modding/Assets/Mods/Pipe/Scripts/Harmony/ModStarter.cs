@@ -9,16 +9,17 @@ namespace Mods.OldGopher.Pipe
   {
     public static bool Loaded { get; private set; }
 
+    public static bool Failed => !Loaded;
+
     public void StartMod(IModEnvironment modEnvironment)
     {
       try
       {
-        var harmony = new Harmony("EXIST.ERROR.NOT");
+        var harmony = new Harmony("Mods.OldGopher.Pipe");
         harmony.PatchAll();
         Loaded = true;
         Debug.Log($"[OldGopher] Harmony loaded");
-      }
-      catch (Exception err)
+      } catch (Exception err)
       {
         Debug.Log($"[OldGopher] Harmony failed error={err}");
       }

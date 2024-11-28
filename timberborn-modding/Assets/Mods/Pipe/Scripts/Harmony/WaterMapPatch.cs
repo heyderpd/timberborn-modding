@@ -8,18 +8,14 @@ namespace Mods.OldGopher.Pipe
   [HarmonyPatch]
   internal class WaterMapPatch : BaseComponent
   {
-    private static WaterRadar waterRadar;
-
-    private static int tmpInit = 0;
-    private static int tmpCount = 0;
+    private static WaterObstacleMap waterObstacleMap;
 
     [Inject]
     public void InjectDependencies(
-      WaterRadar _waterRadar
+      WaterObstacleMap _waterObstacleMap
     )
     {
-      tmpInit++;
-      waterRadar = _waterRadar;
+      waterObstacleMap = _waterObstacleMap;
     }
 
     [HarmonyPrefix]
@@ -27,8 +23,10 @@ namespace Mods.OldGopher.Pipe
     [HarmonyPatch(new[] { typeof(object), typeof(Vector3Int) })]
     static bool OnFullObstacleAddedPrefix(object sender, Vector3Int coordinates)
     {
-      Debug.Log($"[harmony] OnFullObstacleAddedPrefix coordinates={coordinates} init={tmpInit} waterRadar={waterRadar != null} IsOutOfMap={waterRadar?.IsOutOfMap(coordinates)}");
-      return tmpCount % 2 == 0;
+      ModUtils.Log($"[harmony.WaterMapPatch.OnFullObstacleAddedPrefix] HarmonyFailed={HarmonyModStarter.Failed} WaterRadarFailed={waterObstacleMap == null}");
+      if (HarmonyModStarter.Failed || waterObstacleMap == null)
+        return true;
+      return waterObstacleMap.CanAddFullObstacle(coordinates);
     }
 
     [HarmonyPrefix]
@@ -36,8 +34,10 @@ namespace Mods.OldGopher.Pipe
     [HarmonyPatch(new[] { typeof(object), typeof(Vector3Int) })]
     static bool OnFullObstacleRemovedPrefix(object sender, Vector3Int coordinates)
     {
-      Debug.Log($"[harmony] OnFullObstacleRemovedPrefix coordinates={coordinates} init={tmpInit} waterRadar={waterRadar != null} IsOutOfMap={waterRadar?.IsOutOfMap(coordinates)}");
-      return false;
+      ModUtils.Log($"[harmony.WaterMapPatch.OnFullObstacleAddedPrefix] HarmonyFailed={HarmonyModStarter.Failed} WaterRadarFailed={waterObstacleMap == null}");
+      if (HarmonyModStarter.Failed || waterObstacleMap == null)
+        return true;
+      return waterObstacleMap.CanRemoveFullObstacle(coordinates);
     }
   }
 }
