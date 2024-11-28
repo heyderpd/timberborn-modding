@@ -1,52 +1,43 @@
 using UnityEngine;
 using Bindito.Core;
-using System.Reflection;
 using HarmonyLib;
 using Timberborn.BaseComponentSystem;
 
 namespace Mods.OldGopher.Pipe
 {
   [HarmonyPatch]
-  internal class SettingsPatch: BaseComponent
+  internal class WaterMapPatch : BaseComponent
   {
     private static WaterRadar waterRadar;
+
+    private static int tmpInit = 0;
+    private static int tmpCount = 0;
 
     [Inject]
     public void InjectDependencies(
       WaterRadar _waterRadar
     )
     {
-      Debug.Log($"[harmony] InjectDependencies");
+      tmpInit++;
       waterRadar = _waterRadar;
     }
 
-    static MethodInfo TargetMethod()
+    [HarmonyPrefix]
+    [HarmonyPatch("Timberborn.WaterSystem.WaterMap", "OnFullObstacleAdded")]
+    [HarmonyPatch(new[] { typeof(object), typeof(Vector3Int) })]
+    static bool OnFullObstacleAddedPrefix(object sender, Vector3Int coordinates)
     {
-      return AccessTools.Method(
-        AccessTools.TypeByName("Timberborn.WaterSystem.WaterMap"),
-        "OnFullObstacleAdded",
-        new[] { typeof(object), typeof(Vector3Int) }
-      );
+      Debug.Log($"[harmony] OnFullObstacleAddedPrefix coordinates={coordinates} init={tmpInit} waterRadar={waterRadar != null} IsOutOfMap={waterRadar?.IsOutOfMap(coordinates)}");
+      return tmpCount % 2 == 0;
     }
 
-    static bool Prefix(object sender, Vector3Int coordinates)
+    [HarmonyPrefix]
+    [HarmonyPatch("Timberborn.WaterSystem.WaterMap", "OnFullObstacleRemoved")]
+    [HarmonyPatch(new[] { typeof(object), typeof(Vector3Int) })]
+    static bool OnFullObstacleRemovedPrefix(object sender, Vector3Int coordinates)
     {
-      Debug.Log($"[harmony] test coordinates={coordinates}");
-      Debug.Log($"[harmony] test waterRadar={waterRadar != null}");
-      Debug.Log($"[harmony] test IsOutOfMap={waterRadar?.IsOutOfMap(coordinates)}");
+      Debug.Log($"[harmony] OnFullObstacleRemovedPrefix coordinates={coordinates} init={tmpInit} waterRadar={waterRadar != null} IsOutOfMap={waterRadar?.IsOutOfMap(coordinates)}");
       return false;
     }
   }
-
-  /*[HarmonyPatch("Timberborn.WaterSystem.WaterMap")]
-  public class WaterMapPatch
-  {
-    [HarmonyPrefix]
-    [HarmonyPatch("Timberborn.WaterSystem.WaterMap", new[] { typeof(object), typeof(Vector3Int) })]
-    static bool Prefix(object sender, Vector3Int coordinates)
-    {
-      Debug.Log($"[harmony] test coordinates={coordinates}");
-      return false;
-    }
-  }*/
 }

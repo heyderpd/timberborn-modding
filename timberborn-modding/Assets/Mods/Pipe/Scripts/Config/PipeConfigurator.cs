@@ -14,6 +14,7 @@ namespace Mods.OldGopher.Pipe
       containerDefinition.Bind<PipeGroupQueue>().AsSingleton();
       containerDefinition.Bind<PipeGroupManager>().AsSingleton();
       containerDefinition.Bind<PipeFragment>().AsSingleton();
+      containerDefinition.Bind<WaterMapPatch>().AsSingleton();
       containerDefinition.MultiBind<EntityPanelModule>().ToProvider<EntityPanelModuleProvider>().AsSingleton();
       containerDefinition.MultiBind<TemplateModule>().ToProvider(ProvideTemplateModule).AsSingleton();
     }
