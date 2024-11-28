@@ -8,14 +8,14 @@ namespace Mods.OldGopher.Pipe
   [HarmonyPatch]
   internal class WaterMapPatch : BaseComponent
   {
-    private static WaterObstacleMap waterObstacleMap;
+    private static WaterMapExtender waterMapExtender;
 
     [Inject]
     public void InjectDependencies(
-      WaterObstacleMap _waterObstacleMap
+      WaterMapExtender _waterMapExtender
     )
     {
-      waterObstacleMap = _waterObstacleMap;
+      waterMapExtender = _waterMapExtender;
     }
 
     [HarmonyPrefix]
@@ -23,10 +23,10 @@ namespace Mods.OldGopher.Pipe
     [HarmonyPatch(new[] { typeof(object), typeof(Vector3Int) })]
     static bool OnFullObstacleAddedPrefix(object sender, Vector3Int coordinates)
     {
-      ModUtils.Log($"[harmony.WaterMapPatch.OnFullObstacleAddedPrefix] HarmonyFailed={HarmonyModStarter.Failed} WaterRadarFailed={waterObstacleMap == null}");
-      if (HarmonyModStarter.Failed || waterObstacleMap == null)
+      ModUtils.Log($"[harmony.WaterMapPatch.OnFullObstacleAddedPrefix] HarmonyFailed={HarmonyModStarter.Failed} WaterRadarFailed={waterMapExtender == null}");
+      if (HarmonyModStarter.Failed || waterMapExtender == null)
         return true;
-      return waterObstacleMap.CanAddFullObstacle(coordinates);
+      return waterMapExtender.CanAddFullObstacle(coordinates);
     }
 
     [HarmonyPrefix]
@@ -34,10 +34,10 @@ namespace Mods.OldGopher.Pipe
     [HarmonyPatch(new[] { typeof(object), typeof(Vector3Int) })]
     static bool OnFullObstacleRemovedPrefix(object sender, Vector3Int coordinates)
     {
-      ModUtils.Log($"[harmony.WaterMapPatch.OnFullObstacleAddedPrefix] HarmonyFailed={HarmonyModStarter.Failed} WaterRadarFailed={waterObstacleMap == null}");
-      if (HarmonyModStarter.Failed || waterObstacleMap == null)
+      ModUtils.Log($"[harmony.WaterMapPatch.OnFullObstacleAddedPrefix] HarmonyFailed={HarmonyModStarter.Failed} WaterRadarFailed={waterMapExtender == null}");
+      if (HarmonyModStarter.Failed || waterMapExtender == null)
         return true;
-      return waterObstacleMap.CanRemoveFullObstacle(coordinates);
+      return waterMapExtender.CanRemoveFullObstacle(coordinates);
     }
   }
 }

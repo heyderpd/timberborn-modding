@@ -10,16 +10,6 @@ namespace Mods.OldGopher.Pipe
 
     private readonly HashSet<Vector3Int> nativeObstacle;
 
-    private WaterRadar waterRadar;
-
-    [Inject]
-    public void InjectDependencies(
-      WaterRadar _waterRadar
-    )
-    {
-      waterRadar = _waterRadar;
-    }
-
     private bool IsInvalid(Vector3Int coordinate)
     {
       return coordinate == null;
@@ -61,24 +51,6 @@ namespace Mods.OldGopher.Pipe
     public bool NotExist(Vector3Int coordinate)
     {
       return !Exist(coordinate);
-    }
-
-    public bool CanAddFullObstacle(Vector3Int coordinate)
-    {
-      if (waterRadar.IsInvalidCoordinate(coordinate))
-        return false;
-      var canProceed = NotExist(coordinate);
-      SetNative(coordinate);
-      return canProceed;
-    }
-
-    public bool CanRemoveFullObstacle(Vector3Int coordinate)
-    {
-      if (waterRadar.IsInvalidCoordinate(coordinate))
-        return false;
-      var canProceed = Exist(coordinate);
-      UnsetNative(coordinate);
-      return canProceed;
     }
   }
 }
