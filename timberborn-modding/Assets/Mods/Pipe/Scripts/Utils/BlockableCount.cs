@@ -6,24 +6,29 @@ namespace Mods.OldGopher.Pipe
   {
     private readonly Dictionary<T, int> Blockers = new Dictionary<T, int>();
 
-    public void Block(T reference)
+    public bool Block(T reference)
     {
       if (Blockers.ContainsKey(reference))
+      {
         Blockers[reference] += 1;
-      else
-        Blockers.Add(reference, 1);
+        return false;
+      }
+      Blockers.Add(reference, 1);
+      return true;
     }
 
-    public void Unblock(T reference)
+    public bool Unblock(T reference)
     {
-      if (Blockers.TryGetValue(reference, out var value))
+      if (Blockers.ContainsKey(reference))
       {
-        value -= 1;
-        if (value > 0)
-          Blockers[reference] = value;
-        else
+        Blockers[reference] -= 1;
+        if (Blockers[reference] <= 0)
+        {
           Blockers.Remove(reference);
+          return true;
+        }
       }
+      return false;
     }
 
     public bool Contains(T reference)

@@ -3,12 +3,15 @@ using UnityEngine;
 using Timberborn.BlockSystem;
 using Timberborn.WaterObjects;
 using Timberborn.TerrainSystem;
+using Timberborn.WaterSystem;
 
 namespace Mods.OldGopher.Pipe
 {
   internal class WaterRadar
   {
     private ITerrainService terrainService;
+
+    private IWaterService waterService;
 
     private BlockService blockService;
 
@@ -17,11 +20,13 @@ namespace Mods.OldGopher.Pipe
     [Inject]
     public void InjectDependencies(
       ITerrainService _terrainService,
+      IWaterService _waterService,
       BlockService _blockService,
       WaterObstacleMap _waterObstacleMap
     )
     {
       terrainService = _terrainService;
+      waterService = _waterService;
       blockService = _blockService;
       waterObstacleMap = _waterObstacleMap;
     }
@@ -105,6 +110,22 @@ namespace Mods.OldGopher.Pipe
     {
       var block = blockService.GetObjectsAt(coordinate);
       return !block.IsEmpty();
+    }
+
+    public void AddFullObstacle(Vector3Int coordinate)
+    {
+      if (IsInvalidCoordinate(coordinate))
+        return;
+      waterObstacleMap.SetVirtual(coordinate);
+      waterService.AddFullObstacle(coordinate);
+    }
+
+    public void RemoveFullObstacle(Vector3Int coordinate)
+    {
+      if (IsInvalidCoordinate(coordinate))
+        return;
+      waterObstacleMap.UnsetVirtual(coordinate);
+      waterService.RemoveFullObstacle(coordinate);
     }
   }
 }

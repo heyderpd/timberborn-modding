@@ -4,8 +4,6 @@ using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
 using Timberborn.Persistence;
-using Timberborn.WaterSystem;
-using Timberborn.Beavers;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -14,22 +12,18 @@ namespace Mods.OldGopher.Pipe
                                IDeletableEntity,
                                IFinishedStateListener
   {
-    private IWaterService waterService;
+    private WaterRadar waterRadar;
 
-    private WaterObstacleMap waterObstacleMap;
-    
     private BlockObject blockObject;
 
     private Vector3Int coordinate;
 
     [Inject]
     public void InjectDependencies(
-      WaterObstacleMap _waterObstacleMap,
-      IWaterService _waterService
+      WaterRadar _waterRadar
     )
     {
-      waterObstacleMap = _waterObstacleMap;
-      waterService = _waterService;
+      waterRadar = _waterRadar;
     }
 
     public void Awake()
@@ -62,7 +56,7 @@ namespace Mods.OldGopher.Pipe
     private void Shield(bool activate)
     {
       var center = new Vector3Int(-4, -4, 0);
-      var size = 12;
+      var size = 2;//12
       for (var z = 0; z < size; z++)
       {
         for (var y = 0; y < size; y++)
@@ -72,14 +66,9 @@ namespace Mods.OldGopher.Pipe
             var reference = center + new Vector3Int(x, y, z);
             coordinate = blockObject.Transform(reference);
             if (activate)
-            {
-              waterObstacleMap.SetVirtual(coordinate);
-              waterService.AddFullObstacle(coordinate);
-            } else
-            {
-              waterObstacleMap.UnsetVirtual(coordinate);
-              waterService.RemoveFullObstacle(coordinate);
-            }
+              waterRadar.AddFullObstacle(coordinate);
+            else
+              waterRadar.RemoveFullObstacle(coordinate);
           }
         }
       }

@@ -28,16 +28,16 @@ namespace Mods.OldGopher.Pipe
         virtualObstacle.Remove(coordinate);
     }
 
-    public void SetNative(Vector3Int coordinate)
+    public bool SetNative(Vector3Int coordinate)
     {
       if (IsInvalid(coordinate))
-        return;
-      nativeObstacle.Block(coordinate);
+        return false;
+      return nativeObstacle.Block(coordinate);
     }
 
-    public void UnsetNative(Vector3Int coordinate)
+    public bool UnsetNative(Vector3Int coordinate)
     {
-      nativeObstacle.Unblock(coordinate);
+      return nativeObstacle.Unblock(coordinate);
     }
 
     public bool Exist(Vector3Int coordinate)

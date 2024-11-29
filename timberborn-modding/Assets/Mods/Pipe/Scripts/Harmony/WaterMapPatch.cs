@@ -23,11 +23,13 @@ namespace Mods.OldGopher.Pipe
     [HarmonyPatch(new[] { typeof(object), typeof(Vector3Int) })]
     static bool OnFullObstacleAddedPrefix(object sender, Vector3Int coordinates)
     {
-      ModUtils.Log($"[WaterMapPatch.OnFullObstacleAddedPrefix] Failed={HarmonyModStarter.Failed} extender={waterMapExtender == null}");
       if (HarmonyModStarter.Failed || waterMapExtender == null)
+      {
+        Debug.Log($"[WaterMapPatch.OnFullObstacleAddedPrefix] Failed={HarmonyModStarter.Failed} extender={waterMapExtender == null}");
         return true;
-      var proceed = waterMapExtender.CanAddFullObstacle(coordinates)
-      ModUtils.Log($"[WaterMapPatch.OnFullObstacleAddedPrefix] CanAddFullObstacle={proceed}");
+      }
+      var proceed = waterMapExtender.CanAddFullObstacle(coordinates);
+      Debug.Log($"[WaterMapPatch.OnFullObstacleAddedPrefix] coordinates={coordinates} CanAddFullObstacle={proceed}");
       return proceed;
     }
 
@@ -36,11 +38,13 @@ namespace Mods.OldGopher.Pipe
     [HarmonyPatch(new[] { typeof(object), typeof(Vector3Int) })]
     static bool OnFullObstacleRemovedPrefix(object sender, Vector3Int coordinates)
     {
-      ModUtils.Log($"[WaterMapPatch.OnFullObstacleRemovedPrefix] Failed={HarmonyModStarter.Failed} extender={waterMapExtender == null}");
       if (HarmonyModStarter.Failed || waterMapExtender == null)
+      {
+        Debug.Log($"[WaterMapPatch.OnFullObstacleRemovedPrefix] Failed={HarmonyModStarter.Failed} extender={waterMapExtender == null}");
         return true;
+      }
       var proceed = waterMapExtender.CanRemoveFullObstacle(coordinates);
-      ModUtils.Log($"[WaterMapPatch.OnFullObstacleRemovedPrefix] CanRemoveFullObstacle={proceed}");
+      Debug.Log($"[WaterMapPatch.OnFullObstacleRemovedPrefix] coordinates={coordinates} CanRemoveFullObstacle={proceed}");
       return proceed;
     }
   }

@@ -18,7 +18,6 @@ GameObject:
   - component: {fileID: 114887347719951011}
   - component: {fileID: 114594761574811845}
   - component: {fileID: 114615458628604947}
-  - component: {fileID: 114967471623217779}
   - component: {fileID: 7866719366829969872}
   m_Layer: 0
   m_Name: WaterShield.IronTeeth
@@ -294,23 +293,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _progressThresholds:
   - 0
---- !u!114 &114967471623217779
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1001718728464631}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -1668926802, guid: 915d565361ffc0071cb972b12ad62c80, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _coordinates:
-  - {x: 0, y: 0}
-  - {x: 0, y: 1}
-  - {x: 1, y: 0}
-  - {x: 1, y: 1}
 --- !u!114 &7866719366829969872
 MonoBehaviour:
   m_ObjectHideFlags: 0
