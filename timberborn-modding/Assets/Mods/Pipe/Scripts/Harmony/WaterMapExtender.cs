@@ -6,10 +6,6 @@ namespace Mods.OldGopher.Pipe
 {
   internal class WaterMapExtender
   {
-    private readonly HashSet<Vector3Int> virtualObstacle;
-
-    private readonly HashSet<Vector3Int> nativeObstacle;
-
     private WaterRadar waterRadar;
 
     private WaterObstacleMap waterObstacleMap;
