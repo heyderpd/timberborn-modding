@@ -228,7 +228,7 @@ namespace Mods.OldGopher.Pipe
         return null;
       WaterGate gate = waterGates
         .FirstOrDefault((WaterGate gate) =>
-          ModUtils.IsEqual(gate.coordinates, coordinates));
+          ModUtils.IsEqual(gate.coordinate, coordinates));
       return gate;
     }
 

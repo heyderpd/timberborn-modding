@@ -55,7 +55,7 @@ namespace Mods.OldGopher.Pipe
 
     private BlockObject blockObject;
 
-    public Vector3Int coordinates { get; private set; }
+    public Vector3Int coordinate { get; private set; }
 
     private IWaterService waterService;
 
@@ -128,9 +128,9 @@ namespace Mods.OldGopher.Pipe
 
     public void InitializeEntity()
     {
-      coordinates = blockObject.Transform(WaterGateConfig.getCoordinates(Type));
-      LowerLimit = (float)(coordinates.z) + WaterGateConfig.getLowerLimitShift(Type);
-      HigthLimit = (float)(coordinates.z) + WaterGateConfig.getHigthLimitShift(Type);
+      coordinate = blockObject.Transform(WaterGateConfig.getCoordinates(Type));
+      LowerLimit = (float)(coordinate.z) + WaterGateConfig.getLowerLimitShift(Type);
+      HigthLimit = (float)(coordinate.z) + WaterGateConfig.getHigthLimitShift(Type);
       waterParticle.Initialize(colors, this);
       WaterAdded += waterParticle.OnWaterAdded;
       if (IsWaterPump)
@@ -192,7 +192,7 @@ namespace Mods.OldGopher.Pipe
       {
         if (threadSafeWaterMap == null || !isEnabled)
           return false;
-        var underwater = threadSafeWaterMap.CellIsUnderwater(coordinates);
+        var underwater = threadSafeWaterMap.CellIsUnderwater(coordinate);
         return underwater;
       }
       catch (Exception err)
@@ -211,14 +211,14 @@ namespace Mods.OldGopher.Pipe
           SuccessWhenCheckWater = false;
           return;
         }
-        WaterLevel = waterRadar.IsOutOfMap(coordinates)
+        WaterLevel = waterRadar.IsOutOfMap(coordinate)
           ? 0f
-          : threadSafeWaterMap.WaterHeightOrFloor(coordinates);
+          : threadSafeWaterMap.WaterHeightOrFloor(coordinate);
         WaterDetected = Mathf.Max(WaterLevel - LowerLimit, 0f);
         WaterAvailable = WaterService.LimitWater(WaterDetected);
         WaterPressure = WaterService.CalcPressure(LowerLimit, WaterLevel);
         ContaminationPercentage = WaterAvailable > 0f
-          ? threadSafeWaterMap.ColumnContamination(coordinates)
+          ? threadSafeWaterMap.ColumnContamination(coordinate)
           : 0f;
         SuccessWhenCheckWater = true;
       } catch (Exception err)
@@ -299,7 +299,7 @@ namespace Mods.OldGopher.Pipe
 
     private WaterGateState _CheckInput(bool tryConnect = true)
     {
-      var (pipe, obstacle) = waterRadar.FindWaterObstacle(coordinates);
+      var (pipe, obstacle) = waterRadar.FindWaterObstacle(coordinate);
       if (pipe == pipeNode)
         return WaterGateState.EMPTY;
       if (tryConnect && pipeNode.TryConnect(this, pipe))
@@ -364,9 +364,9 @@ namespace Mods.OldGopher.Pipe
       try
       {
         if (cleanWater > 0f)
-          waterService.AddCleanWater(coordinates, cleanWater);
+          waterService.AddCleanWater(coordinate, cleanWater);
         if (contaminatedWater > 0f)
-          waterService.AddContaminatedWater(coordinates, contaminatedWater);
+          waterService.AddContaminatedWater(coordinate, contaminatedWater);
       }
       catch (Exception err)
       {
@@ -381,9 +381,9 @@ namespace Mods.OldGopher.Pipe
         if (!IsUnderwater())
           return;
         if (cleanWater > 0f)
-          waterService.RemoveCleanWater(coordinates, cleanWater);
+          waterService.RemoveCleanWater(coordinate, cleanWater);
         if (contaminatedWater > 0f)
-          waterService.RemoveContaminatedWater(coordinates, contaminatedWater);
+          waterService.RemoveContaminatedWater(coordinate, contaminatedWater);
       }
       catch (Exception err)
       {
