@@ -19,6 +19,7 @@ GameObject:
   - component: {fileID: 114594761574811845}
   - component: {fileID: 114615458628604947}
   - component: {fileID: 114967471623217779}
+  - component: {fileID: 7866719366829969872}
   m_Layer: 0
   m_Name: WaterShield.IronTeeth
   m_TagString: Untagged
@@ -306,18 +307,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _coordinates:
-  - {x: -1, y: -1}
-  - {x: -1, y: 0}
-  - {x: -1, y: 1}
-  - {x: -1, y: 2}
-  - {x: 3, y: -1}
-  - {x: 3, y: 0}
-  - {x: 3, y: 1}
-  - {x: 3, y: 2}
-  - {x: 1, y: -1}
-  - {x: 1, y: 2}
-  - {x: 2, y: -1}
-  - {x: 2, y: 2}
+  - {x: 0, y: 0}
+  - {x: 0, y: 1}
+  - {x: 1, y: 0}
+  - {x: 1, y: 1}
+--- !u!114 &7866719366829969872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001718728464631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c72a26e2e98c3f4192f6a6f21e697cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1017939095831443
 GameObject:
   m_ObjectHideFlags: 0
