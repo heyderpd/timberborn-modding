@@ -44,10 +44,10 @@ namespace Mods.OldGopher.Pipe
     public bool IsInvalidCoordinate(Vector3Int coordinate)
     {
       if (IsOutOfMap(coordinate))
-        return false;
+        return true;
       if (Underground(coordinate))
-        return false;
-      return true;
+        return true;
+      return false;
     }
 
     public BlockObject GetMiddleObjectAt(Vector3Int coordinate)
