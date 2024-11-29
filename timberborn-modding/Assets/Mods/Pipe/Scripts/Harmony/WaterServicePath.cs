@@ -8,21 +8,21 @@ namespace Mods.OldGopher.Pipe
   [HarmonyPatch]
   internal class WaterServicePath : BaseComponent
   {
-    private static WaterMapExtender waterMapExtender;
+    private static WaterServiceExtender waterServiceExtender;
 
     [Inject]
     public void InjectDependencies(
-      WaterMapExtender _waterMapExtender
+      WaterServiceExtender _waterServiceExtender
     )
     {
-      waterMapExtender = _waterMapExtender;
+      waterServiceExtender = _waterServiceExtender;
     }
 
     static bool isUnsafe(string method)
     {
-      if (HarmonyModStarter.Failed || waterMapExtender == null)
+      if (HarmonyModStarter.Failed || waterServiceExtender == null)
       {
-        Debug.Log($"[WaterMapPatch.{method}] Failed={HarmonyModStarter.Failed} extender={waterMapExtender == null}");
+        Debug.Log($"[WaterMapPatch.{method}] Failed={HarmonyModStarter.Failed} extender={waterServiceExtender == null}");
         return true;
       }
       return false;
@@ -35,7 +35,7 @@ namespace Mods.OldGopher.Pipe
     {
       if (isUnsafe("UpdateInflowLimiter"))
         return false;
-      var proceed = waterMapExtender.CanUpdateInflowLimiter(coordinates, flowLimit);
+      var proceed = waterServiceExtender.CanUpdateInflowLimiter(coordinates, flowLimit);
       Debug.Log($"[WaterMapPatch.UpdateInflowLimiter] coordinates={coordinates} CanRemoveFullObstacle={proceed}");
       return proceed;
     }
@@ -47,7 +47,7 @@ namespace Mods.OldGopher.Pipe
     {
       if (isUnsafe("RemoveInflowLimiter"))
         return false;
-      var proceed = waterMapExtender.CanRemoveInflowLimiter(coordinates);
+      var proceed = waterServiceExtender.CanRemoveInflowLimiter(coordinates);
       Debug.Log($"[WaterMapPatch.RemoveInflowLimiter] coordinates={coordinates} CanRemoveFullObstacle={proceed}");
       return proceed;
     }
@@ -59,7 +59,7 @@ namespace Mods.OldGopher.Pipe
     {
       if (isUnsafe("AddFullObstacle"))
         return false;
-      var proceed = waterMapExtender.CanAddFullObstacle(coordinates);
+      var proceed = waterServiceExtender.CanAddFullObstacle(coordinates);
       Debug.Log($"[WaterMapPatch.AddFullObstacle] coordinates={coordinates} CanRemoveFullObstacle={proceed}");
       return proceed;
     }
@@ -71,7 +71,7 @@ namespace Mods.OldGopher.Pipe
     {
       if (isUnsafe("RemoveFullObstacle"))
         return false;
-      var proceed = waterMapExtender.CanRemoveFullObstacle(coordinates);
+      var proceed = waterServiceExtender.CanRemoveFullObstacle(coordinates);
       Debug.Log($"[WaterMapPatch.RemoveFullObstacle] coordinates={coordinates} CanRemoveFullObstacle={proceed}");
       return proceed;
     }
