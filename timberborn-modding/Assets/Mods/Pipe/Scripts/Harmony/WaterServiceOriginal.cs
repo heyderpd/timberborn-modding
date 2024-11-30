@@ -1,16 +1,19 @@
 using System;
 using System.Reflection;
 using UnityEngine;
+using Bindito.Core;
 using HarmonyLib;
+using Timberborn.BaseComponentSystem;
+using Timberborn.WaterSystem;
 
 namespace Mods.OldGopher.Pipe
 {
-  [HarmonyPatch]
-  internal static class WaterServiceOriginal
+  //[HarmonyPatch]
+  internal class WaterServiceOriginal : BaseComponent
   {
     private static bool initialized;
 
-    private static object Instance = null;
+    private static IWaterService Instance = null;
 
     private static MethodBase _original_UpdateInflowLimiter = null;
 
@@ -20,11 +23,33 @@ namespace Mods.OldGopher.Pipe
 
     private static MethodBase _original_RemoveFullObstacle = null;
 
-    static bool _isUnsafe(string method)
+    [Inject]
+    public void InjectDependencies(
+      IWaterService _waterService
+    )
     {
-      if (HarmonyModStarter.Failed || Instance == null)
+      Instance = _waterService;
+      UnityEngine.Debug.Log($"[Harmony.WaterServiceOriginal.InjectDependencies] Instance={Instance != null}");
+    }
+
+    /*[HarmonyPostfix]
+    [HarmonyPatch("Timberborn.WaterSystem.WaterService", MethodType.Constructor)]
+    public static void _Postfix_Constructor(ref object __instance)
+    {
+      var method_Org_Constructor = (MethodBase)(typeof("Class").GetMember(".ctor", AccessTools.all)[2]);
+      var method_Patch_PostFix = typeof(Constructor_Patch).GetMethod("Method_CTOR_Postfix", AccessTools.all);
+      harmony.Patch(method_Org_Constructor, null, new HarmonyMethod(method_Patch_PostFix));
+      //if (initialized)
+      //  return;
+      Instance = __instance;
+      Debug.Log($"[Harmony.WaterServiceOriginal._Postfix_Constructor] _Postfix_Constructor Instance={Instance != null}");
+    }*/
+
+    private static bool _isUnsafe(string method)
+    {
+      if (ModStarter.Failed || Instance == null)
       {
-        Debug.Log($"[WaterMapPatch.{method}] Failed={HarmonyModStarter.Failed} extender={Instance == null}");
+        UnityEngine.Debug.Log($"[WaterMapPatch.{method}] Failed={ModStarter.Failed} extender={Instance == null}");
         return true;
       }
       return false;
@@ -48,16 +73,6 @@ namespace Mods.OldGopher.Pipe
       _original_RemoveFullObstacle = Harmony.GetOriginalMethod(_methodInfo_RemoveFullObstacle);
     }
 
-    [HarmonyPostfix]
-    [HarmonyPatch("Timberborn.WaterSystem.WaterService", "WaterService", MethodType.Constructor)]
-    static void _Postfix_Constructor(ref object __instance)
-    {
-      //if (initialized)
-      //  return;
-      Instance = __instance;
-      Debug.Log($"[Harmony.WaterServiceOriginal._Postfix_Constructor] _Postfix_Constructor Instance={Instance != null}");
-    }
-
     public static void UpdateInflowLimiter(Vector3Int coordinate, float flowLimit)
     {
       try
@@ -68,7 +83,7 @@ namespace Mods.OldGopher.Pipe
       }
       catch (Exception err)
       {
-        Debug.Log($"[Harmony.Failed] UpdateInflowLimiter error={err}");
+        UnityEngine.Debug.Log($"[WaterServiceOriginal.UpdateInflowLimiter] error={err}");
       }
     }
 
@@ -82,7 +97,7 @@ namespace Mods.OldGopher.Pipe
       }
       catch (Exception err)
       {
-        Debug.Log($"[Harmony.Failed] RemoveInflowLimiter error={err}");
+        UnityEngine.Debug.Log($"[WaterServiceOriginal.RemoveInflowLimiter] error={err}");
       }
     }
 
@@ -96,7 +111,7 @@ namespace Mods.OldGopher.Pipe
       }
       catch (Exception err)
       {
-        Debug.Log($"[Harmony.Failed] AddFullObstacle error={err}");
+        UnityEngine.Debug.Log($"[WaterServiceOriginal.AddFullObstacle] error={err}");
       }
     }
 
@@ -110,7 +125,7 @@ namespace Mods.OldGopher.Pipe
       }
       catch (Exception err)
       {
-        Debug.Log($"[Harmony.Failed] RemoveFullObstacle error={err}");
+        UnityEngine.Debug.Log($"[WaterServiceOriginal.RemoveFullObstacle] error={err}");
       }
     }
   }
