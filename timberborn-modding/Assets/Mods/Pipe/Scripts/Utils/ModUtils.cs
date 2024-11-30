@@ -64,7 +64,13 @@ namespace Mods.OldGopher.Pipe
       return true;
     }
 
-    private static Tuple<int, int, int, int, int, int> getRectifyRef(BlockObject block)
+    public static (int, int) getRectifyRef(BlockObject block)
+    {
+      var (xp, yp, zp, xl, yl, zl) = _getRectifyRef(block);
+      return (xp, yp);
+    }
+
+    private static Tuple<int, int, int, int, int, int> _getRectifyRef(BlockObject block)
     {
       int xp = block.Coordinates.x;
       int yp = block.Coordinates.y;
@@ -97,7 +103,7 @@ namespace Mods.OldGopher.Pipe
     {
       if (block?.IsFinished != true || block.Blocks.Size.x == 0 || block.Blocks.Size.y == 0 || block.Blocks.Size.z == 0)
         yield break;
-      var (xp, yp, zp, xl, yl, zl) = getRectifyRef(block);
+      var (xp, yp, zp, xl, yl, zl) = _getRectifyRef(block);
       // near in body
       for (var x = 0; x <= xl + 0; x++)
       {

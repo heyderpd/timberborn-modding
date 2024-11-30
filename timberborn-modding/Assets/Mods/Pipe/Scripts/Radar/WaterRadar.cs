@@ -113,6 +113,20 @@ namespace Mods.OldGopher.Pipe
       return !block.IsEmpty();
     }
 
+    public void UpdateInflowLimiter(Vector3Int coordinate, float flowLimit)
+    {
+      if (IsInvalidCoordinate(coordinate))
+        return;
+      waterService.UpdateInflowLimiter(coordinate, flowLimit);
+    }
+
+    public void RemoveInflowLimiter(Vector3Int coordinate)
+    {
+      if (IsInvalidCoordinate(coordinate))
+        return;
+      waterService.RemoveInflowLimiter(coordinate);
+    }
+
     public void AddFullObstacle(Vector3Int coordinate)
     {
       if (IsInvalidCoordinate(coordinate))

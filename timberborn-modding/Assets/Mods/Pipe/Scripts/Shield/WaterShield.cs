@@ -5,6 +5,7 @@ using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
 using Timberborn.Persistence;
 using UnityEngine.UIElements;
+using System.Collections.Immutable;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -15,16 +16,31 @@ namespace Mods.OldGopher.Pipe
   {
     private WaterRadar waterRadar;
 
+    private WaterShieldService waterShieldService;
+
     private BlockObject blockObject;
 
     private Vector3Int coordinate;
 
+    private ImmutableArray<Vector3Int> shieldField;
+
+    [SerializeField]
+    private int BuildLength;
+
+    [SerializeField]
+    private int Size;
+
+    [SerializeField]
+    private int Height;
+
     [Inject]
     public void InjectDependencies(
-      WaterRadar _waterRadar
+      WaterRadar _waterRadar,
+      WaterShieldService _waterShieldService
     )
     {
       waterRadar = _waterRadar;
+      waterShieldService = _waterShieldService;
     }
 
     public void Awake()
@@ -33,7 +49,9 @@ namespace Mods.OldGopher.Pipe
       blockObject = GetComponentFast<BlockObject>();
     }
 
-    public void InitializeEntity() { }
+    public void InitializeEntity() {
+      shieldField = waterShieldService.DiscoveryShieldField(BuildLength, Size, Height, blockObject);
+    }
 
     public void DeleteEntity() { }
 
@@ -54,35 +72,20 @@ namespace Mods.OldGopher.Pipe
     [BackwardCompatible(2023, 9, 22)]
     public void Load(IEntityLoader entityLoader) { }
 
-    private void Shield(bool activate)
+    public void ActivateShield()
     {
-      var center = new Vector3Int(-2, -2, 0);
-      var size = 8;
-      var height = 4;
-      for (var z = 0; z < height; z++)
+      foreach (var coordinate in shieldField)
       {
-        for (var y = 0; y < size; y++)
-        {
-          for (var x = 0; x < size; x++)
-          {
-            var reference = center + new Vector3Int(x, y, z);
-            coordinate = blockObject.Transform(reference);
-            if (activate)
-              waterRadar.AddFullObstacle(coordinate);
-            else
-              waterRadar.RemoveFullObstacle(coordinate);
-          }
-        }
+        waterRadar.AddFullObstacle(coordinate);
       }
-    }
-
-    public void ActivateShield() {
-      Shield(true);
     }
 
     public void DeactivateShield()
     {
-      //Shield(false);
+      foreach (var coordinate in shieldField)
+      {
+        waterRadar.RemoveFullObstacle(coordinate);
+      }
     }
   }
 }
