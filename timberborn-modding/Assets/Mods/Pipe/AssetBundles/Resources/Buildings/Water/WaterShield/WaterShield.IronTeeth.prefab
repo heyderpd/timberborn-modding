@@ -14,9 +14,7 @@ GameObject:
   - component: {fileID: 114490381985120237}
   - component: {fileID: 114362116575396963}
   - component: {fileID: 114158661847203899}
-  - component: {fileID: 114119532705064850}
   - component: {fileID: 114887347719951011}
-  - component: {fileID: 114594761574811845}
   - component: {fileID: 114615458628604947}
   - component: {fileID: 7866719366829969872}
   m_Layer: 0
@@ -235,19 +233,6 @@ MonoBehaviour:
     _hasCustomPivot: 1
     _coordinates: {x: 0.5, y: 0.5, z: 0}
   _devModeTool: 0
---- !u!114 &114119532705064850
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1001718728464631}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 1412436833, guid: 915d565361ffc0071cb972b12ad62c80, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _height: 1
 --- !u!114 &114887347719951011
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -264,21 +249,6 @@ MonoBehaviour:
   _descriptionLocKey: Building.PipeBox.Description
   _flavorDescriptionLocKey: 
   _imagePath: Buildings/Water/WaterShield/WaterShieldIcon
---- !u!114 &114594761574811845
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1001718728464631}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: -2133346401, guid: d4892fa5f0f35cbe7bba4fc3d70e63dc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _blockAboveMoisture: 1
-  _blockFullMoisture: 0
-  _blockContamination: 0
 --- !u!114 &114615458628604947
 MonoBehaviour:
   m_ObjectHideFlags: 0
