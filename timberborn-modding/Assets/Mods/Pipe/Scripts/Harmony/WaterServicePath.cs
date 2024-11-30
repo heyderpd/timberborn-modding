@@ -11,9 +11,9 @@ namespace Mods.OldGopher.Pipe
 
     private static bool _isUnsafe(string method)
     {
-      if (HarmonyModStarter.Failed)
+      if (ModStarter.Failed)
       {
-        Debug.Log($"[WaterMapPatch.{method}] Failed={HarmonyModStarter.Failed}");
+        Debug.Log($"[WaterMapPatch.{method}] Failed={ModStarter.Failed}");
         return true;
       }
       return false;
@@ -22,48 +22,48 @@ namespace Mods.OldGopher.Pipe
     [HarmonyPrefix]
     [HarmonyPatch("Timberborn.WaterSystem.WaterService", "UpdateInflowLimiter")]
     [HarmonyPatch(new[] { typeof(Vector3Int), typeof(float) })]
-    private static bool _Prefix_UpdateInflowLimiter(Vector3Int coordinates, float flowLimit)
+    public static bool _Prefix_UpdateInflowLimiter(Vector3Int coordinates, float flowLimit)
     {
       if (_isUnsafe("UpdateInflowLimiter"))
         return false;
       var proceed = WaterObstacleMap.CanUpdateInflowLimiter(coordinates, flowLimit);
-      Debug.Log($"[WaterMapPatch.UpdateInflowLimiter] coordinates={coordinates} CanRemoveFullObstacle={proceed}");
+      Debug.Log($"[WaterMapPatch.UpdateInflowLimiter] coordinates={coordinates} proceed={proceed}");
       return proceed;
     }
 
     [HarmonyPrefix]
     [HarmonyPatch("Timberborn.WaterSystem.WaterService", "RemoveInflowLimiter")]
     [HarmonyPatch(new[] { typeof(Vector3Int) })]
-    private static bool _Prefix_RemoveInflowLimiter(Vector3Int coordinates)
+    public static bool _Prefix_RemoveInflowLimiter(Vector3Int coordinates)
     {
       if (_isUnsafe("RemoveInflowLimiter"))
         return false;
       var proceed = WaterObstacleMap.CanRemoveInflowLimiter(coordinates);
-      Debug.Log($"[WaterMapPatch.RemoveInflowLimiter] coordinates={coordinates} CanRemoveFullObstacle={proceed}");
+      Debug.Log($"[WaterMapPatch.RemoveInflowLimiter] coordinates={coordinates} proceed={proceed}");
       return proceed;
     }
 
     [HarmonyPrefix]
     [HarmonyPatch("Timberborn.WaterSystem.WaterService", "AddFullObstacle")]
     [HarmonyPatch(new[] { typeof(Vector3Int) })]
-    private static bool _Prefix_AddFullObstacle(Vector3Int coordinates)
+    public static bool _Prefix_AddFullObstacle(Vector3Int coordinates)
     {
       if (_isUnsafe("AddFullObstacle"))
         return false;
       var proceed = WaterObstacleMap.CanAddFullObstacle(coordinates);
-      Debug.Log($"[WaterMapPatch.AddFullObstacle] coordinates={coordinates} CanRemoveFullObstacle={proceed}");
+      Debug.Log($"[WaterMapPatch.AddFullObstacle] coordinates={coordinates} proceed={proceed}");
       return proceed;
     }
 
     [HarmonyPrefix]
     [HarmonyPatch("Timberborn.WaterSystem.WaterService", "RemoveFullObstacle")]
     [HarmonyPatch(new[] { typeof(Vector3Int) })]
-    private static bool _Prefix_RemoveFullObstacle(Vector3Int coordinates)
+    public static bool _Prefix_RemoveFullObstacle(Vector3Int coordinates)
     {
       if (_isUnsafe("RemoveFullObstacle"))
         return false;
       var proceed = WaterObstacleMap.CanRemoveFullObstacle(coordinates);
-      Debug.Log($"[WaterMapPatch.RemoveFullObstacle] coordinates={coordinates} CanRemoveFullObstacle={proceed}");
+      Debug.Log($"[WaterMapPatch.RemoveFullObstacle] coordinates={coordinates} proceed={proceed}");
       return proceed;
     }
   }

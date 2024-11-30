@@ -79,9 +79,9 @@ namespace Mods.OldGopher.Pipe
       if (terrainService.Underground(coordinate))
         return (null, WaterObstacleType.BLOCK);
       var blockMiddle = GetMiddleObjectAt(coordinate);
-      var existWaterObstacle = HarmonyModStarter.Failed
-        ? SimpleObstacleMap.Exist(blockMiddle)
-        : WaterObstacleMap.fullObstacle.Contains(coordinate);
+      var existWaterObstacle = ModStarter.Failed
+        ? SimpleObstacleMap.IsBlocked(blockMiddle)
+        : WaterObstacleMap.IsBlocked(coordinate);
       var obstacle = existWaterObstacle
         ? WaterObstacleType.BLOCK
         : WaterObstacleType.EMPTY;

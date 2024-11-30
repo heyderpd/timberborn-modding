@@ -1,4 +1,8 @@
+using Amazon.Runtime.Internal.Transform;
 using Bindito.Core;
+using Castle.DynamicProxy.Generators.Emitters.SimpleAST;
+using System.Collections.Generic;
+using Timberborn.BlockSystem;
 using UnityEngine;
 
 namespace Mods.OldGopher.Pipe
@@ -7,7 +11,7 @@ namespace Mods.OldGopher.Pipe
   {
     public static readonly BlockableCount<Vector3Int> fullObstacle = new BlockableCount<Vector3Int>();
 
-    public static readonly BlockableCount<Vector3Int> partialObstacle = new BlockableCount<Vector3Int>();
+    public static readonly Dictionary<Vector3Int, float> partialObstacle = new Dictionary<Vector3Int, float>();
 
     public static void Clear()
     {
@@ -15,27 +19,42 @@ namespace Mods.OldGopher.Pipe
       partialObstacle.Clear();
     }
 
-    public static bool CanUpdateInflowLimiter(Vector3Int coordinate, float flowLimit)
-    {
-      partialObstacle.Block(coordinate);
-      return true;
-    }
-
-    public static bool CanRemoveInflowLimiter(Vector3Int coordinate)
-    {
-      partialObstacle.Unblock(coordinate);
-      return true;
-    }
-
     public static bool CanAddFullObstacle(Vector3Int coordinate)
     {
-      partialObstacle.Block(coordinate);
+      fullObstacle.Block(coordinate);
       return true;
     }
 
     public static bool CanRemoveFullObstacle(Vector3Int coordinate)
     {
-      return partialObstacle.Unblock(coordinate);
+      return fullObstacle.Unblock(coordinate);
+    }
+
+    public static bool CanUpdateInflowLimiter(Vector3Int coordinate, float flowLimit)
+    {
+      if (partialObstacle.ContainsKey(coordinate))
+        partialObstacle[coordinate] = flowLimit;
+      else
+        partialObstacle.Add(coordinate, flowLimit);
+      return true;
+    }
+
+    public static bool CanRemoveInflowLimiter(Vector3Int coordinate)
+    {
+      if (partialObstacle.ContainsKey(coordinate))
+        partialObstacle.Remove(coordinate);
+      return true;
+    }
+
+    public static bool IsBlocked(Vector3Int coordinate)
+    {
+      if (fullObstacle.Contains(coordinate))
+        return true;
+      if (partialObstacle.TryGetValue(coordinate, out var flowLimit))
+      {
+        return flowLimit > 0.7f;
+      }
+      return false;
     }
   }
 }

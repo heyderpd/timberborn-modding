@@ -10,7 +10,7 @@ namespace Mods.OldGopher.Pipe
   {
     private static ImmutableArray<string> invalidBuilds = ImmutableArray.Create("floodgate", "levee", "sluice");
 
-    public static bool Exist(BlockObject blockMiddle)
+    public static bool IsBlocked(BlockObject blockMiddle)
     {
       if (blockMiddle  == null)
         return false;
