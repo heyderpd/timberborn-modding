@@ -215,8 +215,8 @@ namespace Mods.OldGopher.Pipe
           ? 0f
           : threadSafeWaterMap.WaterHeightOrFloor(coordinate);
         WaterDetected = Mathf.Max(WaterLevel - LowerLimit, 0f);
-        WaterAvailable = WaterService.LimitWater(WaterDetected);
-        WaterPressure = WaterService.CalcPressure(LowerLimit, WaterLevel);
+        WaterAvailable = PipeWaterService.LimitWater(WaterDetected);
+        WaterPressure = PipeWaterService.CalcPressure(LowerLimit, WaterLevel);
         ContaminationPercentage = WaterAvailable > 0f
           ? threadSafeWaterMap.ColumnContamination(coordinate)
           : 0f;
@@ -247,8 +247,8 @@ namespace Mods.OldGopher.Pipe
     public void TestParticle()
     {
       SetWaterParticles(
-        UnityEngine.Random.Range(0f, WaterService.waterFactor),
-        UnityEngine.Random.Range(0f, WaterService.waterFactor)
+        UnityEngine.Random.Range(0f, PipeWaterService.waterFactor),
+        UnityEngine.Random.Range(0f, PipeWaterService.waterFactor)
       );
     }
 

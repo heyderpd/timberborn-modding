@@ -78,7 +78,7 @@ namespace Mods.OldGopher.Pipe
     {
       if (!HasWater(Event))
         return;
-      var newWaterPower = ModUtils.GetValueStep(Event.Water, WaterService.waterFactor);
+      var newWaterPower = ModUtils.GetValueStep(Event.Water, PipeWaterService.waterFactor);
       if (newWaterPower == waterPower)
         return;
       waterPower = newWaterPower;

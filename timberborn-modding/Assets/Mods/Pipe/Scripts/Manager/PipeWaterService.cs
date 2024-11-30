@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Mods.OldGopher.Pipe
 {
-  internal static class WaterService
+  internal static class PipeWaterService
   {
 
     public static readonly float maximumFlow = 1.00f;

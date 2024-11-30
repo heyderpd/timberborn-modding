@@ -137,7 +137,7 @@ namespace Mods.OldGopher.Pipe
     {
       if (!isEnabled || CantWorkAlone())
         return;
-      WaterService.MoveWater(this);
+      PipeWaterService.MoveWater(this);
     }
 
     public string GetInfo()
