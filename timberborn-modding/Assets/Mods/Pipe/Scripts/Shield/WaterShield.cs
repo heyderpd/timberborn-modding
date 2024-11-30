@@ -4,6 +4,7 @@ using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
 using Timberborn.Persistence;
+using UnityEngine.UIElements;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -55,9 +56,10 @@ namespace Mods.OldGopher.Pipe
 
     private void Shield(bool activate)
     {
-      var center = new Vector3Int(-4, -4, 0);
-      var size = 2;//12
-      for (var z = 0; z < size; z++)
+      var center = new Vector3Int(-2, -2, 0);
+      var size = 8;
+      var height = 4;
+      for (var z = 0; z < height; z++)
       {
         for (var y = 0; y < size; y++)
         {
@@ -80,7 +82,7 @@ namespace Mods.OldGopher.Pipe
 
     public void DeactivateShield()
     {
-      Shield(false);
+      //Shield(false);
     }
   }
 }

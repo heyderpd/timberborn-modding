@@ -10,7 +10,7 @@ namespace Mods.OldGopher.Pipe
 {
   internal static class ModUtils
   {
-    public static readonly bool enabled = true;
+    public static readonly bool enabled = false;
 
     public static readonly System.Random random = new System.Random();
 
