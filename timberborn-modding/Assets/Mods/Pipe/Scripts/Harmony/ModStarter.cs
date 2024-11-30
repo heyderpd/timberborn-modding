@@ -16,6 +16,7 @@ namespace Mods.OldGopher.Pipe
       try
       {
         var harmony = new Harmony("Mods.OldGopher.Pipe");
+        WaterServiceOriginal.GetOriginalMethods(harmony);
         harmony.PatchAll();
         Loaded = true;
         Debug.Log($"[OldGopher] Harmony loaded");

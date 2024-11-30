@@ -1,4 +1,3 @@
-using Bindito.Core;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -6,50 +5,66 @@ namespace Mods.OldGopher.Pipe
 {
   internal class WaterObstacleMap
   {
-    private readonly HashSet<Vector3Int> virtualObstacle = new HashSet<Vector3Int>();
+    private readonly BlockableCount fullObstacle = new BlockableCount(fullObstacle: true);
 
-    private readonly BlockableCount<Vector3Int> nativeObstacle = new BlockableCount<Vector3Int>();
+    private readonly BlockableCount partialObstacle = new BlockableCount(fullObstacle: false);
 
-    private bool IsInvalid(Vector3Int coordinate)
+    public bool isOccupied(Vector3Int coordinate)
     {
-      return coordinate == null;
+      return fullObstacle.Contains(coordinate) || partialObstacle.Contains(coordinate);
     }
 
-    public void SetVirtual(Vector3Int coordinate)
+    public bool isEmpty(Vector3Int coordinate)
     {
-      if (IsInvalid(coordinate) || virtualObstacle.Contains(coordinate))
-        return;
-      virtualObstacle.Add(coordinate);
+      return !isOccupied(coordinate);
     }
 
-    public void UnsetVirtual(Vector3Int coordinate)
+    public WaterObstacleState getCurrentState(Vector3Int coordinate)
     {
-      if (virtualObstacle.Contains(coordinate))
-        virtualObstacle.Remove(coordinate);
+      var hasAnyFullObstacle = fullObstacle.Contains(coordinate);
+      if (hasAnyFullObstacle)
+        return WaterObstacleState.FULL_OBSTACLE;
+      var hasAnyPartialObstacle = partialObstacle.Contains(coordinate);
+      if (hasAnyFullObstacle)
+        return WaterObstacleState.PARTIAL_OBSTACLE;
+      return WaterObstacleState.EMPTY;
     }
 
-    public bool SetNative(Vector3Int coordinate)
+    public bool addPartial(Vector3Int coordinate, float flowLimit)
     {
-      if (IsInvalid(coordinate))
-        return false;
-      return nativeObstacle.Block(coordinate);
+      var obstacle = partialObstacle.Get(coordinate);
+      if (obstacle == null)
+      {
+        partialObstacle.Block(new WaterObstacle(coordinate, flowLimit));
+        return true;
+      }
+      if (obstacle.flowLimit != flowLimit)
+      {
+        obstacle.setFlowLimit(flowLimit);
+        return true;
+      }
+      return false;
     }
 
-    public bool UnsetNative(Vector3Int coordinate)
+    public bool removePartial(Vector3Int coordinate)
     {
-      return nativeObstacle.Unblock(coordinate);
+      return partialObstacle.Unblock(coordinate);
     }
 
-    public bool Exist(Vector3Int coordinate)
+    public bool addBlock(Vector3Int coordinate)
     {
-      if (IsInvalid(coordinate))
-        return false;
-      return nativeObstacle.Contains(coordinate);
+      var obstacle = fullObstacle.Get(coordinate);
+      if (obstacle == null)
+      {
+        fullObstacle.Block(new WaterObstacle(coordinate));
+        return true;
+      }
+      return false;
     }
 
-    public bool NotExist(Vector3Int coordinate)
+    public bool removeBlock(Vector3Int coordinate)
     {
-      return !Exist(coordinate);
+      return fullObstacle.Unblock(coordinate);
     }
   }
 }
