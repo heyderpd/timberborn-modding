@@ -15,20 +15,21 @@ namespace Mods.OldGopher.Pipe
 
     private BlockService blockService;
 
-    private WaterObstacleMap waterObstacleMap;
+    public WaterRadar()
+    {
+      WaterObstacleMap.Clear();
+    }
 
     [Inject]
     public void InjectDependencies(
       ITerrainService _terrainService,
       IWaterService _waterService,
-      BlockService _blockService,
-      WaterObstacleMap _waterObstacleMap
+      BlockService _blockService
     )
     {
       terrainService = _terrainService;
       waterService = _waterService;
       blockService = _blockService;
-      waterObstacleMap = _waterObstacleMap;
     }
 
     public bool IsOutOfMap(Vector3Int coordinate)
@@ -80,7 +81,7 @@ namespace Mods.OldGopher.Pipe
       var blockMiddle = GetMiddleObjectAt(coordinate);
       var existWaterObstacle = HarmonyModStarter.Failed
         ? SimpleObstacleMap.Exist(blockMiddle)
-        : waterObstacleMap.Exist(coordinate);
+        : WaterObstacleMap.fullObstacle.Contains(coordinate);
       var obstacle = existWaterObstacle
         ? WaterObstacleType.BLOCK
         : WaterObstacleType.EMPTY;
@@ -116,7 +117,6 @@ namespace Mods.OldGopher.Pipe
     {
       if (IsInvalidCoordinate(coordinate))
         return;
-      waterObstacleMap.SetVirtual(coordinate);
       waterService.AddFullObstacle(coordinate);
     }
 
@@ -124,7 +124,6 @@ namespace Mods.OldGopher.Pipe
     {
       if (IsInvalidCoordinate(coordinate))
         return;
-      waterObstacleMap.UnsetVirtual(coordinate);
       waterService.RemoveFullObstacle(coordinate);
     }
   }

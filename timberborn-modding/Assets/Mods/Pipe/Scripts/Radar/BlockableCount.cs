@@ -6,6 +6,11 @@ namespace Mods.OldGopher.Pipe
   {
     private readonly Dictionary<T, int> Blockers = new Dictionary<T, int>();
 
+    public void Clear()
+    {
+      Blockers.Clear();
+    }
+
     public bool Block(T reference)
     {
       if (Blockers.ContainsKey(reference))

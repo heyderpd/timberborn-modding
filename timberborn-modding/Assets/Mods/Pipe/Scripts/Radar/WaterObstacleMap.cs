@@ -1,70 +1,41 @@
-using System.Collections.Generic;
+using Bindito.Core;
 using UnityEngine;
 
 namespace Mods.OldGopher.Pipe
 {
-  internal class WaterObstacleMap
+  internal static class WaterObstacleMap
   {
-    private readonly BlockableCount fullObstacle = new BlockableCount(fullObstacle: true);
+    public static readonly BlockableCount<Vector3Int> fullObstacle = new BlockableCount<Vector3Int>();
 
-    private readonly BlockableCount partialObstacle = new BlockableCount(fullObstacle: false);
+    public static readonly BlockableCount<Vector3Int> partialObstacle = new BlockableCount<Vector3Int>();
 
-    public bool isOccupied(Vector3Int coordinate)
+    public static void Clear()
     {
-      return fullObstacle.Contains(coordinate) || partialObstacle.Contains(coordinate);
+      fullObstacle.Clear();
+      partialObstacle.Clear();
     }
 
-    public bool isEmpty(Vector3Int coordinate)
+    public static bool CanUpdateInflowLimiter(Vector3Int coordinate, float flowLimit)
     {
-      return !isOccupied(coordinate);
+      partialObstacle.Block(coordinate);
+      return true;
     }
 
-    public WaterObstacleState getCurrentState(Vector3Int coordinate)
+    public static bool CanRemoveInflowLimiter(Vector3Int coordinate)
     {
-      var hasAnyFullObstacle = fullObstacle.Contains(coordinate);
-      if (hasAnyFullObstacle)
-        return WaterObstacleState.FULL_OBSTACLE;
-      var hasAnyPartialObstacle = partialObstacle.Contains(coordinate);
-      if (hasAnyFullObstacle)
-        return WaterObstacleState.PARTIAL_OBSTACLE;
-      return WaterObstacleState.EMPTY;
+      partialObstacle.Unblock(coordinate);
+      return true;
     }
 
-    public bool addPartial(Vector3Int coordinate, float flowLimit)
+    public static bool CanAddFullObstacle(Vector3Int coordinate)
     {
-      var obstacle = partialObstacle.Get(coordinate);
-      if (obstacle == null)
-      {
-        partialObstacle.Block(new WaterObstacle(coordinate, flowLimit));
-        return true;
-      }
-      if (obstacle.flowLimit != flowLimit)
-      {
-        obstacle.setFlowLimit(flowLimit);
-        return true;
-      }
-      return false;
+      partialObstacle.Block(coordinate);
+      return true;
     }
 
-    public bool removePartial(Vector3Int coordinate)
+    public static bool CanRemoveFullObstacle(Vector3Int coordinate)
     {
       return partialObstacle.Unblock(coordinate);
-    }
-
-    public bool addBlock(Vector3Int coordinate)
-    {
-      var obstacle = fullObstacle.Get(coordinate);
-      if (obstacle == null)
-      {
-        fullObstacle.Block(new WaterObstacle(coordinate));
-        return true;
-      }
-      return false;
-    }
-
-    public bool removeBlock(Vector3Int coordinate)
-    {
-      return fullObstacle.Unblock(coordinate);
     }
   }
 }

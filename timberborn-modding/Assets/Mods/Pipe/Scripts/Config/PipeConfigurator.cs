@@ -10,10 +10,7 @@ namespace Mods.OldGopher.Pipe
   {
     public void Configure(IContainerDefinition containerDefinition)
     {
-      containerDefinition.Bind<WaterObstacleMap>().AsSingleton();
       containerDefinition.Bind<WaterRadar>().AsSingleton();
-      containerDefinition.Bind<WaterServiceExtender>().AsSingleton();
-      containerDefinition.Bind<WaterServicePath>().AsSingleton();
       containerDefinition.Bind<PipeGroupQueue>().AsSingleton();
       containerDefinition.Bind<PipeGroupManager>().AsSingleton();
       containerDefinition.Bind<PipeFragment>().AsSingleton();
