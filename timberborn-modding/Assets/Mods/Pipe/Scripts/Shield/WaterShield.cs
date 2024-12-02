@@ -1,11 +1,12 @@
+using System.Linq;
+using System.Collections;
+using System.Collections.Immutable;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
 using Timberborn.Persistence;
-using UnityEngine.UIElements;
-using System.Collections.Immutable;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -25,13 +26,13 @@ namespace Mods.OldGopher.Pipe
     private ImmutableArray<Vector3Int> shieldField;
 
     [SerializeField]
-    private int BuildLength;
-
-    [SerializeField]
     private int Size;
 
     [SerializeField]
     private int Height;
+
+    [SerializeField]
+    private float Speed;
 
     [Inject]
     public void InjectDependencies(
@@ -50,7 +51,7 @@ namespace Mods.OldGopher.Pipe
     }
 
     public void InitializeEntity() {
-      shieldField = waterShieldService.DiscoveryShieldField(BuildLength, Size, Height, blockObject);
+      shieldField = waterShieldService.DiscoveryShieldField(Size, Height, blockObject);
     }
 
     public void DeleteEntity() { }
@@ -64,7 +65,6 @@ namespace Mods.OldGopher.Pipe
     public void OnExitFinishedState()
     {
       ((Behaviour)this).enabled = false;
-      DeactivateShield();
     }
 
     public void Save(IEntitySaver entitySaver) { }
@@ -72,20 +72,23 @@ namespace Mods.OldGopher.Pipe
     [BackwardCompatible(2023, 9, 22)]
     public void Load(IEntityLoader entityLoader) { }
 
-    public void ActivateShield()
+    public IEnumerator _ActivateShield()
     {
+      Debug.Log($"ActivateShield start shieldField={shieldField.Count()}");
+      var origin = blockObject.Coordinates;
       foreach (var coordinate in shieldField)
       {
+        Debug.Log($"ActivateShield.yield coordinate={coordinate}");
         waterRadar.AddFullObstacle(coordinate);
+        //waterRadar.AddDirectionLimiter(origin, coordinate);
+        yield return new WaitForSeconds(0.5f);
       }
+      Debug.Log($"ActivateShield end");
     }
 
-    public void DeactivateShield()
+    public void ActivateShield()
     {
-      foreach (var coordinate in shieldField)
-      {
-        waterRadar.RemoveFullObstacle(coordinate);
-      }
+      StartCoroutine(_ActivateShield());
     }
   }
 }
