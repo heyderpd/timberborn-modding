@@ -21,8 +21,7 @@ namespace Mods.OldGopher.Pipe
 
     public static bool CanAddFullObstacle(Vector3Int coordinate)
     {
-      fullObstacle.Block(coordinate);
-      return true;
+      return fullObstacle.Block(coordinate);
     }
 
     public static bool CanRemoveFullObstacle(Vector3Int coordinate)
