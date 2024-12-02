@@ -32,10 +32,10 @@ namespace Mods.OldGopher.Pipe
       return waterSource;
     }
 
-    public ImmutableArray<Vector3Int> DiscoveryShieldField(int size, int height, BlockObject block)
+    public ImmutableArray<ShieldNode> DiscoveryShieldField(int size, int height, BlockObject block)
     {
       Debug.Log("DiscoveryShieldField start");
-      var Coordinates = new List<Vector3Int>();
+      var Coordinates = new List<ShieldNode>();
       var (x_ref, y_ref) = ModUtils.getRectifyRef(block);
       var reference = new Vector2Int(x_ref, y_ref);
       Debug.Log($"DiscoveryShieldField start reference={reference}");
@@ -53,7 +53,7 @@ namespace Mods.OldGopher.Pipe
           if (waterRadar.IsInvalidCoordinate(coordinate) || WaterSourceMap.IsBlocked(coordinate))
             continue;
           Debug.Log($"DiscoveryShieldField coordinate={coordinate} will");
-          Coordinates.Add(coordinate);
+          Coordinates.Add(new ShieldNode(coordinate));
         }
         move++;
         total++;

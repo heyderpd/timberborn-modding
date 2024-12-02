@@ -16,7 +16,11 @@ GameObject:
   - component: {fileID: 114158661847203899}
   - component: {fileID: 114887347719951011}
   - component: {fileID: 114615458628604947}
+  - component: {fileID: 9055749148971998602}
+  - component: {fileID: -8060590498780973478}
+  - component: {fileID: 7108078825334832238}
   - component: {fileID: 7866719366829969872}
+  - component: {fileID: 2492522024794474359}
   m_Layer: 0
   m_Name: WaterShield.IronTeeth
   m_TagString: Untagged
@@ -113,7 +117,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _blocksSpecification:
-    _size: {x: 3, y: 3, z: 6}
+    _size: {x: 3, y: 3, z: 5}
     _blockSpecifications:
     - _matterBelow: 1
       _legacyOccupation: 0
@@ -164,60 +168,6 @@ MonoBehaviour:
       _stackable: 0
       _occupyAllBelow: 0
     - _matterBelow: 1
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
       _legacyOccupation: 0
       _useNewOccupation: 1
       _occupations: 62
@@ -495,6 +445,46 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _progressThresholds:
   - 0
+--- !u!114 &9055749148971998602
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001718728464631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 443178000, guid: a01d35f43886f4b46e413d3c2ea20811, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &-8060590498780973478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001718728464631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1514884223, guid: a01d35f43886f4b46e413d3c2ea20811, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _powerOutput: 0
+  _powerInput: 1000
+  _isShaft: 0
+--- !u!114 &7108078825334832238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001718728464631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 006e9e87372d3354980ac847ee2445fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Active: 1
 --- !u!114 &7866719366829969872
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -509,7 +499,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Size: 12
   Height: 6
-  Speed: 0.25
+  ShieldUpSpeed: 0.2
+  ShieldDownSpeed: 1
+--- !u!114 &2492522024794474359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001718728464631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfbdfab57db1e7e4c9fed99839ad65a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1017939095831443
 GameObject:
   m_ObjectHideFlags: 0
