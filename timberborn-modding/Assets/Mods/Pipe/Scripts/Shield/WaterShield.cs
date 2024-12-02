@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Immutable;
@@ -7,8 +8,6 @@ using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
 using Timberborn.Persistence;
-using System;
-using UnityEngine.UI;
 
 namespace Mods.OldGopher.Pipe
 {

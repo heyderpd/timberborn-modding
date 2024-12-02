@@ -1,5 +1,3 @@
-using UnityEngine;
-
 namespace Mods.OldGopher.Pipe
 {
   internal enum ShieldState
