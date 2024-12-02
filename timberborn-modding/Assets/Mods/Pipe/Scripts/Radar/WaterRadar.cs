@@ -18,6 +18,7 @@ namespace Mods.OldGopher.Pipe
     public WaterRadar()
     {
       WaterObstacleMap.Clear();
+      WaterSourceMap.Clear();
     }
 
     [Inject]
@@ -81,7 +82,7 @@ namespace Mods.OldGopher.Pipe
       var blockMiddle = GetMiddleObjectAt(coordinate);
       var existWaterObstacle = ModStarter.Failed
         ? SimpleObstacleMap.IsBlocked(blockMiddle)
-        : WaterObstacleMap.IsBlocked(coordinate);
+        : WaterSourceMap.IsBlocked(coordinate) || WaterObstacleMap.IsBlocked(coordinate);
       var obstacle = existWaterObstacle
         ? WaterObstacleType.BLOCK
         : WaterObstacleType.EMPTY;
@@ -139,6 +140,17 @@ namespace Mods.OldGopher.Pipe
       if (IsInvalidCoordinate(coordinate))
         return;
       waterService.RemoveFullObstacle(coordinate);
+    }
+
+    public void AddDirectionLimiter(Vector3Int origin, Vector3Int coordinate)
+    {
+      if (IsInvalidCoordinate(coordinate))
+        return;
+      FlowDirection flowDirection = origin.x - coordinate.x >= 0
+        ? FlowDirection.Left
+        : FlowDirection.Right;
+      waterService.AddDirectionLimiter(coordinate, flowDirection);
+      waterService.SetControllerToIncreaseFlow(coordinate);
     }
   }
 }
