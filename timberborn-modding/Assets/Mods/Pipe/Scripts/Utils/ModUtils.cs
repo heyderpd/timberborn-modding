@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using UnityEngine;
 using Timberborn.BlockSystem;
 using Timberborn.Coordinates;
+using Timberborn.Common;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -67,7 +68,7 @@ namespace Mods.OldGopher.Pipe
     public static (int, int) getRectifyRef(BlockObject block)
     {
       var (xp, yp, zp, xl, yl, zl) = _getRectifyRef(block);
-      return (xp, yp);
+      return (xp - block.Coordinates.x, yp - block.Coordinates.y);
     }
 
     private static Tuple<int, int, int, int, int, int> _getRectifyRef(BlockObject block)
