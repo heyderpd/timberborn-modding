@@ -8,6 +8,7 @@ using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
 using Timberborn.Persistence;
+using Timberborn.TickSystem;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -60,22 +61,27 @@ namespace Mods.OldGopher.Pipe
 
     public void Awake()
     {
+      Debug.Log("WaterShield.Awake");
       ((Behaviour)this).enabled = false;
       blockObject = GetComponentFast<BlockObject>();
       animator = GetComponentFast<WaterShieldAnimator>();
       acumulator = GetComponentFast<WaterShieldAcumulator>();
+    }
+
+    public void InitializeEntity()
+    {
+      Debug.Log("WaterShield.InitializeEntity");
       acumulator.OnPowerOff += OnPowerOff;
       acumulator.OnPowerDown += animator.OnSpeedDown;
       acumulator.OnPowerUp += animator.OnSpeedUp;
       acumulator.OnPowerFull += OnPowerFull;
       animator.OnAnimationAtMax += OnPowerFull;
-    }
-
-    public void InitializeEntity() {
       shieldField = waterShieldService.DiscoveryShieldField(Size, Height, blockObject);
     }
 
-    public void DeleteEntity() { }
+    public void DeleteEntity() {
+      ActivateShield(false);
+    }
 
     public void OnEnterFinishedState()
     {
@@ -92,43 +98,55 @@ namespace Mods.OldGopher.Pipe
     [BackwardCompatible(2023, 9, 22)]
     public void Load(IEntityLoader entityLoader) { }
 
-    public IEnumerator ActivateShieldRoutine(bool activate)
+    private IEnumerator ActivateRoutine()
     {
-      Debug.Log($"ActivateShield start activate={activate} shieldField={shieldField.Count()}");
-      State = activate ? ShieldState.TO_UP : ShieldState.TO_DOWN;
-      var origin = blockObject.Coordinates;
+      State = ShieldState.TO_UP;
       foreach (var node in shieldField)
       {
-        Debug.Log($"ActivateShield.yield coordinate={coordinate} node.active={node.active}");
-        if ((activate && node.active) || (!activate && !node.active))
+        if (node.active)
           continue;
-        if (activate)
-          waterRadar.AddFullObstacle(node.coordinate);
-        else
-          waterRadar.RemoveFullObstacle(node.coordinate);
-        node.active = activate;
-        yield return new WaitForSeconds(activate ? ShieldUpSpeed : ShieldDownSpeed);
+        waterRadar.AddFullObstacle(node.coordinate);
+        node.active = true;
+        yield return new WaitForSeconds(ShieldUpSpeed);
       }
-      State = activate ? ShieldState.UP : ShieldState.DOWN;
+      State = ShieldState.UP;
       routine = null;
-      Debug.Log($"ActivateShield end");
+    }
+
+    private IEnumerator DeactivateRoutine()
+    {
+      State = ShieldState.TO_DOWN;
+      foreach (var node in shieldField.Reverse())
+      {
+        if (!node.active)
+          continue;
+        waterRadar.RemoveFullObstacle(node.coordinate);
+        node.active = false;
+        yield return new WaitForSeconds(ShieldDownSpeed);
+      }
+      State = ShieldState.DOWN;
+      routine = null;
     }
 
     public void ActivateShield(bool activate)
     {
       if (routine != null)
         StopCoroutine(routine);
-      routine = StartCoroutine(ActivateShieldRoutine(activate));
+      routine = StartCoroutine(activate
+        ? ActivateRoutine()
+        : DeactivateRoutine());
     }
 
-    public void OnPowerOff(object sender, EventArgs evt)
+    private void OnPowerOff(object sender, EventArgs evt)
     {
       if (State > ShieldState.TO_DOWN)
         ActivateShield(false);
     }
 
-    public void OnPowerFull(object sender, EventArgs evt)
+    private void OnPowerFull(object sender, EventArgs evt)
     {
+      if (!((Behaviour)this).enabled)
+        return;
       if (State < ShieldState.TO_UP && acumulator.MaxPower && animator.AtTopSpeed)
         ActivateShield(true);
     }

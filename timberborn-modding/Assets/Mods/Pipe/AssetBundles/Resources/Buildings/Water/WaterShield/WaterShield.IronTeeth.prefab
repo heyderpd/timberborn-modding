@@ -19,8 +19,9 @@ GameObject:
   - component: {fileID: 9055749148971998602}
   - component: {fileID: -8060590498780973478}
   - component: {fileID: 7108078825334832238}
+  - component: {fileID: 9191061595875884875}
+  - component: {fileID: 5209661369488283752}
   - component: {fileID: 7866719366829969872}
-  - component: {fileID: 2492522024794474359}
   m_Layer: 0
   m_Name: WaterShield.IronTeeth
   m_TagString: Untagged
@@ -485,6 +486,34 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Active: 1
+--- !u!114 &9191061595875884875
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001718728464631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 12292bfafa814a349a7eccceeda8e5fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  nodePowered: {fileID: 0}
+--- !u!114 &5209661369488283752
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001718728464631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfbdfab57db1e7e4c9fed99839ad65a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AntennaSpeed: 0.4
+  CogSpeed: 0.05
+  BladeSpeed: 1
 --- !u!114 &7866719366829969872
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -501,18 +530,6 @@ MonoBehaviour:
   Height: 6
   ShieldUpSpeed: 0.2
   ShieldDownSpeed: 1
---- !u!114 &2492522024794474359
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1001718728464631}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cfbdfab57db1e7e4c9fed99839ad65a0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1017939095831443
 GameObject:
   m_ObjectHideFlags: 0

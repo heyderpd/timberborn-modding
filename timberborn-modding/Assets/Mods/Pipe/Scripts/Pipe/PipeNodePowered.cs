@@ -1,5 +1,7 @@
-﻿using Timberborn.BaseComponentSystem;
+﻿using System;
+using Timberborn.BaseComponentSystem;
 using Timberborn.MechanicalSystem;
+using UnityEngine;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -13,6 +15,7 @@ namespace Mods.OldGopher.Pipe
 
     private bool NodeActiveAndPowered => mechanicalNode?.ActiveAndPowered ?? false;
 
+    [NonSerialized]
     public bool Active = true;
 
     public void Awake()

@@ -17,7 +17,7 @@ namespace Mods.OldGopher.Pipe
 
     public bool Active = false;
 
-    public bool AtTopSpeed { get; private set; } = false;
+    public bool AtTopSpeed => Speed >= MaxSpeed;
 
     private IAnimator Animator;
 
@@ -47,7 +47,6 @@ namespace Mods.OldGopher.Pipe
         Mathf.Max(_speed, MaxSpeed),
       0f);
       _speed = _speed > MinSpeed ? _speed : 0f;
-      AtTopSpeed = _speed >= MaxSpeed;
       return _speed;
     }
 

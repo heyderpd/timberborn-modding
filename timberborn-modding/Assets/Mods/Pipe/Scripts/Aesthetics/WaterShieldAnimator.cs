@@ -2,17 +2,29 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using Bindito.Core;
+using UnityEngine;
 using Timberborn.Animations;
 using Timberborn.TimeSystem;
-using Timberborn.BaseComponentSystem;
 using Timberborn.TickSystem;
+using Timberborn.EntitySystem;
+using Timberborn.BaseComponentSystem;
 
 namespace Mods.OldGopher.Pipe
 {
   internal class WaterShieldAnimator : BaseComponent,
+                                       IInitializableEntity,
                                        ITickableSingleton
   {
     private NonlinearAnimationManager nonlinearAnimationManager;
+
+    [SerializeField]
+    private float AntennaSpeed;
+
+    [SerializeField]
+    private float CogSpeed;
+
+    [SerializeField]
+    private float BladeSpeed;
 
     private SpeedAnimator Antenna;
 
@@ -22,8 +34,7 @@ namespace Mods.OldGopher.Pipe
 
     public event EventHandler OnAnimationAtMax;
 
-    [NonSerialized]
-    public float SpeedFactor = 0f;
+    private float SpeedFactor = 0f;
 
     public bool Active
     {
@@ -53,26 +64,38 @@ namespace Mods.OldGopher.Pipe
 
     public void Awake()
     {
+      Debug.Log("WaterShieldAcumulator.Awake");
       var animators = new List<IAnimator>();
       GetComponentsFast<IAnimator>(animators);
       Antenna = new SpeedAnimator(
         animators.FirstOrDefault(item => item.AnimationName == "#AntennaAnimated"),
         nonlinearAnimationManager,
-        0.4f
+        AntennaSpeed
       );
       Cog = new SpeedAnimator(
         animators.FirstOrDefault(item => item.AnimationName == "#CogAnimated"),
         nonlinearAnimationManager,
-        0.05f
+        CogSpeed
       );
       Blade = new SpeedAnimator(
         animators.FirstOrDefault(item => item.AnimationName == "#BladesAnimated"),
         nonlinearAnimationManager,
-        1.0f
+        BladeSpeed
       );
     }
 
-    public void OnEnterFinishedState()
+    public void OnSpeedUp(object sender, float _SpeedFactor)
+    {
+      Active = true;
+      SpeedFactor = _SpeedFactor;
+    }
+
+    public void OnSpeedDown(object sender, EventArgs evt)
+    {
+      Active = false;
+    }
+
+    public void InitializeEntity()
     {
       Antenna.Initialize();
       Cog.Initialize();
@@ -86,17 +109,6 @@ namespace Mods.OldGopher.Pipe
       Blade.Update(SpeedFactor);
       if (AtTopSpeed)
         this.OnAnimationAtMax?.Invoke(this, EventArgs.Empty);
-    }
-
-    public void OnSpeedUp(object sender, float _SpeedFactor)
-    {
-      Active = true;
-      SpeedFactor = _SpeedFactor;
-    }
-
-    public void OnSpeedDown(object sender, EventArgs evt)
-    {
-      Active = false;
     }
   }
 }
