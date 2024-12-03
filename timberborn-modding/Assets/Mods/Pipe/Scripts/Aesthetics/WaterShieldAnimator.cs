@@ -3,28 +3,26 @@ using System.Linq;
 using System.Collections.Generic;
 using Bindito.Core;
 using UnityEngine;
-using Timberborn.Animations;
 using Timberborn.TimeSystem;
 using Timberborn.TickSystem;
-using Timberborn.EntitySystem;
-using Timberborn.BaseComponentSystem;
+using Timberborn.BlockSystem;
+using Timberborn.Animations;
 
 namespace Mods.OldGopher.Pipe
 {
-  internal class WaterShieldAnimator : BaseComponent,
-                                       IInitializableEntity,
-                                       ITickableSingleton
+  internal class WaterShieldAnimator : TickableComponent,
+                                       IFinishedStateListener
   {
     private NonlinearAnimationManager nonlinearAnimationManager;
 
     [SerializeField]
-    private float AntennaSpeed;
+    private float AntennaSpeed = 0.4f;
 
     [SerializeField]
-    private float CogSpeed;
+    private float CogSpeed = 0.05f;
 
     [SerializeField]
-    private float BladeSpeed;
+    private float BladeSpeed = 1.0f;
 
     private SpeedAnimator Antenna;
 
@@ -64,7 +62,7 @@ namespace Mods.OldGopher.Pipe
 
     public void Awake()
     {
-      Debug.Log("WaterShieldAcumulator.Awake");
+      Debug.Log("WaterShieldAnimator.Awake");
       var animators = new List<IAnimator>();
       GetComponentsFast<IAnimator>(animators);
       Antenna = new SpeedAnimator(
@@ -95,14 +93,17 @@ namespace Mods.OldGopher.Pipe
       Active = false;
     }
 
-    public void InitializeEntity()
+    public void OnEnterFinishedState()
     {
+      Debug.Log("WaterShieldAnimator.OnEnterFinishedState");
       Antenna.Initialize();
       Cog.Initialize();
       Blade.Initialize();
     }
 
-    public void Tick()
+    public void OnExitFinishedState() { }
+
+    public override void Tick()
     {
       Antenna.Update(SpeedFactor);
       Cog.Update(SpeedFactor);

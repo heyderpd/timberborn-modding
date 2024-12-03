@@ -18,9 +18,10 @@ GameObject:
   - component: {fileID: 114615458628604947}
   - component: {fileID: 9055749148971998602}
   - component: {fileID: -8060590498780973478}
+  - component: {fileID: 7463488530144917052}
   - component: {fileID: 7108078825334832238}
-  - component: {fileID: 9191061595875884875}
-  - component: {fileID: 5209661369488283752}
+  - component: {fileID: 7342733298384292758}
+  - component: {fileID: 8797614892833487696}
   - component: {fileID: 7866719366829969872}
   m_Layer: 0
   m_Name: WaterShield.IronTeeth
@@ -58,8 +59,8 @@ MonoBehaviour:
   m_Script: {fileID: -790041461, guid: 1bd6ccb667024f9c2b77daf7f62a4eed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _selectionSoundName: Inventor
-  _loopingSoundName: Inventor
+  _selectionSoundName: Numbercruncher
+  _loopingSoundName: 
   _buildingCost:
   - _goodId: TreatedPlank
     _amount: 1000
@@ -391,11 +392,11 @@ MonoBehaviour:
       _stackable: 0
       _occupyAllBelow: 0
   _entrance:
-    _hasEntrance: 1
-    _coordinates: {x: 0, y: -1, z: 0}
+    _hasEntrance: 0
+    _coordinates: {x: 0, y: 0, z: 0}
   _baseZ: 0
   _overridable: 0
-  _flippable: 1
+  _flippable: 0
 --- !u!114 &114158661847203899
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -473,6 +474,37 @@ MonoBehaviour:
   _powerOutput: 0
   _powerInput: 1000
   _isShaft: 0
+--- !u!114 &7463488530144917052
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001718728464631}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 200649111, guid: 6db671ca2a10521151a0623ea7cc13c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _connectableBlocks:
+  - _coordinates: {x: 0, y: 0, z: 0}
+    _connectableDirections: 19
+  - _coordinates: {x: 0, y: 1, z: 0}
+    _connectableDirections: 18
+  - _coordinates: {x: 0, y: 2, z: 0}
+    _connectableDirections: 22
+  - _coordinates: {x: 1, y: 0, z: 0}
+    _connectableDirections: 17
+  - _coordinates: {x: 1, y: 1, z: 0}
+    _connectableDirections: 16
+  - _coordinates: {x: 1, y: 2, z: 0}
+    _connectableDirections: 20
+  - _coordinates: {x: 2, y: 0, z: 0}
+    _connectableDirections: 25
+  - _coordinates: {x: 2, y: 1, z: 0}
+    _connectableDirections: 24
+  - _coordinates: {x: 2, y: 2, z: 0}
+    _connectableDirections: 28
 --- !u!114 &7108078825334832238
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -485,8 +517,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 006e9e87372d3354980ac847ee2445fb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Active: 1
---- !u!114 &9191061595875884875
+--- !u!114 &7342733298384292758
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -495,11 +526,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 1001718728464631}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 12292bfafa814a349a7eccceeda8e5fc, type: 3}
+  m_Script: {fileID: 11500000, guid: f7c876c1058c87d4dae9a6dbc13132fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nodePowered: {fileID: 0}
---- !u!114 &5209661369488283752
+  powerTicks: 30
+--- !u!114 &8797614892833487696
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

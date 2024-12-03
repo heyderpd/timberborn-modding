@@ -1,19 +1,19 @@
 using System;
 using UnityEngine;
-using Timberborn.BaseComponentSystem;
 using Timberborn.TickSystem;
 using Timberborn.BlockSystem;
-using Timberborn.EntitySystem;
 
 namespace Mods.OldGopher.Pipe
 {
-  internal class WaterShieldAcumulator : BaseComponent,
-                                         IInitializableEntity,
-                                         ITickableSingleton
+  internal class WaterShieldAcumulator : TickableComponent,
+                                         IFinishedStateListener
   {
     private float acumulator = 0f;
 
-    private float powerStep = 0.1f;
+    [SerializeField]
+    private int powerTicks = 30;
+
+    private float powerStep;
 
     private float powerEfficiency => nodePowered?.PowerEfficiency ?? 0f;
 
@@ -31,19 +31,21 @@ namespace Mods.OldGopher.Pipe
 
     public void Awake()
     {
-      Debug.Log("WaterShieldAcumulator.Awake");
       nodePowered = GetComponentFast<PipeNodePowered>();
+      powerStep = (1f / powerTicks) * Time.fixedDeltaTime;
+      Debug.Log($"WaterShieldAcumulator.Awake powerTicks={powerTicks} powerStep={powerStep}");
     }
 
     public void UpdateAcumulator()
     {
       var power = powerEfficiency > 0f
-        ? acumulator * (1f + (powerStep * powerEfficiency))
-        : acumulator * (1f - powerStep);
-      power = Mathf.Min(
-        Mathf.Max(power, 1f),
+        ? acumulator + (powerStep * powerEfficiency)
+        : acumulator - powerStep;
+      power = Mathf.Max(
+        Mathf.Min(power, 1f),
       0f);
       acumulator = power;
+      Debug.Log($"WaterShieldAcumulator.UpdateAcumulator powerEfficiency={powerEfficiency} powerStep={powerStep} acumulator={acumulator}");
     }
 
     public void CheckPower()
@@ -58,12 +60,19 @@ namespace Mods.OldGopher.Pipe
         this.OnPowerFull?.Invoke(this, EventArgs.Empty);
     }
 
-    public void InitializeEntity()
+    public void OnEnterFinishedState()
     {
-      nodePowered?.EnablePowerConsumption();
+      Debug.Log("WaterShieldAcumulator.OnEnterFinishedState");
+      nodePowered.EnablePowerConsumption();
     }
 
-    public void Tick()
+    public void OnExitFinishedState()
+    {
+      Debug.Log("WaterShieldAcumulator.OnExitFinishedState");
+      nodePowered.DisablePowerConsumption();
+    }
+
+    public override void Tick()
     {
       UpdateAcumulator();
       CheckPower();

@@ -8,7 +8,6 @@ using Timberborn.EntitySystem;
 using Timberborn.BlockSystem;
 using Timberborn.BaseComponentSystem;
 using Timberborn.Persistence;
-using Timberborn.TickSystem;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -79,17 +78,21 @@ namespace Mods.OldGopher.Pipe
       shieldField = waterShieldService.DiscoveryShieldField(Size, Height, blockObject);
     }
 
-    public void DeleteEntity() {
+    public void DeleteEntity()
+    {
+      Debug.Log("WaterShield.DeleteEntity");
       ActivateShield(false);
     }
 
     public void OnEnterFinishedState()
     {
+      Debug.Log("WaterShield.OnEnterFinishedState");
       ((Behaviour)this).enabled = true;
     }
 
     public void OnExitFinishedState()
     {
+      Debug.Log("WaterShield.OnExitFinishedState");
       ((Behaviour)this).enabled = false;
     }
 
@@ -101,10 +104,8 @@ namespace Mods.OldGopher.Pipe
     private IEnumerator ActivateRoutine()
     {
       State = ShieldState.TO_UP;
-      foreach (var node in shieldField)
+      foreach (var node in shieldField.Where(item => !item.active))
       {
-        if (node.active)
-          continue;
         waterRadar.AddFullObstacle(node.coordinate);
         node.active = true;
         yield return new WaitForSeconds(ShieldUpSpeed);
@@ -116,10 +117,8 @@ namespace Mods.OldGopher.Pipe
     private IEnumerator DeactivateRoutine()
     {
       State = ShieldState.TO_DOWN;
-      foreach (var node in shieldField.Reverse())
+      foreach (var node in shieldField.Reverse().Where(item => item.active))
       {
-        if (!node.active)
-          continue;
         waterRadar.RemoveFullObstacle(node.coordinate);
         node.active = false;
         yield return new WaitForSeconds(ShieldDownSpeed);

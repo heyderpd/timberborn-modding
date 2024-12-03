@@ -7,17 +7,19 @@ namespace Mods.OldGopher.Pipe
 {
   internal class SpeedAnimator
   {
-    private float MaxSpeed;
+    private float SpeedMax = 1f;
 
-    private float MinSpeed = 0.001f;
+    private float SpeedMin = 0.001f;
+
+    private float SpeedLimit = 1f;
+
+    private float SpeedStep = 0.1f;
 
     private float Speed = 0f;
 
-    private float SpeedStep = 1.1f;
-
     public bool Active = false;
 
-    public bool AtTopSpeed => Speed >= MaxSpeed;
+    public bool AtTopSpeed => Speed >= SpeedMax;
 
     private IAnimator Animator;
 
@@ -30,23 +32,21 @@ namespace Mods.OldGopher.Pipe
     public SpeedAnimator(
       IAnimator _Animator,
       NonlinearAnimationManager _nonlinearAnimationManager,
-      float _MaxSpeed = 1f
+      float _SpeedMax
     )
     {
       Animator = _Animator;
       nonlinearAnimationManager = _nonlinearAnimationManager;
-      MaxSpeed = _MaxSpeed;
+      SpeedMax = _SpeedMax;
     }
 
     private float CalculeSpeed(float SpeedFactor)
     {
       var _speed = Active
-        ? Speed * SpeedStep * SpeedFactor
-        : Speed / SpeedStep;
-      _speed = Mathf.Min(
-        Mathf.Max(_speed, MaxSpeed),
-      0f);
-      _speed = _speed > MinSpeed ? _speed : 0f;
+        ? Speed + SpeedStep
+        : Speed - SpeedStep;
+      _speed = Mathf.Min(_speed, SpeedMax * SpeedFactor);
+      _speed = _speed > SpeedMin ? _speed : 0f;
       return _speed;
     }
 

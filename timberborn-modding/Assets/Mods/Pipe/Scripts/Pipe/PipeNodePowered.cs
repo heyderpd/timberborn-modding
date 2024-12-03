@@ -1,7 +1,7 @@
 ﻿using System;
-using Timberborn.BaseComponentSystem;
-using Timberborn.MechanicalSystem;
 using UnityEngine;
+using Timberborn.MechanicalSystem;
+using Timberborn.BaseComponentSystem;
 
 namespace Mods.OldGopher.Pipe
 {
@@ -23,27 +23,30 @@ namespace Mods.OldGopher.Pipe
       mechanicalNode = GetComponentFast<MechanicalNode>();
     }
 
-    public void InitializeEntity()
-    {
-      DisablePowerConsumption();
-    }
-
     public void DisablePowerConsumption()
     {
+      Debug.Log($"PipeNodePowered.EnablePowerConsumption try NodeInvalid={NodeInvalid} GraphValid={GraphValid} Active={Active}");
       if (NodeInvalid)
         return;
       mechanicalNode.Active = false;
       if (GraphValid)
+      {
         mechanicalNode.UpdateInput(0);
+        Debug.Log("PipeNodePowered.EnablePowerConsumption disabled");
+      }
     }
 
     public void EnablePowerConsumption()
     {
+      Debug.Log($"PipeNodePowered.EnablePowerConsumption try NodeInvalid={NodeInvalid} GraphValid={GraphValid} Active={Active}");
       if (NodeInvalid || !Active)
         return;
       mechanicalNode.Active = true;
       if (GraphValid)
+      {
         mechanicalNode.UpdateInput(1);
+        Debug.Log("PipeNodePowered.EnablePowerConsumption enabled");
+      }
     }
 
     public float PowerEfficiency
