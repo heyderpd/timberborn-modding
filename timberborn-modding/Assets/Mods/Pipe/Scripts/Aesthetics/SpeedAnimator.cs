@@ -9,13 +9,9 @@ namespace Mods.OldGopher.Pipe
   {
     private float SpeedMax = 1f;
 
-    private float SpeedMin = 0.001f;
-
-    private float SpeedLimit = 1f;
-
     private float SpeedStep = 0.1f;
 
-    private float Speed = 0f;
+    public float Speed { get; private set; } = 0f;
 
     public bool Active = false;
 
@@ -45,8 +41,9 @@ namespace Mods.OldGopher.Pipe
       var _speed = Active
         ? Speed + SpeedStep
         : Speed - SpeedStep;
-      _speed = Mathf.Min(_speed, SpeedMax * SpeedFactor);
-      _speed = _speed > SpeedMin ? _speed : 0f;
+      _speed = Mathf.Max(
+        Mathf.Min(_speed, SpeedMax * SpeedFactor),
+      0f);
       return _speed;
     }
 

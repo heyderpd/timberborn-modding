@@ -27,7 +27,6 @@ namespace Mods.OldGopher.Pipe
       if (_isUnsafe("UpdateInflowLimiter"))
         return false;
       var proceed = WaterObstacleMap.CanUpdateInflowLimiter(coordinates, flowLimit);
-      Debug.Log($"[WaterMapPatch.UpdateInflowLimiter] coordinates={coordinates} proceed={proceed}");
       return proceed;
     }
 
@@ -39,7 +38,6 @@ namespace Mods.OldGopher.Pipe
       if (_isUnsafe("RemoveInflowLimiter"))
         return false;
       var proceed = WaterObstacleMap.CanRemoveInflowLimiter(coordinates);
-      Debug.Log($"[WaterMapPatch.RemoveInflowLimiter] coordinates={coordinates} proceed={proceed}");
       return proceed;
     }
 
@@ -51,7 +49,6 @@ namespace Mods.OldGopher.Pipe
       if (_isUnsafe("AddFullObstacle"))
         return false;
       var proceed = WaterObstacleMap.CanAddFullObstacle(coordinates);
-      Debug.Log($"[WaterMapPatch.AddFullObstacle] coordinates={coordinates} proceed={proceed}");
       return proceed;
     }
 
@@ -63,7 +60,6 @@ namespace Mods.OldGopher.Pipe
       if (_isUnsafe("RemoveFullObstacle"))
         return false;
       var proceed = WaterObstacleMap.CanRemoveFullObstacle(coordinates);
-      Debug.Log($"[WaterMapPatch.RemoveFullObstacle] coordinates={coordinates} proceed={proceed}");
       return proceed;
     }
   }

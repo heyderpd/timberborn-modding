@@ -12,8 +12,6 @@ namespace Mods.OldGopher.Pipe
 
     private static readonly HashSet<Vector3Int> waterSourceCoordinates = new HashSet<Vector3Int>();
 
-    //private static readonly HashSet<Vector2Int> waterSourceCoordinatesXY = new HashSet<Vector2Int>();
-
     public static void Clear()
     {
       //waterSources.Clear();
@@ -40,9 +38,7 @@ namespace Mods.OldGopher.Pipe
         return;
       foreach (var coordinate in Coordinates)
       {
-        Debug.Log($"[WaterSourceMap.Block] coordinate={coordinate} xy={coordinate.XY()}");
         waterSourceCoordinates.Add(coordinate);
-        //waterSourceCoordinatesXY.Add(coordinate.XY());
       }
     }
 
@@ -52,9 +48,6 @@ namespace Mods.OldGopher.Pipe
         return;
       foreach (var coordinate in Coordinates)
       {
-        Debug.Log($"[WaterSourceMap.Unblock] coordinate={coordinate}  xy={coordinate.XY()}");
-        //if (waterSourceCoordinatesXY.Contains(coordinate.XY()))
-        //  waterSourceCoordinatesXY.Remove(coordinate.XY());
         if (waterSourceCoordinates.Contains(coordinate))
           waterSourceCoordinates.Remove(coordinate);
       }
@@ -65,7 +58,6 @@ namespace Mods.OldGopher.Pipe
       if (coordinate == null)
         return true;
       var exist = waterSourceCoordinates.Contains(coordinate);
-      Debug.Log($"[WaterSourceMap.IsBlocked] coordinate={coordinate} xy={coordinate.XY()} exist={exist}");
       return exist;
     }
   }

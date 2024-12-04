@@ -130,14 +130,14 @@ namespace Mods.OldGopher.Pipe
 
     public void AddFullObstacle(Vector3Int coordinate)
     {
-      if (IsInvalidCoordinate(coordinate))
+      if (IsInvalidCoordinate(coordinate) || WaterSourceMap.IsBlocked(coordinate))
         return;
       waterService.AddFullObstacle(coordinate);
     }
 
     public void RemoveFullObstacle(Vector3Int coordinate)
     {
-      if (IsInvalidCoordinate(coordinate))
+      if (IsInvalidCoordinate(coordinate) || WaterSourceMap.IsBlocked(coordinate))
         return;
       waterService.RemoveFullObstacle(coordinate);
     }

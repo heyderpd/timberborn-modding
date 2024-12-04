@@ -29,7 +29,6 @@ namespace Mods.OldGopher.Pipe
         return;
       //WaterSourceMap.Add(__instance);
       WaterSourceMap.Block(__instance.Coordinates);
-      Debug.Log($"[WaterSourcePath.InitializeEntity] Coordinates={__instance.Coordinates.Count()}");
     }
 
     [HarmonyPostfix]
@@ -40,7 +39,6 @@ namespace Mods.OldGopher.Pipe
         return;
       //WaterSourceMap.Remove(__instance);
       WaterSourceMap.Unblock(__instance.Coordinates);
-      Debug.Log($"[WaterSourcePath.DeleteEntity] Coordinates={__instance.Coordinates.Count()}");
     }
   }
 }

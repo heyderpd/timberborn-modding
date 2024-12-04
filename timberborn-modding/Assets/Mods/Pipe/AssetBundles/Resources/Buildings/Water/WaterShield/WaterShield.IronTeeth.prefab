@@ -119,7 +119,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _blocksSpecification:
-    _size: {x: 3, y: 3, z: 5}
+    _size: {x: 3, y: 3, z: 4}
     _blockSpecifications:
     - _matterBelow: 1
       _legacyOccupation: 0
@@ -337,60 +337,6 @@ MonoBehaviour:
       _occupations: 62
       _stackable: 0
       _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
-    - _matterBelow: 2
-      _legacyOccupation: 0
-      _useNewOccupation: 1
-      _occupations: 62
-      _stackable: 0
-      _occupyAllBelow: 0
   _entrance:
     _hasEntrance: 0
     _coordinates: {x: 0, y: 0, z: 0}
@@ -429,8 +375,8 @@ MonoBehaviour:
   m_Script: {fileID: 652365310, guid: b6b9d4cc3090b6fceb2eb6438dd271f1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _displayNameLocKey: Building.PipeBox.DisplayName
-  _descriptionLocKey: Building.PipeBox.Description
+  _displayNameLocKey: Building.WaterShield.DisplayName
+  _descriptionLocKey: Building.WaterShield.Description
   _flavorDescriptionLocKey: 
   _imagePath: Buildings/Water/WaterShield/WaterShieldIcon
 --- !u!114 &114615458628604947
@@ -529,7 +475,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f7c876c1058c87d4dae9a6dbc13132fc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  powerTicks: 30
+  SecondsToFullPower: 12
 --- !u!114 &8797614892833487696
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -542,9 +488,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cfbdfab57db1e7e4c9fed99839ad65a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  AntennaSpeed: 0.4
-  CogSpeed: 0.05
-  BladeSpeed: 1
+  AnimatedSpeed: 2
 --- !u!114 &7866719366829969872
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -557,10 +501,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2c72a26e2e98c3f4192f6a6f21e697cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Size: 12
-  Height: 6
-  ShieldUpSpeed: 0.2
-  ShieldDownSpeed: 1
+  Size: 15
+  Height: 5
+  SecondsToShieldUp: 60
+  SecondsToShieldDown: 15
 --- !u!1 &1017939095831443
 GameObject:
   m_ObjectHideFlags: 0
@@ -606,7 +550,7 @@ GameObject:
   - component: {fileID: 65228494700430687}
   - component: {fileID: 114008319152479193}
   m_Layer: 0
-  m_Name: ConstructionSite1x1
+  m_Name: ConstructionSite3x3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -660,7 +604,7 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: ConstructionSites\ConstructionSite1x1\ConstructionSite1x1.Model
+  _modelName: ConstructionSites\ConstructionSite3x3\ConstructionSite3x3.Model
 --- !u!1 &1569506069226352
 GameObject:
   m_ObjectHideFlags: 0
@@ -727,7 +671,7 @@ MonoBehaviour:
   m_Script: {fileID: -1942782917, guid: 40833514e55bcf2135fbcf9411078554, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _modelName: Buildings/Landscaping/Levee/Levee.IronTeeth.ConstructionStage0.Model
+  _modelName: ConstructionSites\ConstructionSite3x3\ConstructionSite3x3.Model
 --- !u!1 &1730594037791531
 GameObject:
   m_ObjectHideFlags: 0
@@ -738,6 +682,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4826127091702988}
   - component: {fileID: 65677247165934486}
+  - component: {fileID: 7584552463029471898}
   - component: {fileID: 114245968066381917}
   m_Layer: 0
   m_Name: '#Finished'
@@ -780,8 +725,29 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.9, y: 1.0209901, z: 0.9}
-  m_Center: {x: 0.5, y: 0.51049507, z: 0.5}
+  m_Size: {x: 3, y: 1, z: 3}
+  m_Center: {x: 1.5, y: 0.5, z: 1.5}
+--- !u!65 &7584552463029471898
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1730594037791531}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1.5, y: 1, z: 1.5}
+  m_Center: {x: 1.5, y: 2, z: 1.5}
 --- !u!114 &114245968066381917
 MonoBehaviour:
   m_ObjectHideFlags: 0

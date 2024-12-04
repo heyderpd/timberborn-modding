@@ -1,56 +1,42 @@
 using System;
-using System.Linq;
-using System.Collections.Generic;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.TimeSystem;
 using Timberborn.TickSystem;
-using Timberborn.BlockSystem;
 using Timberborn.Animations;
 
 namespace Mods.OldGopher.Pipe
 {
-  internal class WaterShieldAnimator : TickableComponent,
-                                       IFinishedStateListener
+  internal class WaterShieldAnimator : TickableComponent
   {
     private NonlinearAnimationManager nonlinearAnimationManager;
 
     [SerializeField]
-    private float AntennaSpeed = 0.4f;
+    private float AnimatedSpeed = 1f;
 
-    [SerializeField]
-    private float CogSpeed = 0.05f;
-
-    [SerializeField]
-    private float BladeSpeed = 1.0f;
-
-    private SpeedAnimator Antenna;
-
-    private SpeedAnimator Cog;
-
-    private SpeedAnimator Blade;
+    private SpeedAnimator Animated;
 
     public event EventHandler OnAnimationAtMax;
 
     private float SpeedFactor = 0f;
 
+    private bool SpeedChanged = false;
+
     public bool Active
     {
       get
       {
-        return (Antenna?.AtTopSpeed ?? false) && (Cog?.AtTopSpeed ?? false) && (Blade?.AtTopSpeed ?? false);
+        return (Animated?.AtTopSpeed ?? false);
       }
       set
       {
-        if (Antenna == null || Cog == null || Blade == null)
+        if (Animated == null)
           return;
-        Antenna.Active = value;
-        Cog.Active = value;
-        Blade.Active = value;
+        Animated.Active = value;
       }
     }
 
-    public bool AtTopSpeed => (Antenna?.AtTopSpeed ?? false) && (Cog?.AtTopSpeed ?? false) && (Blade?.AtTopSpeed ?? false);
+    public bool AtTopSpeed => Animated?.AtTopSpeed ?? false;
 
     [Inject]
     public void InjectDependencies(
@@ -62,52 +48,29 @@ namespace Mods.OldGopher.Pipe
 
     public void Awake()
     {
-      Debug.Log("WaterShieldAnimator.Awake");
-      var animators = new List<IAnimator>();
-      GetComponentsFast<IAnimator>(animators);
-      Antenna = new SpeedAnimator(
-        animators.FirstOrDefault(item => item.AnimationName == "#AntennaAnimated"),
+      Animated = new SpeedAnimator(
+        GetComponentInChildren<IAnimator>(true),
         nonlinearAnimationManager,
-        AntennaSpeed
+        AnimatedSpeed
       );
-      Cog = new SpeedAnimator(
-        animators.FirstOrDefault(item => item.AnimationName == "#CogAnimated"),
-        nonlinearAnimationManager,
-        CogSpeed
-      );
-      Blade = new SpeedAnimator(
-        animators.FirstOrDefault(item => item.AnimationName == "#BladesAnimated"),
-        nonlinearAnimationManager,
-        BladeSpeed
-      );
+      Animated.Initialize();
     }
 
-    public void OnSpeedUp(object sender, float _SpeedFactor)
+    public void OnSpeedChange(object sender, float _SpeedFactor)
     {
-      Active = true;
+      if (SpeedFactor == _SpeedFactor)
+        return;
       SpeedFactor = _SpeedFactor;
+      Active = _SpeedFactor > 0f;
+      SpeedChanged = true;
     }
-
-    public void OnSpeedDown(object sender, EventArgs evt)
-    {
-      Active = false;
-    }
-
-    public void OnEnterFinishedState()
-    {
-      Debug.Log("WaterShieldAnimator.OnEnterFinishedState");
-      Antenna.Initialize();
-      Cog.Initialize();
-      Blade.Initialize();
-    }
-
-    public void OnExitFinishedState() { }
 
     public override void Tick()
     {
-      Antenna.Update(SpeedFactor);
-      Cog.Update(SpeedFactor);
-      Blade.Update(SpeedFactor);
+      if (!SpeedChanged)
+        return;
+      SpeedChanged = false;
+      Animated.Update(SpeedFactor);
       if (AtTopSpeed)
         this.OnAnimationAtMax?.Invoke(this, EventArgs.Empty);
     }

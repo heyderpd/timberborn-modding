@@ -11,64 +11,71 @@ namespace Mods.OldGopher.Pipe
     private float acumulator = 0f;
 
     [SerializeField]
-    private int powerTicks = 30;
+    private int SecondsToFullPower = 30;
 
     private float powerStep;
 
+    private bool powerChanged = false;
+
     private float powerEfficiency => nodePowered?.PowerEfficiency ?? 0f;
 
-    public bool MaxPower => acumulator > 0f;
+    private bool unpowered => powerEfficiency == 0f;
+
+    private bool powered => powerEfficiency == 1f;
+
+    public bool MaxPower => acumulator >= 1f;
+
+    public bool FailurePower => acumulator < 0.5f;
+
+    public bool NonePower => acumulator == 0f;
 
     private PipeNodePowered nodePowered;
 
     public event EventHandler OnPowerOff;
 
-    public event EventHandler OnPowerDown;
+    public event EventHandler<float> OnPowerChange;
 
-    public event EventHandler<float> OnPowerUp;
-
-    public event EventHandler OnPowerFull;
+    public event EventHandler OnPowerOn;
 
     public void Awake()
     {
       nodePowered = GetComponentFast<PipeNodePowered>();
-      powerStep = (1f / powerTicks) * Time.fixedDeltaTime;
-      Debug.Log($"WaterShieldAcumulator.Awake powerTicks={powerTicks} powerStep={powerStep}");
+      powerStep = (1f / SecondsToFullPower) * Time.fixedDeltaTime;
     }
 
     public void UpdateAcumulator()
     {
-      var power = powerEfficiency > 0f
+      Debug.Log($"WaterShieldAcumulator.UpdateAcumulator powerEfficiency={powerEfficiency}");
+      var power = powered
         ? acumulator + (powerStep * powerEfficiency)
         : acumulator - powerStep;
       power = Mathf.Max(
         Mathf.Min(power, 1f),
       0f);
+      powerChanged = acumulator != power;
       acumulator = power;
-      Debug.Log($"WaterShieldAcumulator.UpdateAcumulator powerEfficiency={powerEfficiency} powerStep={powerStep} acumulator={acumulator}");
     }
 
     public void CheckPower()
     {
-      if (acumulator == 0f)
+      if (NonePower || (unpowered && FailurePower))
         this.OnPowerOff?.Invoke(this, EventArgs.Empty);
-      if (powerEfficiency < 0f)
-        this.OnPowerDown?.Invoke(this, EventArgs.Empty);
-      else
-        this.OnPowerUp?.Invoke(this, acumulator);
-      if (acumulator == 1f)
-        this.OnPowerFull?.Invoke(this, EventArgs.Empty);
+      if (powerChanged)
+      {
+        powerChanged = false;
+        this.OnPowerChange?.Invoke(this, acumulator);
+      }
+      if (powered && MaxPower)
+        this.OnPowerOn?.Invoke(this, EventArgs.Empty);
     }
 
     public void OnEnterFinishedState()
     {
-      Debug.Log("WaterShieldAcumulator.OnEnterFinishedState");
       nodePowered.EnablePowerConsumption();
     }
 
     public void OnExitFinishedState()
     {
-      Debug.Log("WaterShieldAcumulator.OnExitFinishedState");
       nodePowered.DisablePowerConsumption();
     }
 

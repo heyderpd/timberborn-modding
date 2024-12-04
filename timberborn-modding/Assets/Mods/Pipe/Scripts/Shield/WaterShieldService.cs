@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Bindito.Core;
 using UnityEngine;
 using Timberborn.BlockSystem;
@@ -32,32 +31,37 @@ namespace Mods.OldGopher.Pipe
       return waterSource;
     }
 
-    public ImmutableArray<ShieldNode> DiscoveryShieldField(int size, int height, BlockObject block)
+    public ShieldNode DiscoveryWaterColumn(Vector2Int reference, int height, BlockObject block)
     {
-      Debug.Log("DiscoveryShieldField start");
+      var Coordinates = new List<Vector3Int>();
+      for (var z = height - 1; z >= 0; z--)
+      {
+        coordinate = block.Transform(new Vector3Int(reference.x, reference.y, z));
+        if (waterRadar.IsInvalidCoordinate(coordinate))
+          continue;
+        Coordinates.Add(coordinate);
+      }
+      if (Coordinates.Count > 0)
+        return new ShieldNode(Coordinates);
+      return null;
+    }
+
+    public IEnumerable<ShieldNode> DiscoveryShieldField(int totalLimit, int height, BlockObject block)
+    {
       var Coordinates = new List<ShieldNode>();
       var (x_ref, y_ref) = ModUtils.getRectifyRef(block);
-      var reference = new Vector2Int(x_ref, y_ref);
-      Debug.Log($"DiscoveryShieldField start reference={reference}");
-      var totalLimit = size * size * height;
+      var reference = new Vector2Int(x_ref + 1, y_ref + 1);
       var total = 0;
       var move = 0;
       var moveLimit = -1;
       var direction = 3;
       while (total < totalLimit)
       {
-        //for (var z = 0; z < height; z++)
-        for (var z = height - 1; z >= 0; z--)
-        {
-          coordinate = block.Transform(new Vector3Int(reference.x, reference.y, z));
-          if (waterRadar.IsInvalidCoordinate(coordinate) || WaterSourceMap.IsBlocked(coordinate))
-            continue;
-          Debug.Log($"DiscoveryShieldField coordinate={coordinate} will");
-          Coordinates.Add(new ShieldNode(coordinate));
-        }
+        var column = DiscoveryWaterColumn(reference, height, block);
+        if (column != null)
+          yield return column;
         move++;
         total++;
-        Debug.Log($"DiscoveryShieldField loop A move={move} moveLimit={moveLimit} direction={direction}");
         if (move > moveLimit)
         {
           move = 0;
@@ -74,10 +78,7 @@ namespace Mods.OldGopher.Pipe
           reference.x--;
         else
           reference.y--;
-        Debug.Log($"DiscoveryShieldField loop B move={move} moveLimit={moveLimit} direction={direction}");
       }
-      Debug.Log("DiscoveryShieldField end");
-      return Coordinates.ToImmutableArray();
     }
   }
 }
